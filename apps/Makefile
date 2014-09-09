@@ -48,7 +48,7 @@ APPDIR = ${shell pwd}
 #   list can be extended by the .config file as well.
 
 CONFIGURED_APPS =
-SUBDIRS  = examples graphics interpreters modbus builtin nshlib netutils
+SUBDIRS  = examples graphics interpreters modbus builtin symtab nshlib netutils
 SUBDIRS += platform system
 
 # The list of configured directories is derived from NuttX configuration
@@ -64,6 +64,7 @@ SUBDIRS += platform system
 # builtin/Make.defs must be included first
 
 include builtin/Make.defs
+include symtab/Make.defs
 include examples/Make.defs
 include graphics/Make.defs
 include interpreters/Make.defs

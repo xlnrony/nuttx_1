@@ -37,8 +37,6 @@
  * Included Files
  *******************************************************************************/
 
-#include <nuttx/config.h>
-
 #include <sys/types.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -3810,7 +3808,7 @@ static int stm32_ctrlout(FAR struct usbhost_driver_s *drvr,
               /* Start DATA out transfer (only one DATA packet) */
 
               priv->chan[priv->ep0out].outdata1 = true;
-              ret = stm32_ctrl_senddata(priv, NULL, 0);
+              ret = stm32_ctrl_senddata(priv, buffer, buflen);
               if (ret < 0)
                 {
                   usbhost_trace1(OTGFS_TRACE1_SENDDATA, -ret);
@@ -4354,7 +4352,7 @@ static inline int stm32_hw_initialize(FAR struct stm32_usbhost_s *priv)
  *
  *******************************************************************************/
 
-FAR struct usbhost_connection_s *stm32_otgfshost_initialize(int controller)
+static FAR struct usbhost_connection_s *stm32_otgfshost_initialize(int controller)
 {
   /* At present, there is only support for a single OTG FS host. Hence it is
    * pre-allocated as g_usbhost.  However, in most code, the private data

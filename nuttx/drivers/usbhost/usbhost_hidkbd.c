@@ -57,6 +57,7 @@
 #include <nuttx/fs/fs.h>
 #include <nuttx/arch.h>
 #include <nuttx/wqueue.h>
+#include <nuttx/kthread.h>
 
 #include <nuttx/usb/usb.h>
 #include <nuttx/usb/usbhost.h>
@@ -1577,7 +1578,7 @@ static inline int usbhost_devinit(FAR struct usbhost_state_s *priv)
   usbhost_takesem(&g_exclsem);
   g_priv = priv;
 
-  priv->pollpid = task_create("kbdpoll", CONFIG_HIDKBD_DEFPRIO,
+  priv->pollpid = kernel_thread("kbdpoll", CONFIG_HIDKBD_DEFPRIO,
                               CONFIG_HIDKBD_STACKSIZE,
                               (main_t)usbhost_kbdpoll, (FAR char * const *)NULL);
   if (priv->pollpid == ERROR)

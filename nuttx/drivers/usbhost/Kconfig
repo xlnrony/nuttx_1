@@ -284,6 +284,14 @@ config HIDMOUSE_WTHRESH
 endif # MOUSE_WHEEL
 endif # USBHOST_HIDMOUSE
 
+config USBHOST_EPASS3003
+	bool "HID Epass3003 USB Token Class Support"
+	default n
+	depends on !INT_DISABLE
+	---help---
+		Enable support for the epass3003 usb token class driver.  This also depends on
+		SCHED_WORKQUEUE && !DISABLE_SIGNALS
+
 config USBHOST_RTL8187
 	bool "RTL8187-based wireless LAN"
 	default n

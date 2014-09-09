@@ -251,7 +251,7 @@ int nxflat_main(int argc, char *argv[])
         }
 
       message("Wait a bit for test completion\n");
-      sleep(4);
+      getchar();
     }
 
   message("End-of-Test.. Exit-ing\n");

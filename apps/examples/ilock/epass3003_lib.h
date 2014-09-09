@@ -1,8 +1,8 @@
 /****************************************************************************
- * syscall/syscall_clock_systimer.c
+ * examples/ilock/epass3003_lib.h
  *
- *   Copyright (C) 2011-2012, 2014 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ *   Copyright (C) 2011, 2013-2014 xlnrony. All rights reserved.
+ *   Author: xlnrony <xlnrony@gmail.com>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -14,7 +14,7 @@
  *    notice, this list of conditions and the following disclaimer in
  *    the documentation and/or other materials provided with the
  *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
+ * 3. Neither the name Gregory Nutt nor the names of its contributors may be
  *    used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -33,6 +33,9 @@
  *
  ****************************************************************************/
 
+#ifndef __APPS_INCLUDE_EPASS3003_H
+#define __APPS_INCLUDE_EPASS3003_H
+
 /****************************************************************************
  * Included Files
  ****************************************************************************/
@@ -41,40 +44,39 @@
 
 #include <stdint.h>
 
-#include <nuttx/clock.h>
+#if defined(CONFIG_USBHOST) && defined(CONFIG_USBHOST_EPASS3003)
 
 /****************************************************************************
- * Pre-processor definitions
+ * Pre-processor Definitions
+ ****************************************************************************/
+ 
+/****************************************************************************
+ * Public Types
  ****************************************************************************/
 
 /****************************************************************************
  * Public Data
  ****************************************************************************/
 
-/****************************************************************************
- * Private Functions
- ****************************************************************************/
-
-/****************************************************************************
- * Public Functions
- ****************************************************************************/
-
-/****************************************************************************
- * Name: syscall_clock_systimer
- *
- * Description:
- *   In the kernel build, proxying for clock_systimer() must be handled
- *   specially.  In the kernel phase of the build, clock_systimer() is
- *   macro that simply accesses a global variable.  In the user phase of
- *   the kernel build, clock_systimer() is a proxy function.
- *
- *   In order to fill out the table g_funclookup[], this function will stand
- *   in during the kernel phase of the build so that clock_systemer() will
- *   have an address that can be included in the g_funclookup[] table.
- *
- ****************************************************************************/
-
-uint32_t syscall_clock_systimer(void)
+#ifdef __cplusplus
+#define EXTERN extern "C"
+extern "C"
 {
-  return clock_systimer();
+#else
+#define EXTERN extern
+#endif
+
+/****************************************************************************
+ * Public Function Prototypes
+ ****************************************************************************/
+
+EXTERN int epass3003_transmit_apdu(int fd, FAR uint8_t *txbuf, size_t txpktlen, FAR uint8_t *rxbuf, FAR size_t *rxlen);
+
+#undef EXTERN
+#ifdef __cplusplus
 }
+#endif
+
+#endif /* CONFIG_USBHOST_EPASS3003 */
+#endif /* __APPS_INCLUDE_EPASS3003_H */
+

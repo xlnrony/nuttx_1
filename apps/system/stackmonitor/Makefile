@@ -44,7 +44,7 @@ endif
 # Stack Monitor Application
 
 PRIORITY	= SCHED_PRIORITY_DEFAULT
-STACKSIZE	= 768
+STACKSIZE	= 1024
 
 ASRCS		=
 CSRCS		= stackmonitor.c

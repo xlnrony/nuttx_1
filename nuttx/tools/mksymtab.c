@@ -51,7 +51,7 @@
  ****************************************************************************/
 
 #define MAX_HEADER_FILES 500
-#define SYMTAB_NAME      "g_symtab"
+#define SYMTAB_NAME      "CONFIG_EXECFUNCS_SYMTAB"
 
 /****************************************************************************
  * Private Types

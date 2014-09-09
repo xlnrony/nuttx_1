@@ -92,7 +92,7 @@ extern "C" {
  *
  ****************************************************************************/
 
-int builtin_initialize(void);
+EXTERN int builtin_initialize(void);
 
 /****************************************************************************
  * Name: builtin_uninitialize
@@ -105,7 +105,7 @@ int builtin_initialize(void);
  *
  ****************************************************************************/
 
-void builtin_uninitialize(void);
+EXTERN void builtin_uninitialize(void);
 
 /****************************************************************************
  * Utility Functions Provided to Applications by binfmt/libbuiltin
@@ -126,7 +126,7 @@ void builtin_uninitialize(void);
  *
  ****************************************************************************/
 
-int builtin_isavail(FAR const char *appname);
+EXTERN int builtin_isavail(FAR const char *appname);
 
 /****************************************************************************
  * Name: builtin_getname
@@ -144,7 +144,7 @@ int builtin_isavail(FAR const char *appname);
  *
  ****************************************************************************/
 
-FAR const char *builtin_getname(int index);
+EXTERN FAR const char *builtin_getname(int index);
 
 /****************************************************************************
  * Data Set Access Functions Provided to Applications by binfmt/libbuiltin
@@ -167,7 +167,36 @@ FAR const char *builtin_getname(int index);
  *
  ****************************************************************************/
 
-FAR const struct builtin_s *builtin_for_index(int index);
+EXTERN FAR const struct builtin_s *builtin_for_index(int index);
+
+/****************************************************************************
+ * Name: exec_builtin
+ *
+ * Description:
+ *   Executes builtin applications registered during 'make context' time.
+ *   New application is run in a separate task context (and thread).
+ *
+ * Input Parameter:
+ *   filename  - Name of the linked-in binary to be started.
+ *   argv      - Argument list
+ *   redirfile - If output if redirected, this parameter will be non-NULL
+ *               and will provide the full path to the file.
+ *   oflags    - If output is redirected, this parameter will provide the
+ *               open flags to use.  This will support file replacement
+ *               of appending to an existing file.
+ *
+ * Returned Value:
+ *   This is an end-user function, so it follows the normal convention:
+ *   Returns the PID of the exec'ed module.  On failure, it.returns
+ *   -1 (ERROR) and sets errno appropriately.
+ *
+ ****************************************************************************/
+
+EXTERN int builtin_exec(FAR const char *appname, FAR char * const *argv,
+                        FAR const char *redirfile, int oflags);
+
+EXTERN void builtin_getbuiltins(FAR const struct builtin_s **builtins, FAR int *builtin_count);
+EXTERN void builtin_setbuiltins(FAR const struct builtin_s *builtins, int builtin_count);
 
 #undef EXTERN
 #if defined(__cplusplus)

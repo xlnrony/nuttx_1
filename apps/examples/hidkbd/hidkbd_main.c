@@ -247,7 +247,7 @@ static int hidkbd_waiter(int argc, char *argv[])
        * hub ports.
        */
 
-      rhpndx = CONN_WAIT(g_usbconn, &connected);
+      rhpndx = usbhost_connection_wait(g_usbconn, &connected);
       DEBUGASSERT(rhpndx == OK);
 
       connected = !connected;
@@ -259,7 +259,7 @@ static int hidkbd_waiter(int argc, char *argv[])
         {
           /* Yes.. enumerate the newly connected device */
 
-          (void)CONN_ENUMERATE(g_usbconn, rhpndx);
+          (void)usbhost_connection_enumerate(g_usbconn, rhpndx);
         }
     }
 
@@ -299,7 +299,7 @@ int hidkbd_main(int argc, char *argv[])
    */
 
   printf("hidkbd_main: Initialize USB host keyboard driver\n");
-  g_usbconn = arch_usbhost_initialize();
+  g_usbconn = usbhost_initialize(0);
   if (g_usbconn)
     {
       /* Start a thread to handle device connection. */

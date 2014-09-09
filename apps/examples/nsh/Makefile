@@ -65,18 +65,18 @@ ROOTDEPPATH	= --dep-path .
 VPATH		=
 
 all: .built
-.PHONY: clean depend distclean
+.PHONY: context clean depend distclean
 
 $(AOBJS): %$(OBJEXT): %.S
 	$(call ASSEMBLE, $<, $@)
 
 $(COBJS): %$(OBJEXT): %.c
 	$(call COMPILE, $<, $@)
-
+	
 .built: $(OBJS)
 	$(call ARCHIVE, $(BIN), $(OBJS))
 	@touch .built
-
+	
 context:
 
 .depend: Makefile $(SRCS)
@@ -88,7 +88,7 @@ depend: .depend
 clean:
 	$(call DELFILE, .built)
 	$(call CLEAN)
-
+	
 distclean: clean
 	$(call DELFILE, Make.dep)
 	$(call DELFILE, .depend)

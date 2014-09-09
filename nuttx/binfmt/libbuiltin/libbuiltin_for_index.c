@@ -1,8 +1,10 @@
 /****************************************************************************
- * syscall/syscall_stublookup.c
+ * apps/builtin/builtin.c
  *
- *   Copyright (C) 2011-2012, 2014 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ *   Copyright (C) 2011 Uros Platise. All rights reserved.
+ *   Copyright (C) 2011 Gregory Nutt. All rights reserved.
+ *   Authors: Uros Platise <uros.platise@isotel.eu>
+ *            Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -38,31 +40,28 @@
  ****************************************************************************/
 
 #include <nuttx/config.h>
-#include <syscall.h>
 
-#ifdef CONFIG_LIB_SYSCALL
+#include <nuttx/irq.h>
+#include <nuttx/binfmt/builtin.h>
 
 /****************************************************************************
- * Pre-processor definitions
+ * Private Types
+ ****************************************************************************/
+
+/****************************************************************************
+ * Private Function Prototypes
  ****************************************************************************/
 
 /****************************************************************************
  * Public Data
  ****************************************************************************/
 
-/* Stub lookup tables.  This table is indexed by the system call numbers
- * defined above.  Given the system call number, the corresponding entry in
- * this table provides the number of parameters needed by the function.
- */
+static FAR const struct builtin_s *g_builtins = NULL;
+static int g_builtin_count = 0;
 
-const uint8_t g_funcnparms[SYS_nsyscalls] =
-{
-#  undef SYSCALL_LOOKUP1
-#  define SYSCALL_LOOKUP1(f,n,p) n
-#  undef SYSCALL_LOOKUP
-#  define SYSCALL_LOOKUP(f,n,p)  , n
-#  include "syscall_lookup.h"
-};
+/****************************************************************************
+ * Private Data
+ ****************************************************************************/
 
 /****************************************************************************
  * Private Functions
@@ -72,4 +71,45 @@ const uint8_t g_funcnparms[SYS_nsyscalls] =
  * Public Functions
  ****************************************************************************/
 
- #endif /* CONFIG_LIB_SYSCALL */
+void builtin_getbuiltins(FAR const struct builtin_s **builtins, FAR int *builtin_count)
+{
+  irqstate_t flags;
+
+  DEBUGASSERT(g_builtins);
+	
+  DEBUGASSERT(builtins && builtin_count);
+
+  /* Disable interrupts very briefly so that both the symbol table and its
+   * size are returned as a single atomic operation.
+   */
+
+  flags     = irqsave();
+  *builtins   = g_builtins;
+  *builtin_count = g_builtin_count;
+  irqrestore(flags);
+}
+
+void builtin_setbuiltins(FAR const struct builtin_s *builtins, int builtin_count)
+{
+  irqstate_t flags;
+
+  DEBUGASSERT(builtins);
+
+  /* Disable interrupts very briefly so that both the symbol table and its
+   * size are set as a single atomic operation.
+   */
+
+  flags 		  = irqsave();
+  g_builtins   = builtins;
+  g_builtin_count = builtin_count;
+  irqrestore(flags);
+}
+
+FAR const struct builtin_s *builtin_for_index(int index)
+{
+  if (index < g_builtin_count)
+    {
+      return &g_builtins[index];
+    }
+  return NULL;
+}

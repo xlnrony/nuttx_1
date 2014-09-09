@@ -39,6 +39,10 @@ include $(APPDIR)/Make.defs
 
 # ELF Example
 
+APPNAME		= elf
+PRIORITY	= SCHED_PRIORITY_DEFAULT
+STACKSIZE	= 2048
+
 ASRCS =
 CSRCS = elf_main.c symtab.c
 
@@ -86,7 +90,14 @@ really_build: $(OBJS)
 	@$(MAKE) -C tests TOPDIR="$(TOPDIR)" APPDIR="$(APPDIR)" CROSSDEV=$(CROSSDEV)
 	@$(MAKE) TOPDIR="$(TOPDIR)" APPDIR="$(APPDIR)" really_build
 
+ifeq ($(CONFIG_NSH_BUILTIN_APPS),y)
+$(BUILTIN_REGISTRY)$(DELIM)$(APPNAME)_main.bdat: $(DEPCONFIG) Makefile
+	$(call REGISTER,$(APPNAME),$(PRIORITY),$(STACKSIZE),$(APPNAME)_main)
+
+context: $(BUILTIN_REGISTRY)$(DELIM)$(APPNAME)_main.bdat
+else
 context:
+endif
 
 # We can't make dependencies in this directory because the required
 # header files may not yet exist.

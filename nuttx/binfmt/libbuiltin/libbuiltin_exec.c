@@ -1,5 +1,5 @@
 /****************************************************************************
- * apps/builtin/exec_builtin.c
+ * apps/builtin/libbuiltin_exec.c
  *
  * Originally by:
  *
@@ -51,16 +51,12 @@
 #include <errno.h>
 #include <debug.h>
 
-#if 0
 #include <sys/wait.h>
 #include <sched.h>
 #include <string.h>
 #include <semaphore.h>
 
 #include <nuttx/binfmt/builtin.h>
-#endif
-
-#include <apps/builtin.h>
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -87,7 +83,7 @@
  ****************************************************************************/
 
 /****************************************************************************
- * Name: exec_builtin
+ * Name: builtin_exec
  *
  * Description:
  *   Executes builtin applications registered during 'make context' time.
@@ -109,7 +105,7 @@
  *
  ****************************************************************************/
 
-int exec_builtin(FAR const char *appname, FAR char * const *argv,
+int builtin_exec(FAR const char *appname, FAR char * const *argv,
                  FAR const char *redirfile, int oflags)
 {
   FAR const struct builtin_s *builtin;

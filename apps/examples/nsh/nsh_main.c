@@ -47,12 +47,24 @@
 
 #include <nuttx/arch.h>
 
-#if defined(CONFIG_FS_BINFS) && (CONFIG_BUILTIN)
-#  include <nuttx/binfmt/builtin.h>
+#if defined(CONFIG_BUILTIN)
+#  include <apps/builtin.h>
+#  if defined(CONFIG_FS_BINFS)
+#    include <nuttx/binfmt/builtin.h>
+#  endif
+#endif
+
+#if !defined(CONFIG_BINFMT_DISABLE) && defined(CONFIG_NXFLAT)
+#  include <nuttx/binfmt/nxflat.h>
+#endif
+
+#if !defined(CONFIG_BINFMT_DISABLE) && defined(CONFIG_ELF)
+#  include <nuttx/binfmt/elf.h>
 #endif
 
 #if defined(CONFIG_LIBC_EXECFUNCS) && defined(CONFIG_EXECFUNCS_SYMTAB)
 #  include <nuttx/binfmt/symtab.h>
+#  include <apps/symtab.h>
 #endif
 
 #include <apps/nsh.h>
@@ -89,21 +101,6 @@
  * Public Data
  ****************************************************************************/
 
-/* If posix_spawn() is enabled as required for CONFIG_NSH_FILE_APPS, then
- * a symbol table is needed by the internals of posix_spawn().  The symbol
- * table is needed to support ELF and NXFLAT binaries to dynamically link to
- * the base code.  However, if only the BINFS file system is supported, then
- * no Makefile is needed.
- *
- * This is a kludge to plug the missing file system in the case where BINFS
- * is used.  REVISIT:  This will, of course, be in the way if you want to
- * support ELF or NXFLAT binaries!
- */
-
-#if defined(CONFIG_LIBC_EXECFUNCS) && defined(CONFIG_EXECFUNCS_SYMTAB)
-const struct symtab_s CONFIG_EXECFUNCS_SYMTAB[1];
-#endif
-
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
@@ -130,18 +127,39 @@ int nsh_main(int argc, char *argv[])
   /* Make sure that we are using our symbol table */
 
 #if defined(CONFIG_LIBC_EXECFUNCS) && defined(CONFIG_EXECFUNCS_SYMTAB)
-  exec_setsymtab(CONFIG_EXECFUNCS_SYMTAB, 0);
+  symtab_list_initialize();
 #endif
 
   /* Register the BINFS file system */
 
-#if defined(CONFIG_FS_BINFS) && (CONFIG_BUILTIN)
-  ret = builtin_initialize();
-  if (ret < 0)
+#if defined(CONFIG_BUILTIN)
+  builtin_list_initialize();
+  #if defined(CONFIG_FS_BINFS)
+    ret = builtin_initialize();
+    if (ret < 0)
     {
-     fprintf(stderr, "ERROR: builtin_initialize failed: %d\n", ret);
-     exitval = 1;
-   }
+      fprintf(stderr, "ERROR: builtin_initialize failed: %d\n", ret);
+      exitval = 1;
+    }  
+  #endif
+#endif
+
+#if !defined(CONFIG_BINFMT_DISABLE) && defined(CONFIG_NXFLAT)
+    ret = nxflat_initialize();
+    if (ret < 0)
+    {
+      fprintf(stderr, "ERROR: nxflat_initialize failed: %d\n", ret);
+      exitval = 1;
+    }  
+#endif
+
+#if !defined(CONFIG_BINFMT_DISABLE) && defined(CONFIG_ELF)
+    ret = elf_initialize();
+    if (ret < 0)
+    {
+      fprintf(stderr, "ERROR: elf_initialize failed: %d\n", ret);
+      exitval = 1;
+    }  
 #endif
 
   /* Initialize the NSH library */

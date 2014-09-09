@@ -39,6 +39,10 @@ include $(APPDIR)/Make.defs
 
 # NXFLAT Example
 
+APPNAME		= nxflat
+PRIORITY	= SCHED_PRIORITY_DEFAULT
+STACKSIZE	= 2048
+
 ASRCS		=
 CSRCS		= nxflat_main.c
 
@@ -80,7 +84,14 @@ headers:
 	$(call ARCHIVE, $(BIN), $(OBJS))
 	@touch .built
 
+ifeq ($(CONFIG_NSH_BUILTIN_APPS),y)
+$(BUILTIN_REGISTRY)$(DELIM)$(APPNAME)_main.bdat: $(DEPCONFIG) Makefile
+	$(call REGISTER,$(APPNAME),$(PRIORITY),$(STACKSIZE),$(APPNAME)_main)
+
+context: $(BUILTIN_REGISTRY)$(DELIM)$(APPNAME)_main.bdat
+else
 context:
+endif
 
 # We can't make dependencies in this directory because the required
 # header files may not yet exist.
@@ -90,7 +101,10 @@ context:
 
 depend: .depend
 
-clean:
+clean_tests:
+	@$(MAKE) -C tests TOPDIR="$(TOPDIR)" APPDIR="$(APPDIR)" CROSSDEV=$(CROSSDEV) clean
+
+clean: clean_tests
 	$(call DELFILE, .built)
 	$(call CLEAN)
 

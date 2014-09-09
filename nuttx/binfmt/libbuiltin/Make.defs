@@ -41,7 +41,7 @@ BINFMT_CSRCS += builtin.c
 
 # Builtin library interfaces
 
-BINFMT_CSRCS += libbuiltin_getname.c libbuiltin_isavail.c
+BINFMT_CSRCS += libbuiltin_exec.c libbuiltin_for_index.c libbuiltin_getname.c libbuiltin_isavail.c
 
 # Hook the libbuiltin subdirectory into the build
 

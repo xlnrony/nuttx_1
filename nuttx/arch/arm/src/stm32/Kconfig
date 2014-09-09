@@ -1164,7 +1164,7 @@ config STM32_OTGHS
 config STM32_OTGHS_FS_MODE
 	bool "Use OTG HS in FS mode"
 	default n
-	depends on STM32_OTGHS && !STM32_OTGFS
+	depends on STM32_OTGHS
 	select STM32_OTGFS2
 	---help---
 		The STM32 USB HS module can operate in legacy FS mode using the
