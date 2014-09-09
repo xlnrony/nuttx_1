@@ -39,30 +39,41 @@ include $(APPDIR)/Make.defs
 
 # ELF Example
 
-APPNAME		= elf
-PRIORITY	= SCHED_PRIORITY_DEFAULT
-STACKSIZE	= 2048
-
 ASRCS =
-CSRCS = elf_main.c symtab.c
+CSRCS = symtab.c
+MAINSRC = elf_main.c
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(CSRCS:.c=$(OBJEXT))
+MAINOBJ = $(MAINSRC:.c=$(OBJEXT))
 
-SRCS = $(ASRCS) $(CSRCS)
+SRCS = $(ASRCS) $(CSRCS) $(MAINSRC)
 OBJS = $(AOBJS) $(COBJS)
 
+ifneq ($(CONFIG_BUILD_KERNEL),y)
+  OBJS += $(MAINOBJ)
+endif
+
 ifeq ($(CONFIG_WINDOWS_NATIVE),y)
-  BIN		= ..\..\libapps$(LIBEXT)
+  BIN = ..\..\libapps$(LIBEXT)
 else
 ifeq ($(WINTOOL),y)
-  BIN		= ..\\..\\libapps$(LIBEXT)
+  BIN = ..\\..\\libapps$(LIBEXT)
 else
-  BIN		= ../../libapps$(LIBEXT)
+  BIN = ../../libapps$(LIBEXT)
 endif
 endif
 
-ROOTDEPPATH	= --dep-path . --dep-path tests
+ifeq ($(WINTOOL),y)
+  INSTALL_DIR = "${shell cygpath -w $(BIN_DIR)}"
+else
+  INSTALL_DIR = $(BIN_DIR)
+endif
+
+CONFIG_XYZ_PROGNAME ?= discover$(EXEEXT)
+PROGNAME = $(CONFIG_XYZ_PROGNAME)
+
+ROOTDEPPATH = --dep-path . --dep-path tests
 
 # Build targets
 
@@ -90,14 +101,20 @@ really_build: $(OBJS)
 	@$(MAKE) -C tests TOPDIR="$(TOPDIR)" APPDIR="$(APPDIR)" CROSSDEV=$(CROSSDEV)
 	@$(MAKE) TOPDIR="$(TOPDIR)" APPDIR="$(APPDIR)" really_build
 
-ifeq ($(CONFIG_NSH_BUILTIN_APPS),y)
-$(BUILTIN_REGISTRY)$(DELIM)$(APPNAME)_main.bdat: $(DEPCONFIG) Makefile
-	$(call REGISTER,$(APPNAME),$(PRIORITY),$(STACKSIZE),$(APPNAME)_main)
+ifeq ($(CONFIG_BUILD_KERNEL),y)
+$(BIN_DIR)$(DELIM)$(PROGNAME): $(OBJS) $(MAINOBJ)
+	@echo "LD: $(PROGNAME)"
+	$(Q) $(LD) $(LDELFFLAGS) $(LDLIBPATH) -o $(INSTALL_DIR)$(DELIM)$(PROGNAME) $(ARCHCRT0OBJ) $(MAINOBJ) $(LDLIBS)
+	$(Q) $(NM) -u  $(INSTALL_DIR)$(DELIM)$(PROGNAME)
 
-context: $(BUILTIN_REGISTRY)$(DELIM)$(APPNAME)_main.bdat
+install: $(BIN_DIR)$(DELIM)$(PROGNAME)
+
 else
-context:
+install:
+
 endif
+
+context:
 
 # We can't make dependencies in this directory because the required
 # header files may not yet exist.

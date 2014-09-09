@@ -173,10 +173,13 @@ static int up_addrenv_create_region(FAR uintptr_t **list,
 
   /* Verify that we are configured with enough virtual address space to
    * support this memory region.
+   *
+   *   npages pages correspondes to (npages << MM_PGSHIFT) bytes
+   *   listlen sections corresponds to (listlen << 20) bytes
    */
 
   npages = MM_NPAGES(regionsize);
-  if (npages > listlen)
+  if (npages > (listlen << (20 - MM_PGSHIFT)))
     {
       bdbg("ERROR: npages=%u listlen=%u\n", npages, listlen);
       return -E2BIG;
@@ -188,7 +191,7 @@ static int up_addrenv_create_region(FAR uintptr_t **list,
    */
 
   nmapped = 0;
-  for (i = 0; i < npages; i++)
+  for (i = 0; i < npages; i += ENTRIES_PER_L2TABLE)
     {
       /* Allocate one physical page for the L2 page table */
 

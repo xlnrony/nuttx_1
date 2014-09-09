@@ -8389,3 +8389,49 @@
 	  set correctly (2014-903).
 	* sched/Kconfig and sched/init/os_bringup.c: Add capability to perform
 	  initial board initialization on a separate worker thread (2014-9-3).
+	* tools/mkexport.sh: Fix 'make export'.  Adding subdirectories to the
+	  sched/ directory broke the header file collection logic (2014-9-4).
+	* Makefile.unix, Makefile.win, FlatLibs.mk, KernelLibs.mk, and
+	  ProtectedLibs.mk: In the kernel or protected builds, only the user
+	  libraries should be exported (2014-9-4).
+	* Makefile.unix, Makefile.win, and tools/mkexport.sh: In 'make export',
+	  do not copy internal header files or build scripts if this is a
+	  kernel or protected build (014-9-4).
+	* tools/mkexport.sh, arch/*/src/Makefile, arm/src/a1x/Make.defs,
+	  sama5/Make.defs, armv7-a/crt0.c:  The 'make export' target needs to
+	  bundle up the user C startup file (crt0), not the kernel head object
+	  for the kernel and protected builds (2014-9-4).
+	* tools/mkexport.sh: Add .config file to export package (2014-9-5).
+	* configs/16z:  Support for this board has been removed from the NuttX
+	  source tree (but still can be found in the misc/Obsoleted directory).
+	  This port is not ready for usage but may return to the NuttX tree
+	  at some point in the future (2014-9-5).
+	* tools/Makefile.export and mkexport.sh: The apps/ import build requires
+	  that we extract more information from the platform Make.defs file
+	  (2014-9-5).
+	* tools/Makefile.export and mkexport.sh: Need to export the setting of
+	  WINTOOL as well (2014-9-5).
+	* SAMA5D4-EK kernel configuration now builds NSH instead of examples/elf
+	  (2014-9-6).
+	* libc/pthread/pthread_attrinit.c, sched/pthread/pthread_create.c, and
+	  include/nuttx/pthread.h:  Fix some conditional compilation in kernel
+	  build mode.  And, while we are touching this logic, make
+	  g_default_pthread_attr const (2014-9-7).
+	* arch/arm/src/armv7-a/arm_addrenv.c: Correct size comparison (pages vs.
+	  sections) (2014-9-7).
+	* configs/sama5d4-ek/src/sam_bringup.c and sama5d4-ek.h:  Need to call
+	  elf_initialize() on bring-up before attempting to load ELF modules
+	  (2014-9-7).
+	* arch/arm/src/armv7-a/arm_addrenv.c: Fix loop counter... was overrunning
+	  a table on larger ELF files (2104-9-7).
+	* arch/arm/src/sama5/sam_memories.c, sam_pgalloc.c, and sam_pgalloc.h: In
+	  kernel build with address environment, need logic to map user virtual
+	  addresses to physical addresses, and vice versa (2104-9-7).
+	* SAM3X/Arduino Due: Fix typo in sam3x_periphclks.h; add SCLK
+	  definitions to board.h header file.  From Fabien Comte (2014-9-8).
+	* Several pthread interfaces: A ddconst storage class to to phthread
+	  parameters.  From Freddie Chopin (2014-9-8).
+	* libc/math: Corrected atan2 implementations from Denis Arnst (2014-9-8).
+	* sama5d4-ek/knsh:  Rename the kernel configuration to knsh to better
+	  match the naming used with other platforms (2014-9-8).
+
