@@ -48,6 +48,7 @@
 
 #include <nuttx/arch.h>
 #include <nuttx/kmalloc.h>
+#include <nuttx/mm.h>
 #include <nuttx/binfmt/binfmt.h>
 
 #include "sched/sched.h"
@@ -135,6 +136,9 @@ static void exec_ctors(FAR void *arg)
 int exec_module(FAR const struct binary_s *binp)
 {
   FAR struct task_tcb_s *tcb;
+#ifdef CONFIG_ARCH_ADDRENV
+  save_addrenv_t oldenv;
+#endif
   FAR uint32_t *stack;
   pid_t pid;
   int err;
@@ -150,7 +154,7 @@ int exec_module(FAR const struct binary_s *binp)
     }
 #endif
 
-  bdbg("Executing %s\n", binp->filename);
+  bvdbg("Executing %s\n", binp->filename);
 
   /* Allocate a TCB for the new task. */
 
@@ -161,13 +165,34 @@ int exec_module(FAR const struct binary_s *binp)
       goto errout;
     }
 
-  /* Allocate the stack for the new task (always from the user heap) */
+#ifdef CONFIG_ARCH_ADDRENV
+  /* Instantiate the address environment containing the user heap */
+
+  ret = up_addrenv_select(&binp->addrenv, &oldenv);
+  if (ret < 0)
+    {
+      bdbg("ERROR: up_addrenv_select() failed: %d\n", ret);
+      err = -ret;
+      goto errout_with_tcb;
+    }
+
+  /* Initialize the user heap */
+
+  umm_initialize((FAR void *)CONFIG_ARCH_HEAP_VBASE,
+                 up_addrenv_heapsize(&binp->addrenv));
+#endif
+
+  /* Allocate the stack for the new task.
+   *
+   * REVISIT:  This allocation is currently always from the user heap.  That
+   * will need to change if/when we want to support dynamic stack allocation.
+   */
 
   stack = (FAR uint32_t*)kumm_malloc(binp->stacksize);
-  if (!tcb)
+  if (!stack)
     {
       err = ENOMEM;
-      goto errout_with_tcb;
+      goto errout_with_addrenv;
     }
 
   /* Initialize the task */
@@ -235,6 +260,18 @@ int exec_module(FAR const struct binary_s *binp)
       goto errout_with_stack;
     }
 
+#ifdef CONFIG_ARCH_ADDRENV
+  /* Restore the address environment of the caller */
+
+  ret = up_addrenv_restore(&oldenv);
+  if (ret < 0)
+    {
+      bdbg("ERROR: up_addrenv_select() failed: %d\n", ret);
+      err = -ret;
+      goto errout_with_stack;
+    }
+#endif
+
   return (int)pid;
 
 errout_with_stack:
@@ -243,6 +280,10 @@ errout_with_stack:
   kumm_free(stack);
   goto errout;
 
+errout_with_addrenv:
+#ifdef CONFIG_ARCH_ADDRENV
+  (void)up_addrenv_restore(&oldenv);
+#endif
 errout_with_tcb:
   kmm_free(tcb);
 errout:

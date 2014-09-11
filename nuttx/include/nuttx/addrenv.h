@@ -161,6 +161,31 @@
 
 #define ARCH_SCRATCH_VBASE (CONFIG_ARCH_STACK_VBASE + ARCH_STACK_SIZE)
 
+/* There is no need to use the scratch memory region if the page pool memory
+ * is statically mapped.
+ */
+
+#ifdef CONFIG_ARCH_PGPOOL_MAPPING
+
+#  ifndef CONFIG_ARCH_PGPOOL_PBASE
+#    error CONFIG_ARCH_PGPOOL_PBASE not defined
+#  endif
+
+#  ifndef CONFIG_ARCH_PGPOOL_VBASE
+#    error CONFIG_ARCH_PGPOOL_VBASE not defined
+#  endif
+
+#  ifndef CONFIG_ARCH_PGPOOL_SIZE
+#    error CONFIG_ARCH_PGPOOL_SIZE not defined
+#  endif
+
+#  define CONFIG_ARCH_PGPOOL_PEND \
+     (CONFIG_ARCH_PGPOOL_PBASE + CONFIG_ARCH_PGPOOL_SIZE)
+#  define CONFIG_ARCH_PGPOOL_VEND \
+     (CONFIG_ARCH_PGPOOL_VBASE + CONFIG_ARCH_PGPOOL_SIZE)
+
+#endif
+
 /****************************************************************************
  * Public Types
  ****************************************************************************/
@@ -220,27 +245,28 @@ struct addrenv_reserve_s
  * is an abstract representation of a task group's address environment and
  * must be defined in arch/arch.h if CONFIG_ARCH_ADDRENV is defined.
  *
- *   up_addrenv_create  - Create an address environment
- *   up_addrenv_destroy - Destroy an address environment.
- *   up_addrenv_vtext   - Returns the virtual base address of the .text
- *                        address environment
- *   up_addrenv_vdata   - Returns the virtual base address of the .bss/.data
- *                        address environment
- *   up_addrenv_select  - Instantiate an address environment
- *   up_addrenv_restore - Restore an address environment
- *   up_addrenv_clone   - Copy an address environment from one location to
- *                        another.
+ *   up_addrenv_create   - Create an address environment
+ *   up_addrenv_destroy  - Destroy an address environment.
+ *   up_addrenv_vtext    - Returns the virtual base address of the .text
+ *                         address environment
+ *   up_addrenv_vdata    - Returns the virtual base address of the .bss/.data
+ *                         address environment
+ *   up_addrenv_heapsize - Returns the size of the initial heap allocation.
+ *   up_addrenv_select   - Instantiate an address environment
+ *   up_addrenv_restore  - Restore an address environment
+ *   up_addrenv_clone    - Copy an address environment from one location to
+ *                         another.
  *
  * Higher-level interfaces used by the tasking logic.  These interfaces are
  * used by the functions in sched/ and all operate on the thread which whose
  * group been assigned an address environment by up_addrenv_clone().
  *
- *   up_addrenv_attach  - Clone the address environment assigned to one TCB
- *                        to another.  This operation is done when a pthread
- *                        is created that share's the same address
- *                        environment.
- *   up_addrenv_detach  - Release the threads reference to an address
- *                        environment when a task/thread exits.
+ *   up_addrenv_attach   - Clone the address environment assigned to one TCB
+ *                         to another.  This operation is done when a pthread
+ *                         is created that share's the same address
+ *                         environment.
+ *   up_addrenv_detach   - Release the threads reference to an address
+ *                         environment when a task/thread exits.
  *
  ****************************************************************************/
 

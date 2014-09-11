@@ -1,7 +1,7 @@
 /****************************************************************************
- * binfmt/libnxflat/libnxflat.h
+ * arch/arm/src/armv7/pginline.h
  *
- *   Copyright (C) 2012 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2014 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,8 +33,8 @@
  *
  ****************************************************************************/
 
-#ifndef __BINFMT_LIBNXFLAT_LIBNXFLAT_H
-#define __BINFMT_LIBNXFLAT_LIBNXFLAT_H
+#ifndef __ARCH_ARM_SRC_ARMV7_A_PGINLINE_H
+#define __ARCH_ARM_SRC_ARMV7_A_PGINLINE_H
 
 /****************************************************************************
  * Included Files
@@ -42,93 +42,78 @@
 
 #include <nuttx/config.h>
 
-#include <sys/types.h>
+#include <stdint.h>
 
-#include <nuttx/arch.h>
-#include <nuttx/binfmt/nxflat.h>
+#include <nuttx/addrenv.h>
+
+#include "mmu.h"
+
+#if defined(CONFIG_MM_PGALLOC) && defined(CONFIG_ARCH_USE_MMU)
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
 
 /****************************************************************************
- * Public Types
+ * Private Data
  ****************************************************************************/
 
 /****************************************************************************
- * Name: nxflat_addrenv_alloc
- *
- * Description:
- *   Allocate data memory for the NXFLAT image. If CONFIG_ARCH_ADDRENV=n,
- *   memory will be allocated using kmm_zalloc().  If CONFIG_ARCH_ADDRENV-y,
- *   then memory will be allocated using up_addrenv_create().
- *
- * Input Parameters:
- *   loadinfo - Load state information
- *   envsize - The size (in bytes) of the address environment needed for the
- *     ELF image.
- *
- * Returned Value:
- *   Zero (OK) on success; a negated errno value on failure.
- *
+ * Private Functions
  ****************************************************************************/
-
-int nxflat_addrenv_alloc(FAR struct nxflat_loadinfo_s *loadinfo, size_t envsize);
 
 /****************************************************************************
- * Name: nxflat_addrenv_select
+ * Name: arm_pgmap
  *
  * Description:
- *   Temporarity select the task's address environemnt.
- *
- * Input Parameters:
- *   loadinfo - Load state information
- *
- * Returned Value:
- *   Zero (OK) on success; a negated errno value on failure.
+ *   Map one page to a temporary, scratch virtual memory address
  *
  ****************************************************************************/
 
-#ifdef CONFIG_ARCH_ADDRENV
-#  define nxflat_addrenv_select(l) up_addrenv_select(&(l)->addrenv, &(l)->oldenv)
+#ifndef CONFIG_ARCH_PGPOOL_MAPPING
+static inline uintptr_t arm_tmpmap(uintptr_t paddr, FAR uint32_t *l1save)
+{
+  *l1save = mmu_l1_getentry(ARCH_SCRATCH_VBASE);
+  mmu_l1_setentry(paddr & ~SECTION_MASK, ARCH_SCRATCH_VBASE, MMU_MEMFLAGS);
+  return ((uintptr_t)ARCH_SCRATCH_VBASE | (paddr & SECTION_MASK));
+}
 #endif
 
 /****************************************************************************
- * Name: nxflat_addrenv_restore
+ * Name: arm_pgrestore
  *
  * Description:
- *   Restore the address environment before nxflat_addrenv_select() was called..
- *
- * Input Parameters:
- *   loadinfo - Load state information
- *
- * Returned Value:
- *   Zero (OK) on success; a negated errno value on failure.
+ *  Restore any previous L1 page table mapping that was in place when
+ *  arm_tmpmap() was called
  *
  ****************************************************************************/
 
-#ifdef CONFIG_ARCH_ADDRENV
-#  define nxflat_addrenv_restore(l) up_addrenv_restore(&(l)->oldenv)
+#ifndef CONFIG_ARCH_PGPOOL_MAPPING
+static inline void arm_tmprestore(uint32_t l1save)
+{
+  mmu_l1_restore(ARCH_SCRATCH_VBASE, l1save);
+}
 #endif
 
 /****************************************************************************
- * Name: nxflat_addrenv_free
+ * Name: arm_pgvaddr
  *
  * Description:
- *   Release the address environment previously created by
- *   nxflat_addrenv_alloc().  This function  is called only under certain
- *   error conditions after the module has been loaded but not yet
- *   started. After the module has been started, the address environment
- *   will automatically be freed when the module exits.
- *
- * Input Parameters:
- *   loadinfo - Load state information
- *
- * Returned Value:
- *   None.
+ *   If the page memory pool is staticly mapped, then we do not have to
+ *   go through the the temporary mapping.  We simply have to perform a
+ *   physical to virtual memory address mapping.
  *
  ****************************************************************************/
 
-void nxflat_addrenv_free(FAR struct nxflat_loadinfo_s *loadinfo);
+#ifdef CONFIG_ARCH_PGPOOL_MAPPING
+static inline uintptr_t arm_pgvaddr(uintptr_t paddr)
+{
+  DEBUGASSERT(paddr >= CONFIG_ARCH_PGPOOL_PBASE &&
+              paddr < CONFIG_ARCH_PGPOOL_PEND);
 
-#endif /* __BINFMT_LIBNXFLAT_LIBNXFLAT_H */
+  return paddr - CONFIG_ARCH_PGPOOL_PBASE + CONFIG_ARCH_PGPOOL_VBASE;
+}
+#endif
+
+#endif /* CONFIG_MM_PGALLOC && CONFIG_ARCH_USE_MMU */
+#endif /* __ARCH_ARM_SRC_ARMV7_A_PGINLINE_H */

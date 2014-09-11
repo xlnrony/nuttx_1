@@ -8429,9 +8429,43 @@
 	  addresses to physical addresses, and vice versa (2104-9-7).
 	* SAM3X/Arduino Due: Fix typo in sam3x_periphclks.h; add SCLK
 	  definitions to board.h header file.  From Fabien Comte (2014-9-8).
-	* Several pthread interfaces: A ddconst storage class to to phthread
+	* Several pthread interfaces: Add const storage class to to phthread
 	  parameters.  From Freddie Chopin (2014-9-8).
 	* libc/math: Corrected atan2 implementations from Denis Arnst (2014-9-8).
 	* sama5d4-ek/knsh:  Rename the kernel configuration to knsh to better
 	  match the naming used with other platforms (2014-9-8).
-
+	* configs/cc3200-launchpad/README.txt: Add README file for the CC3200
+	  Launchpad (2014-9-9).
+	* configs/sama5d4-ek/README.txt, Kconfig, knsh/defconfig.ROMFS,
+	  src/sam_bringup.c, and sama5d4-ek.h: SAMA5D4-EK kernel config can now
+	  boot from a ROMFS file system (2014-9-9).
+	* LibTargets.mk, Makefile.unix, and Makefile.win: Move commit library
+	  targets out of Makefile.unix and Makeifle.win into a new LibTargets.mk
+	  (2014-9-9).
+	* LibTargets.mk and configs/sama5d4-ek/knsh/Make.defs: Add logic that will
+	  permit us to build user libraries with different CFLAGS than kernel
+	  code.  This is needed because we need the -fno-common option when
+	  building ELF code to prevent SHN_COMMON relocations (2014-9-8).
+	* binfmt/libelf/libelf_symbols.c, libelf_bind.c, and all implementations
+	  of up_relocate(): ELF relocations.  Some relocation types do not have
+	  a named symbol associated with them.  The design did not account for
+	  that case (2014-9-9).
+	* binfmt/binfmt_execmodule.c: When allocating a stack for a new process
+	  using the user-sapce allocator, need to select the address environment
+	  first (2014-9-9).
+	* arch/Kconfig, arm/src/armv7-a/pginline.h, arm_addrenv.c, and
+	  arm_pgalloc.c and include/nuttx/addrenv.h: Add configuration to use
+	  the fixed DRAM mapping for the page pool (if available) instead of
+	  remapping dynamically to access L2 page tables and page data.  Also,
+	  add logic in address environment creation to initialize the shared
+	  data at the beginning of the .bss/.data process memory region
+	  (2014-9-10).
+	* configs/sama5d4-ek/elf and knsh: These configurations now use the
+	  fixed DRAM mapping for manipulating the page memory pool (2014-9-10).
+	* arch/arm/include/arch.h and src/armv7-a/arm_addrenv.c,
+	  nuttx/binfmt/binfmt_execmodule.c, libelf/libelf_addrenv.c,
+	  libelf_load.c, libnxflat/libnxflat_addrenv.c, include/nuttx/arch.h, and
+ 	  mm/umm_initialize.c:  Add logic to initialize the per-process user
+	  heap when each user process is started (2014-9-10).
+	* sched/clock/clock.h, clock_initialize.c, and clock_settime.c: Remove
+	  vestiges of g_tickbias; apply bias instead to g_basetime (2014-9-10).

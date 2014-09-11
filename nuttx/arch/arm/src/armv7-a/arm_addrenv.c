@@ -40,27 +40,28 @@
  * is an abstract representation of a task group's address environment and
  * must be defined in arch/arch.h if CONFIG_ARCH_ADDRENV is defined.
  *
- *   up_addrenv_create  - Create an address environment
- *   up_addrenv_destroy - Destroy an address environment.
- *   up_addrenv_vtext   - Returns the virtual base address of the .text
- *                        address environment
- *   up_addrenv_vdata   - Returns the virtual base address of the .bss/.data
- *                        address environment
- *   up_addrenv_select  - Instantiate an address environment
- *   up_addrenv_restore - Restore an address environment
- *   up_addrenv_clone   - Copy an address environment from one location to
- *                        another.
+ *   up_addrenv_create   - Create an address environment
+ *   up_addrenv_destroy  - Destroy an address environment.
+ *   up_addrenv_vtext    - Returns the virtual base address of the .text
+ *                         address environment
+ *   up_addrenv_vdata    - Returns the virtual base address of the .bss/.data
+ *                         address environment
+ *   up_addrenv_heapsize - Returns the size of the initial heap allocation.
+ *   up_addrenv_select   - Instantiate an address environment
+ *   up_addrenv_restore  - Restore an address environment
+ *   up_addrenv_clone    - Copy an address environment from one location to
+ *                         another.
  *
  * Higher-level interfaces used by the tasking logic.  These interfaces are
  * used by the functions in sched/ and all operate on the thread which whose
  * group been assigned an address environment by up_addrenv_clone().
  *
- *   up_addrenv_attach  - Clone the address environment assigned to one TCB
- *                        to another.  This operation is done when a pthread
- *                        is created that share's the same address
- *                        environment.
- *   up_addrenv_detach  - Release the threads reference to an address
- *                        environment when a task/thread exits.
+ *   up_addrenv_attach   - Clone the address environment assigned to one TCB
+ *                         to another.  This operation is done when a pthread
+ *                         is created that share's the same address
+ *                         environment.
+ *   up_addrenv_detach   - Release the threads reference to an address
+ *                         environment when a task/thread exits.
  *
  ****************************************************************************/
 
@@ -82,6 +83,7 @@
 
 #include "cache.h"
 #include "mmu.h"
+#include "pginline.h"
 
 #ifdef CONFIG_ARCH_ADDRENV
 
@@ -152,6 +154,10 @@ static void set_l2_entry(FAR uint32_t *l2table, uintptr_t paddr,
  * Description:
  *   Create one memory region.
  *
+ * Returned Value:
+ *   On success, the number of pages allocated is returned.  Otherwise, a
+ *   negated errno value is returned.
+ *
  ****************************************************************************/
 
 static int up_addrenv_create_region(FAR uintptr_t **list,
@@ -161,7 +167,9 @@ static int up_addrenv_create_region(FAR uintptr_t **list,
   irqstate_t flags;
   uintptr_t paddr;
   FAR uint32_t *l2table;
+#ifndef CONFIG_ARCH_PGPOOL_MAPPING
   uint32_t l1save;
+#endif
   size_t nmapped;
   unsigned int npages;
   unsigned int i;
@@ -204,12 +212,19 @@ static int up_addrenv_create_region(FAR uintptr_t **list,
       DEBUGASSERT(MM_ISALIGNED(paddr));
       list[i] = (FAR uintptr_t *)paddr;
 
+      flags = irqsave();
+
+#ifdef CONFIG_ARCH_PGPOOL_MAPPING
+      /* Get the virtual address corresponding to the physical page address */
+
+      l2table = (FAR uint32_t *)arm_pgvaddr(paddr);
+#else
       /* Temporarily map the page into the virtual address space */
 
-      flags = irqsave();
       l1save = mmu_l1_getentry(ARCH_SCRATCH_VBASE);
       mmu_l1_setentry(paddr & ~SECTION_MASK, ARCH_SCRATCH_VBASE, MMU_MEMFLAGS);
       l2table = (FAR uint32_t *)(ARCH_SCRATCH_VBASE | (paddr & SECTION_MASK));
+#endif
 
       /* Initialize the page table */
 
@@ -224,7 +239,9 @@ static int up_addrenv_create_region(FAR uintptr_t **list,
           paddr = mm_pgalloc(1);
           if (!paddr)
             {
+#ifndef CONFIG_ARCH_PGPOOL_MAPPING
               mmu_l1_restore(ARCH_SCRATCH_VBASE, l1save);
+#endif
               irqrestore(flags);
               return -ENOMEM;
             }
@@ -244,14 +261,92 @@ static int up_addrenv_create_region(FAR uintptr_t **list,
                         (uintptr_t)l2table +
                         ENTRIES_PER_L2TABLE * sizeof(uint32_t));
 
+#ifndef CONFIG_ARCH_PGPOOL_MAPPING
       /* Restore the scratch section L1 page table entry */
 
       mmu_l1_restore(ARCH_SCRATCH_VBASE, l1save);
+#endif
       irqrestore(flags);
     }
 
+  return npages;
+}
+
+/****************************************************************************
+ * Name: up_addrenv_initdata
+ *
+ * Description:
+ *   Initialize the region of memory at the the beginning of the .bss/.data
+ *   region that is shared between the user process and the kernel.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_BUILD_KERNEL
+static int up_addrenv_initdata(uintptr_t l2table)
+{
+  irqstate_t flags;
+  FAR uint32_t *virtptr;
+  uintptr_t paddr;
+#ifndef CONFIG_ARCH_PGPOOL_MAPPING
+  uint32_t l1save;
+#endif
+
+  DEBUGASSERT(l2table);
+  flags = irqsave();
+
+#ifdef CONFIG_ARCH_PGPOOL_MAPPING
+  /* Get the virtual address corresponding to the physical page table address */
+
+  virtptr = (FAR uint32_t *)arm_pgvaddr(l2table);
+#else
+  /* Temporarily map the page into the virtual address space */
+
+  l1save = mmu_l1_getentry(ARCH_SCRATCH_VBASE);
+  mmu_l1_setentry(l2table & ~SECTION_MASK, ARCH_SCRATCH_VBASE, MMU_MEMFLAGS);
+  virtptr = (FAR uint32_t *)(ARCH_SCRATCH_VBASE | (l2table & SECTION_MASK));
+#endif
+
+  /* Invalidate D-Cache so that we read from the physical memory */
+
+  arch_invalidate_dcache((uintptr_t)virtptr,
+                         (uintptr_t)virtptr + sizeof(uint32_t));
+
+  /* Get the physical address of the first page of of .bss/.data */
+
+  paddr = (uintptr_t)(*virtptr) & PTE_SMALL_PADDR_MASK;
+  DEBUGASSERT(paddr);
+
+#ifdef CONFIG_ARCH_PGPOOL_MAPPING
+  /* Get the virtual address corresponding to the physical page address */
+
+  virtptr = (FAR uint32_t *)arm_pgvaddr(paddr);
+#else
+  /* Temporarily map the page into the virtual address space */
+
+  mmu_l1_setentry(paddr & ~SECTION_MASK, ARCH_SCRATCH_VBASE, MMU_MEMFLAGS);
+  virtptr = (FAR uint32_t *)(ARCH_SCRATCH_VBASE | (paddr & SECTION_MASK));
+#endif
+
+  /* Finally, after of all of that, we can initialize the tiny region at
+   * the beginning of .bss/.data by setting it to zero.
+   */
+
+  memset(virtptr, 0, ARCH_DATA_RESERVE_SIZE);
+
+  /* Make sure that the initialized data is flushed to physical memory. */
+
+  arch_flush_dcache((uintptr_t)virtptr,
+                    (uintptr_t)virtptr + ARCH_DATA_RESERVE_SIZE);
+
+#ifndef CONFIG_ARCH_PGPOOL_MAPPING
+  /* Restore the scratch section L1 page table entry */
+
+  mmu_l1_restore(ARCH_SCRATCH_VBASE, l1save);
+#endif
+  irqrestore(flags);
   return OK;
 }
+#endif /* CONFIG_BUILD_KERNEL */
 
 /****************************************************************************
  * Name: up_addrenv_destroy_region
@@ -267,7 +362,9 @@ static void up_addrenv_destroy_region(FAR uintptr_t **list,
   irqstate_t flags;
   uintptr_t paddr;
   FAR uint32_t *l2table;
+#ifndef CONFIG_ARCH_PGPOOL_MAPPING
   uint32_t l1save;
+#endif
   int i;
   int j;
 
@@ -284,12 +381,19 @@ static void up_addrenv_destroy_region(FAR uintptr_t **list,
       paddr = (uintptr_t)list[i];
       if (paddr != 0)
         {
+          flags = irqsave();
+
+#ifdef CONFIG_ARCH_PGPOOL_MAPPING
+          /* Get the virtual address corresponding to the physical page address */
+
+          l2table = (FAR uint32_t *)arm_pgvaddr(paddr);
+#else
           /* Temporarily map the page into the virtual address space */
 
-          flags = irqsave();
           l1save = mmu_l1_getentry(ARCH_SCRATCH_VBASE);
           mmu_l1_setentry(paddr & ~SECTION_MASK, ARCH_SCRATCH_VBASE, MMU_MEMFLAGS);
           l2table = (FAR uint32_t *)(ARCH_SCRATCH_VBASE | (paddr & SECTION_MASK));
+#endif
 
           /* Return the allocated pages to the page allocator */
 
@@ -303,9 +407,11 @@ static void up_addrenv_destroy_region(FAR uintptr_t **list,
                 }
             }
 
+#ifndef CONFIG_ARCH_PGPOOL_MAPPING
           /* Restore the scratch section L1 page table entry */
 
           mmu_l1_restore(ARCH_SCRATCH_VBASE, l1save);
+#endif
           irqrestore(flags);
 
           /* And free the L2 page table itself */
@@ -336,6 +442,8 @@ static void up_addrenv_destroy_region(FAR uintptr_t **list,
  *     actual size of the data region that is allocated will include a
  *     OS private reserved region at the beginning.  The size of the
  *     private, reserved region is give by ARCH_DATA_RESERVE_SIZE.
+ *   heapsize - The initial size (in bytes) of the heap address environment
+ *     needed by the task.  This region may be read/write only.
  *   addrenv - The location to return the representation of the task address
  *     environment.
  *
@@ -344,7 +452,7 @@ static void up_addrenv_destroy_region(FAR uintptr_t **list,
  *
  ****************************************************************************/
 
-int up_addrenv_create(size_t textsize, size_t datasize,
+int up_addrenv_create(size_t textsize, size_t datasize, size_t heapsize,
                       FAR group_addrenv_t *addrenv)
 {
   int ret;
@@ -389,8 +497,35 @@ int up_addrenv_create(size_t textsize, size_t datasize,
       goto errout;
     }
 
-  /* Notice that no pages are yet allocated for the heap */
+#ifdef CONFIG_BUILD_KERNEL
+  /* Initialize the shared data are at the beginning of the .bss/.data
+   * region.
+   */
 
+  ret = up_addrenv_initdata((uintptr_t)addrenv->data[0] & PMD_PTE_PADDR_MASK);
+  if (ret < 0)
+    {
+      bdbg("ERROR: Failed to initialize .bss/.data region: %d\n", ret);
+      goto errout;
+    }
+#endif
+
+  /* Allocate heap space pages */
+
+  ret = up_addrenv_create_region(addrenv->heap, ARCH_HEAP_NSECTS,
+                                 CONFIG_ARCH_HEAP_VBASE, heapsize,
+                                 MMU_L2_UDATAFLAGS);
+  if (ret < 0)
+    {
+      bdbg("ERROR: Failed to create heap region: %d\n", ret);
+      goto errout;
+    }
+
+  /* Save the initial heap size allocated.  This will be needed when
+   * the heap data structures are initialized.
+   */
+
+  addrenv->heapsize = (size_t)ret << MM_PGSHIFT;
   return OK;
 
 errout:
@@ -429,12 +564,10 @@ int up_addrenv_destroy(FAR group_addrenv_t *addrenv)
   up_addrenv_destroy_region(addrenv->data, ARCH_DATA_NSECTS,
                             CONFIG_ARCH_DATA_VBASE);
 
-#if 0 /* Not yet implemented */
   /* Destroy the heap region */
 
   up_addrenv_destroy_region(addrenv->heap, ARCH_HEAP_NSECTS,
                             CONFIG_ARCH_HEAP_VBASE);
-#endif
 
   memset(addrenv, 0, sizeof(group_addrenv_t));
   return OK;
@@ -500,6 +633,31 @@ int up_addrenv_vdata(FAR group_addrenv_t *addrenv, uintptr_t textsize,
   DEBUGASSERT(addrenv && vdata);
   *vdata = (FAR void *)(CONFIG_ARCH_DATA_VBASE + ARCH_DATA_RESERVE_SIZE);
   return OK;
+}
+
+/****************************************************************************
+ * Name: up_addrenv_heapsize
+ *
+ * Description:
+ *   Return the initial heap allocation size.  That is the amount of memory
+ *   allocated by up_addrenv_create() when the heap memory region was first
+ *   created.  This may or may not differ from the heapsize parameter that
+ *   was passed to up_addrenv_create()
+ *
+ * Input Parameters:
+ *   addrenv - The representation of the task address environment previously
+ *     returned by up_addrenv_create.
+ *
+ * Returned Value:
+ *   The initial heap size allocated is returned on success; a negated
+ *   errno value on failure.
+ *
+ ****************************************************************************/
+
+ssize_t up_addrenv_heapsize(FAR const group_addrenv_t *addrenv)
+{
+  DEBUGASSERT(addrenv);
+  return (ssize_t)addrenv->heapsize;
 }
 
 /****************************************************************************
@@ -584,7 +742,6 @@ int up_addrenv_select(FAR const group_addrenv_t *addrenv,
         }
     }
 
-#if 0 /* Not yet implemented */
   for (vaddr = CONFIG_ARCH_HEAP_VBASE, i = 0;
        i < ARCH_HEAP_NSECTS;
        vaddr += SECTION_SIZE, i++)
@@ -608,7 +765,6 @@ int up_addrenv_select(FAR const group_addrenv_t *addrenv,
           mmu_l1_clrentry(vaddr);
         }
     }
-#endif
 
   return OK;
 }
@@ -656,7 +812,6 @@ int up_addrenv_restore(FAR const save_addrenv_t *oldenv)
       mmu_l1_restore(vaddr, oldenv->data[i]);
     }
 
-#if 0 /* Not yet implemented */
   for (vaddr = CONFIG_ARCH_HEAP_VBASE, i = 0;
        i < ARCH_HEAP_NSECTS;
        vaddr += SECTION_SIZE, i++)
@@ -665,7 +820,6 @@ int up_addrenv_restore(FAR const save_addrenv_t *oldenv)
 
       mmu_l1_restore(vaddr, oldenv->heap[i]);
     }
-#endif
 
   return OK;
 }
