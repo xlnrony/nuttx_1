@@ -1,5 +1,5 @@
 /*******************************************************************************
- * arch/arm/src/stm32/stm32_otgahost.c
+ * arch/arm/src/stm32/stm32_otgbhost.c
  *
  *   Copyright (C) 2012-2014 Gregory Nutt. All rights reserved.
  *   Authors: Gregory Nutt <gnutt@nuttx.org>

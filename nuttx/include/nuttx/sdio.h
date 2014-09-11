@@ -894,6 +894,9 @@ extern "C" {
 #define EXTERN extern
 #endif
 
+EXTERN FAR struct sdio_dev_s *sdio_initialize(int slotno);
+EXTERN void sdio_mediachange(FAR struct sdio_dev_s *dev, bool cardinslot);
+
 #undef EXTERN
 #if defined(__cplusplus)
 }

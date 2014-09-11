@@ -1,6 +1,7 @@
 /* symtab_list.h: Auto-generated symbol table.  Do not edit */
 
 #include <nuttx/config.h>
+#include <nuttx/compiler.h>
 #include <nuttx/binfmt/symtab.h>
 
 #include <unistd.h>
@@ -41,6 +42,7 @@
 #include <mqueue.h>
 #include <nuttx/net/net.h>
 #include <nuttx/binfmt/nxflat.h>
+#include <nuttx/arch.h>
 #include <poll.h>
 #include <spawn.h>
 #include <sys/prctl.h>
@@ -54,7 +56,6 @@
 #include <sys/sendfile.h>
 #include <sys/statfs.h>
 #include <assert.h>
-#include <nuttx/arch.h>
 #include <nuttx/progmem.h>
 #include <nuttx/usb/usbhost.h>
 #include <nuttx/usb/usbhost_trace.h>
@@ -557,6 +558,9 @@ struct symtab_s CONFIG_EXECFUNCS_SYMTAB[] =
 #if CONFIG_NFILE_DESCRIPTORS > 0 && CONFIG_NFILE_STREAMS > 0
   { "perror", (FAR const void *)perror },
 #endif
+#if defined(CONFIG_ARCH_ADDRENV) && defined(CONFIG_MM_PGALLOC) && defined(CONFIG_ARCH_USE_MMU)
+  { "pgalloc", (FAR const void *)pgalloc },
+#endif
 #if CONFIG_NFILE_DESCRIPTORS > 0
   { "pipe", (FAR const void *)pipe },
 #endif
@@ -1006,7 +1010,9 @@ struct symtab_s CONFIG_EXECFUNCS_SYMTAB[] =
 #if defined(CONFIG_HAVE_LONG_DOUBLE) && (defined(CONFIG_LIBM) || defined(CONFIG_ARCH_MATH))
   { "tanl", (FAR const void *)tanl },
 #endif
+#if !defined(CONFIG_ARCH_ADDRENV)
   { "task_create", (FAR const void *)task_create },
+#endif
   { "task_delete", (FAR const void *)task_delete },
   { "task_restart", (FAR const void *)task_restart },
   { "task_spawn", (FAR const void *)task_spawn },
@@ -1074,7 +1080,7 @@ struct symtab_s CONFIG_EXECFUNCS_SYMTAB[] =
   { "up_cxxinitialize", (FAR const void *)up_cxxinitialize },
 #endif
   { "up_progmem_erasepage", (FAR const void *)up_progmem_erasepage },
-  { "up_progmem_getaddr", (FAR const void *)up_progmem_getaddr },
+  { "up_progmem_getaddress", (FAR const void *)up_progmem_getaddress },
   { "up_progmem_getpage", (FAR const void *)up_progmem_getpage },
   { "up_progmem_ispageerased", (FAR const void *)up_progmem_ispageerased },
   { "up_progmem_isuniform", (FAR const void *)up_progmem_isuniform },

@@ -137,13 +137,13 @@ endif
 
 ifeq ($(CONFIG_USBHOST),y)
 ifneq ($(CONFIG_STM32_OTGFS)_$(CONFIG_STM32_OTGFS2),n_n)
-CHIP_CSRCS += stm32_otgfshost.c
+CHIP_CSRCS += stm32_otghost.c
 endif
 ifeq ($(CONFIG_STM32_OTGFS),y)
-CHIP_CSRCS += stm32_otgfs1host.c
+CHIP_CSRCS += stm32_otgahost.c
 endif
 ifeq ($(CONFIG_STM32_OTGFS2),y)
-CHIP_CSRCS += stm32_otgfs2host.c
+CHIP_CSRCS += stm32_otgbhost.c
 endif
 endif
 
