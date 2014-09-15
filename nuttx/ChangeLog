@@ -8469,3 +8469,81 @@
 	  heap when each user process is started (2014-9-10).
 	* sched/clock/clock.h, clock_initialize.c, and clock_settime.c: Remove
 	  vestiges of g_tickbias; apply bias instead to g_basetime (2014-9-10).
+	* include/nuttx/lib.h, sched/init/os_start.c, and
+	  configs/ea3131/locked/mklocked.sh: Replace the empty lib_initialize()
+	  function with a pre-processor macro (2014-9-11).
+	* libc/misc/lib_stream.c: When a privileged thread exits, we have to use
+	  the kernel alloctor to free memory; when an unprivileged thread exits,
+	  we don't have to do anything... heap memory will be cleaned up when the
+	  address environment is torn down (2014-9-11).
+	* arch/arm/src/stm32/stm32_serial.c and chip/stm32f20xxx_rcc.h: Fix for
+	  UART7 and UART8 on STM32 clock enable from Aton (2014-9-11).
+	* arch/arm/src/armv7-a/arm_vectors.S: ARMv7-A: Exception register
+	  save/restore needs to work a little differently if we support useri
+	  mode processes (2014-9-11).
+	* configs/cc3200-launchpad/src/cc3200_leds.c and other board files: Add
+	  LED support for the CC3200 Launchpad.  From Jim Ewing (2014-9-11).
+	* arch/arm/src/armv7-a/arm_initialstate.c:  All tasks, even user mode
+	  tasks, must start in supervisor mode until they get past the start-up
+	  trampoline (2014-9-11).
+	* arch/arm/src/armv7-a/arm_vectors.S: Fix logic for returning from
+	  exceptions to user-mode contexts.  NuttX processes are now functional
+	  on the Cortex-A (2014-9-11).
+	* arch/arm/src/armv7-a/arm_fullcontextrestore.S, arm_syscall.c, crt0.c,
+	  and svcall.h: Modify up_fullcontextrestore() for CONFIG_BUILD_KERNEL.
+	  It changed CPSR while in kernel.  That will crash if the new CPSR is
+	  user mode while executing in kernel space.  Fixed by adding a
+	  SYS_context_restore system call.  There is an alternative, simpler
+	  modification to up_fullcontextrestore() that could have been done:  It
+	  might have been possible to use the SPSR instead of the CPRSR and then
+	  do an exception return from up_fullcontextrestore().  That would be
+	  more efficient, but I never tried it (2014-9-12).
+	* binfmt/libelf/libelf_load.c: ELF: Critical bugfix.. BSS was not being
+	  cleared (2014-9-12).
+	* configs/sama5d4-ek/knsh/defconfig and defconfig.ROMFS: Enable NSH
+	  file applications in these configurations (2014-9-12).
+	* libc/Kconfig, unistd/lib_execsymtab.c, configs/sim/nsh/defconfig, and
+	  stm32f4discovery/posix_spawn/defconfig: Having a symbol table is an
+	  option.  There are no symbol tables with CONFIG_BUILD_KERNEL, for
+	  example (2014-9-12).
+	* syscall/syscall.csv and include/sys/syscall.h: exevc, execvl,
+	  posix_spawn, and posix_spawnp were not properly integrated as system
+	  calls (2014-9-12).
+	* syscall/syscall_lookup.h: Fix typos in the stub lookup table
+	  (2014-9-12).
+	* configs/stm32f4discovery/netnsh, Kconfig, README.txt, and
+	  include/board.h: Add the network enabled NSH configuration for the
+	  STM32F4Discovery board with the STM32F4DIS-BB base board installed
+	  (2014-9-13).
+	* nuttx/mm/umm_sbrk.c: Fix a typo in use of a configuration setting
+	  (2014-9-13).
+	* configs/stm32f4discovery/README.txt: Add STM32F4DIS-BB GPIO pin
+	  usage (2014-9-13).
+	* arch/Kconfig, arch/arm/include/arch.h, src/armv7-a/arm_addrenv.c,
+	  sama5/sam_pgalloc.c, and include/nuttx/addrenv.h: Add a configuration
+	  option for dynamic stack management (stack management not yet
+	  implemented) (2014-9-13).
+	* arch/Kconfigm arm/src/armv7-a/addrenv.h, arm_addrenv.c, and
+	  arm_addrenv_utils.c, a1x/Make.defs, and sama5/Make.defs,
+	  include/nuttx/addrenv.h and arch.h: Move static helper routines from
+	  arm_addrenv.c and may them global so that they can be shared by
+	  forthcoming stack address environment logic (2014-9-13).
+	* arch/arm/src/armv7-a/arm_addrenv_stack.c, arm_addrenv.c,
+	  a1x/Make.defs, sama5/Make.defs, and include/nuttx/arch.h: Add logic
+	  needed to manage a virtualized stack.  Not yet incorporated into
+	  base OS logic (2014-9-13).
+	* sched/task/task_posixspawn.c: Kernel proxy thread should be a kernel
+	  thread, not a user task (2014-9-14).
+	* include/sched.h and spawn.h, libc/Kconfig, spawn/Make.defs,
+	  lib_psa_getstacksize.c, lib_psa_init.c, and lib_psa_setstacksize.c,
+	  sched/task/Make.defs, task_create.c, and task_spawn.c: Don't build
+	  task_create() or task_spawn() interfaces if there is an address
+	  environment (2014-9-14).
+	* arch/arm/src/armv7-a/arm_addrenv_ustack.c, include/nuttx/addrenv.h,
+	  arch.h, and other files: Rename everything associated with the dynamic
+	  process stack to ustack to make room in the name space for a kstack
+	  (2014-9-14).
+	* arch/arm/src/armv7-a/arm_addrenv_kstack.c, include/nuttx/addrenv.h,
+	  arch.h, and othr files:  Add the initial implementation of the process
+	  kernel stack logic.  Not yet integrated into the main OS logic nor
+	  tested (2014-9-14).

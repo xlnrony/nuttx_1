@@ -747,6 +747,42 @@ uintptr_t pgalloc(uintptr_t brkaddr, unsigned int npages);
  *   up_addrenv_detach   - Release the threads reference to an address
  *                         environment when a task/thread exits.
  *
+ * CONFIG_ARCH_STACK_DYNAMIC=y indicates that the user process stack resides
+ * in its own address space.  This options is also *required* if
+ * CONFIG_BUILD_KERNEL and CONFIG_LIBC_EXECFUNCS are selected.  Why?
+ * Because the caller's stack must be preserved in its own address space
+ * when we instantiate the environment of the new process in order to
+ * initialize it.
+ *
+ * NOTE: The naming of the CONFIG_ARCH_STACK_DYNAMIC selection implies that
+ * dynamic stack allocation is supported.  Certainly this option must be set
+ * if dynamic stack allocation is supported by a platform.  But the more
+ * general meaning of this configuration environment is simply that the
+ * stack has its own address space.
+ *
+ * If CONFIG_ARCH_STACK_DYNAMIC=y is selected then the platform specific
+ * code must export these additional interfaces:
+ *
+ *   up_addrenv_ustackalloc  - Create a stack address environment
+ *   up_addrenv_ustackfree   - Destroy a stack address environment.
+ *   up_addrenv_vustack      - Returns the virtual base address of the stack
+ *   up_addrenv_ustackselect - Instantiate a stack address environment
+ *
+ * If CONFIG_ARCH_KERNEL_STACK is selected, then each user process will have
+ * two stacks:  (1) a large (and possibly dynamic) user stack and (2) a
+ * smaller kernel stack.  However, this option is *required* if both
+ * CONFIG_BUILD_KERNEL and CONFIG_LIBC_EXECFUNCS are selected.  Why?  Because
+ * when we instantiate and initialize the address environment of the new
+ * user process, we will temporarily lose the address environment of the old
+ * user process, including its stack contents.  The kernel C logic will crash
+ * immediately with no valid stack in place.
+ *
+ * If CONFIG_ARCH_KERNEL_STACK=y is selected then the platform specific
+ * code must export these additional interfaces:
+ *
+ *   up_addrenv_kstackalloc  - Create a stack in the kernel address environment
+ *   up_addrenv_kstackfree   - Destroy the kernel stack.
+ *
  ****************************************************************************/
 /****************************************************************************
  * Name: up_addrenv_create
@@ -872,7 +908,7 @@ int up_addrenv_vdata(FAR group_addrenv_t *addrenv, uintptr_t textsize,
  *
  ****************************************************************************/
 
-#ifdef CONFIG_ARCH_ADDRENV
+#if defined(CONFIG_ARCH_ADDRENV) && defined(CONFIG_BUILD_KERNEL)
 ssize_t up_addrenv_heapsize(FAR const group_addrenv_t *addrenv);
 #endif
 
@@ -1020,6 +1056,136 @@ int up_addrenv_attach(FAR struct task_group_s *group, FAR struct tcb_s *tcb);
 
 #ifdef CONFIG_ARCH_ADDRENV
 int up_addrenv_detach(FAR struct task_group_s *group, FAR struct tcb_s *tcb);
+#endif
+
+/****************************************************************************
+ * Name: up_addrenv_ustackalloc
+ *
+ * Description:
+ *   This function is called when a new thread is created in order to
+ *   instantiate an address environment for the new thread's stack.
+ *   up_addrenv_ustackalloc() is essentially the allocator of the physical
+ *   memory for the new task's stack.
+ *
+ * Input Parameters:
+ *   tcb - The TCB of the thread that requires the stack address environment.
+ *   stacksize - The size (in bytes) of the initial stack address
+ *     environment needed by the task.  This region may be read/write only.
+ *
+ * Returned Value:
+ *   Zero (OK) on success; a negated errno value on failure.
+ *
+ ****************************************************************************/
+
+#if defined(CONFIG_ARCH_ADDRENV) && defined(CONFIG_ARCH_STACK_DYNAMIC)
+int up_addrenv_ustackalloc(FAR struct tcb_s *tcb, size_t stacksize);
+#endif
+
+/****************************************************************************
+ * Name: up_addrenv_ustackfree
+ *
+ * Description:
+ *   This function is called when any thread exits.  This function then
+ *   destroys the defunct address environment for the thread's stack,
+ *   releasing the underlying physical memory.
+ *
+ * Input Parameters:
+ *   tcb - The TCB of the thread that no longer requires the stack address
+ *     environment.
+ *
+ * Returned Value:
+ *   Zero (OK) on success; a negated errno value on failure.
+ *
+ ****************************************************************************/
+
+#if defined(CONFIG_ARCH_ADDRENV) && defined(CONFIG_ARCH_STACK_DYNAMIC)
+int up_addrenv_ustackfree(FAR struct tcb_s *tcb);
+#endif
+
+/****************************************************************************
+ * Name: up_addrenv_vustack
+ *
+ * Description:
+ *   Return the virtual address associated with the newly create stack
+ *   address environment.
+ *
+ * Input Parameters:
+ *   tcb - The TCB of the thread with the stack address environment of
+ *     interest.
+ *   vstack - The location to return the stack virtual base address.
+ *
+ * Returned Value:
+ *   Zero (OK) on success; a negated errno value on failure.
+ *
+ ****************************************************************************/
+
+#if defined(CONFIG_ARCH_ADDRENV) && defined(CONFIG_ARCH_STACK_DYNAMIC)
+int up_addrenv_vustack(FAR const struct tcb_s *tcb, FAR void **vstack);
+#endif
+
+/****************************************************************************
+ * Name: up_addrenv_ustackselect
+ *
+ * Description:
+ *   After an address environment has been established for a task's stack
+ *   (via up_addrenv_ustackalloc().  This function may be called to instantiate
+ *   that address environment in the virtual address space.  This is a
+ *   necessary step before each context switch to the newly created thread
+ *   (including the initial thread startup).
+ *
+ * Input Parameters:
+ *   tcb - The TCB of the thread with the stack address environment to be
+ *     instantiated.
+ *
+ * Returned Value:
+ *   Zero (OK) on success; a negated errno value on failure.
+ *
+ ****************************************************************************/
+
+#if defined(CONFIG_ARCH_ADDRENV) && defined(CONFIG_ARCH_STACK_DYNAMIC)
+int up_addrenv_ustackselect(FAR const struct tcb_s *tcb);
+#endif
+
+/****************************************************************************
+ * Name: up_addrenv_kstackalloc
+ *
+ * Description:
+ *   This function is called when a new thread is created to allocate
+ *   the new thread's kernel stack.   This function may be called for certain
+ *   terminating threads which have no kernel stack.  It must be tolerant of
+ *   that case.
+ *
+ * Input Parameters:
+ *   tcb - The TCB of the thread that requires the kernel stack.
+ *   stacksize - The size (in bytes) of the kernel stack needed by the
+ *     thread.
+ *
+ * Returned Value:
+ *   Zero (OK) on success; a negated errno value on failure.
+ *
+ ****************************************************************************/
+
+#if defined(CONFIG_ARCH_ADDRENV) && defined(CONFIG_ARCH_KERNEL_STACK)
+int up_addrenv_kstackalloc(FAR struct tcb_s *tcb);
+#endif
+
+/****************************************************************************
+ * Name: up_addrenv_kstackfree
+ *
+ * Description:
+ *   This function is called when any thread exits.  This function frees
+ *   the kernel stack.
+ *
+ * Input Parameters:
+ *   tcb - The TCB of the thread that no longer requires the kernel stack.
+ *
+ * Returned Value:
+ *   Zero (OK) on success; a negated errno value on failure.
+ *
+ ****************************************************************************/
+
+#if defined(CONFIG_ARCH_ADDRENV) && defined(CONFIG_ARCH_KERNEL_STACK)
+int up_addrenv_kstackfree(FAR struct tcb_s *tcb);
 #endif
 
 /****************************************************************************

@@ -51,6 +51,7 @@
 
 #include "arm.h"
 #include "svcall.h"
+#include "addrenv.h"
 #include "up_internal.h"
 
 /****************************************************************************
@@ -58,15 +59,15 @@
  ****************************************************************************/
 /* Debug ********************************************************************/
 
-/* Output debug info if stack dump is selected -- even if
- * debug is not selected.
- */
-
-#if defined(CONFIG_DEBUG_SYSCALL) || defined(CONFIG_DEBUG_SVCALL)
+#if defined(CONFIG_DEBUG_SYSCALL)
 # define svcdbg(format, ...) lldbg(format, ##__VA_ARGS__)
 #else
 # define svcdbg(x...)
 #endif
+
+/* Output debug info if stack dump is selected -- even if debug is not
+ * selected.
+ */
 
 #ifdef CONFIG_ARCH_STACKDUMP
 # undef  lldbg
@@ -219,15 +220,53 @@ uint32_t *arm_syscall(uint32_t *regs)
 #ifdef CONFIG_BUILD_KERNEL
           regs[REG_CPSR]      = rtcb->xcp.syscall[index].cpsr;
 #endif
-          rtcb->xcp.nsyscalls = index;
-
           /* The return value must be in R0-R1.  dispatch_syscall() temporarily
            * moved the value for R0 into R2.
            */
 
           regs[REG_R0]         = regs[REG_R2];
+
+#ifdef CONFIG_ARCH_KERNEL_STACK
+          /* If this is the outermost SYSCALL and if there is a saved user stack
+           * pointer, then restore the user stack pointer on this final return to
+           * user code.
+           */
+
+          if (index == 0 && rtcb->xcp.ustkptr != NULL)
+            {
+              regs[REG_SP]      = (uint32_t)rtcb->xcp.ustkptr;
+              rtcb->xcp.ustkptr = NULL;
+            }
+#endif
+          /* Save the new SYSCALL nesting level */
+
+          rtcb->xcp.nsyscalls = index;
         }
         break;
+
+      /* R0=SYS_context_restore:  Restore task context
+       *
+       * void up_fullcontextrestore(uint32_t *restoreregs) noreturn_function;
+       *
+       * At this point, the following values are saved in context:
+       *
+       *   R0 = SYS_context_restore
+       *   R1 = restoreregs
+       */
+
+#ifdef CONFIG_BUILD_KERNEL
+      case SYS_context_restore:
+        {
+          /* Replace 'regs' with the pointer to the register set in
+           * regs[REG_R1].  On return from the system call, that register
+           * set will determine the restored context.
+           */
+
+          regs = (uint32_t *)regs[REG_R1];
+          DEBUGASSERT(regs);
+        }
+        break;
+#endif
 
       /* R0=SYS_task_start:  This a user task start
        *
@@ -397,7 +436,6 @@ uint32_t *arm_syscall(uint32_t *regs)
 #ifdef CONFIG_BUILD_KERNEL
           rtcb->xcp.syscall[index].cpsr      = regs[REG_CPSR];
 #endif
-          rtcb->xcp.nsyscalls                = index + 1;
 
           regs[REG_PC]   = (uint32_t)dispatch_syscall;
 #ifdef CONFIG_BUILD_KERNEL
@@ -410,17 +448,41 @@ uint32_t *arm_syscall(uint32_t *regs)
 #else
           svcdbg("ERROR: Bad SYS call: %d\n", regs[REG_R0]);
 #endif
+
+#ifdef CONFIG_ARCH_KERNEL_STACK
+          /* If this is the first SYSCALL and if there is an allocated
+           * kernel stack, then switch to the kernel stack.
+           */
+
+          if (index == 0 && rtcb->xcp.kstack != NULL)
+            {
+              rtcb->xcp.ustkptr = (FAR uint32_t *)regs[REG_SP];
+              regs[REG_SP]      = (uint32_t)rtcb->xcp.kstack + ARCH_KERNEL_STACKSIZE;
+            }
+#endif
+          /* Save the new SYSCALL nesting level */
+
+          rtcb->xcp.nsyscalls   = index + 1;
         }
         break;
     }
 
+#if defined(CONFIG_DEBUG_SYSCALL)
   /* Report what happened */
 
-  svcdbg("SYSCALL Return: %d \n", regs[REG_R0]);
+  svcdbg("SYSCALL Exit: regs: %p: %d\n", regs);
+  svcdbg("  R0: %08x %08x %08x %08x %08x %08x %08x %08x\n",
+         regs[REG_R0],  regs[REG_R1],  regs[REG_R2],  regs[REG_R3],
+         regs[REG_R4],  regs[REG_R5],  regs[REG_R6],  regs[REG_R7]);
+  svcdbg("  R8: %08x %08x %08x %08x %08x %08x %08x %08x\n",
+         regs[REG_R8],  regs[REG_R9],  regs[REG_R10], regs[REG_R11],
+         regs[REG_R12], regs[REG_R13], regs[REG_R14], regs[REG_R15]);
+  svcdbg("CPSR: %08x\n", regs[REG_CPSR]);
+#endif
 
-  /* Return the last value of curent_regs.  This supports context switchs
-   * on return from the exception.  That capability is not used here,
-   * however.
+  /* Return the last value of curent_regs.  This supports context switches
+   * on return from the exception.  That capability is only used with the
+   * SYS_context_switch system call.
    */
 
   return regs;

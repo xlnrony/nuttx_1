@@ -3707,13 +3707,13 @@ Configurations
 
     4. A system call interface is enabled and the ELF test programs interface with the base RTOS code system calls.  This eliminates the need for symbol tables to link with the base RTOS (symbol tables are still used, however, to interface with the common C library instaniation).  Relevant configuration settings:
 
-    RTOS Features -> System call support
-      CONFIG_LIB_SYSCALL=y                      : Enable system call support
-      CONFIG_SYS_NNEST=2                        : Max number of nested system calls
-      CONFIG_SYS_RESERVED=1                     : SYStem call 0 is reserved on this platform
+      RTOS Features -> System call support
+        CONFIG_LIB_SYSCALL=y                   : Enable system call support
+        CONFIG_SYS_NNEST=2                     : Max number of nested system calls
+        CONFIG_SYS_RESERVED=1                  : SYStem call 0 is reserved on this platform
 
-    Application Configurations -> Examples -> ELF Loader Example
-      CONFIG_EXAMPLES_ELF_SYSCALL=y             : Link apps with the SYStem call library
+      Application Configurations -> Examples -> ELF Loader Example
+        CONFIG_EXAMPLES_ELF_SYSCALL=y          : Link apps with the SYStem call library
 
     STATUS:
       2014-8-24: This configuration works with the address environment
@@ -3726,6 +3726,11 @@ Configurations
                  http://www.nuttx.org/doku.php?id=wiki:nxinternal:memconfigs#task_create
 
       2014-8-29: System call interface verified.
+      2014-9-11: There has been some breakage due to changes for the knsh
+                 configuration.  This test now hangs after running the first
+                 ELF program.  With GDB I can see that the IDLE loop is running
+                 but apparently either ELF main program is deadlocked. Need to
+                 revisit.
 
   knsh:
     An NSH configuration used to test the SAMA5D kenel build configuration.
@@ -3920,6 +3925,28 @@ Configurations
 
        Update: I don't believe that this HSMCI error occurs if file system
        debug output is enabled.
+
+    2014-9-11: Everything seems to be working quite nicely witn the ROMFS
+       file system.  A considerable amount of testing has been done and
+       there are no known defects as of this writing.
+
+    2014-9-13: Currently a program running as a process in the kernel build
+       mode cannot run other programs that reside on the file system.  Why?
+       Because in order to run those other programs, the new program's
+       address environment must be instantiated in memory to load the .text
+       and .data and to allocate the initial user space components from the
+       new user heap.
+
+       However, the previous program's stack currently resides in its heap.
+       So when a process tries to run another program, its heap is unmapped
+       and the system crashes.  The fix is to add a separate stack in a
+       separate memory region that does not get unmapped when creating new
+       processes.  There are hooks in place to do this; I just need to get
+       time to get that done.
+
+       To see the bug in action:
+
+         nsh> /bin/hello
 
   nsh:
 
@@ -4393,7 +4420,7 @@ Configurations
    STATUS:
        See the To-Do list below
 
-   (2014-8-30): Retesting today I am seeing a strange behavior:  Serial
+   2014-8-30: Retesting today I am seeing a strange behavior:  Serial
        output is coming out in chunks with delays between the chunks.  It
        appears that something is not good in the serial port configuration.
        I see no such chunky behavior in, for example, grahics output.

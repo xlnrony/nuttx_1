@@ -86,7 +86,7 @@
 
 #ifndef CONFIG_ARCH_DATA_VBASE
 #  error CONFIG_ARCH_DATA_VBASE not defined
-#  define CONFIG_ARCH_DATA_VBASE (CONFIG_ARCH_TEXT_VBASE + ARCH_TEXT_SIZE)
+#  define CONFIG_ARCH_DATA_VBASE ARCH_TEXT_VEND
 #endif
 
 #if (CONFIG_ARCH_DATA_VBASE & CONFIG_MM_MASK) != 0
@@ -123,7 +123,7 @@
 
 #ifndef CONFIG_ARCH_HEAP_VBASE
 #  error CONFIG_ARCH_HEAP_VBASE not defined
-#  define CONFIG_ARCH_HEAP_VBASE (CONFIG_ARCH_DATA_VBASE + ARCH_DATA_SIZE)
+#  define CONFIG_ARCH_HEAP_VBASE ARCH_DATA_VEND
 #endif
 
 #if (CONFIG_ARCH_HEAP_VBASE & CONFIG_MM_MASK) != 0
@@ -138,28 +138,42 @@
 #define ARCH_HEAP_SIZE  (CONFIG_ARCH_HEAP_NPAGES * CONFIG_MM_PGSIZE)
 #define ARCH_HEAP_VEND  (CONFIG_ARCH_HEAP_VBASE + ARCH_HEAP_SIZE)
 
-/* Stack region */
+#ifdef CONFIG_ARCH_STACK_DYNAMIC
+  /* User stack region */
 
-#ifndef CONFIG_ARCH_STACK_VBASE
-#  error CONFIG_ARCH_STACK_VBASE not defined
-#  define CONFIG_ARCH_STACK_VBASE (CONFIG_ARCH_HEAP_VBASE + ARCH_HEAP_SIZE)
+#  ifndef CONFIG_ARCH_STACK_VBASE
+#    error CONFIG_ARCH_STACK_VBASE not defined
+#    define CONFIG_ARCH_STACK_VBASE ARCH_HEAP_VEND
+#  endif
+
+#  if (CONFIG_ARCH_STACK_VBASE & CONFIG_MM_MASK) != 0
+#    error CONFIG_ARCH_STACK_VBASE not aligned to page boundary
+#  endif
+
+#  ifndef CONFIG_ARCH_STACK_NPAGES
+#    warning CONFIG_ARCH_STACK_NPAGES not defined
+#    define CONFIG_ARCH_STACK_NPAGES 1
+#  endif
+
+#  define ARCH_STACK_SIZE (CONFIG_ARCH_STACK_NPAGES * CONFIG_MM_PGSIZE)
+#  define ARCH_STACK_VEND (CONFIG_ARCH_STACK_VBASE + ARCH_STACK_SIZE)
+
+#ifdef CONFIG_ARCH_KERNEL_STACK
+/* Kernel stack */
+
+#  ifndef CONFIG_ARCH_KERNEL_STACKSIZE
+#    define CONFIG_ARCH_KERNEL_STACKSIZE 1568
+#  endif
 #endif
 
-#if (CONFIG_ARCH_STACK_VBASE & CONFIG_MM_MASK) != 0
-#  error CONFIG_ARCH_STACK_VBASE not aligned to page boundary
+  /* A single page scratch region used for temporary mappings */
+
+#  define ARCH_SCRATCH_VBASE ARCH_STACK_VEND
+#else
+  /* A single page scratch region used for temporary mappings */
+
+#  define ARCH_SCRATCH_VBASE ARCH_HEAP_VEND
 #endif
-
-#ifndef CONFIG_ARCH_STACK_NPAGES
-#  warning CONFIG_ARCH_STACK_NPAGES not defined
-#  define CONFIG_ARCH_STACK_NPAGES 1
-#endif
-
-#define ARCH_STACK_SIZE (CONFIG_ARCH_STACK_NPAGES * CONFIG_MM_PGSIZE)
-#define ARCH_STACK_VEND (CONFIG_ARCH_STACK_VBASE + ARCH_STACK_SIZE)
-
-/* A single page scratch region used for temporary mappings */
-
-#define ARCH_SCRATCH_VBASE (CONFIG_ARCH_STACK_VBASE + ARCH_STACK_SIZE)
 
 /* There is no need to use the scratch memory region if the page pool memory
  * is statically mapped.
@@ -263,10 +277,46 @@ struct addrenv_reserve_s
  *
  *   up_addrenv_attach   - Clone the address environment assigned to one TCB
  *                         to another.  This operation is done when a pthread
- *                         is created that share's the same address
+ *                         is created that share's the same group address
  *                         environment.
- *   up_addrenv_detach   - Release the threads reference to an address
+ *   up_addrenv_detach   - Release the thread's reference to an address
  *                         environment when a task/thread exits.
+ *
+ * CONFIG_ARCH_STACK_DYNAMIC=y indicates that the user process stack resides
+ * in its own address space.  This options is also *required* if
+ * CONFIG_BUILD_KERNEL and CONFIG_LIBC_EXECFUNCS are selected.  Why?
+ * Because the caller's stack must be preserved in its own address space
+ * when we instantiate the environment of the new process in order to
+ * initialize it.
+ *
+ * NOTE: The naming of the CONFIG_ARCH_STACK_DYNAMIC selection implies that
+ * dynamic stack allocation is supported.  Certainly this option must be set
+ * if dynamic stack allocation is supported by a platform.  But the more
+ * general meaning of this configuration environment is simply that the
+ * stack has its own address space.
+ *
+ * If CONFIG_ARCH_STACK_DYNAMIC=y is selected then the platform specific
+ * code must export these additional interfaces:
+ *
+ *   up_addrenv_ustackalloc  - Create a stack address environment
+ *   up_addrenv_ustackfree   - Destroy a stack address environment.
+ *   up_addrenv_vustack      - Returns the virtual base address of the stack
+ *   up_addrenv_ustackselect - Instantiate a stack address environment
+ *
+ * If CONFIG_ARCH_KERNEL_STACK is selected, then each user process will have
+ * two stacks:  (1) a large (and possibly dynamic) user stack and (2) a
+ * smaller kernel stack.  However, this option is *required* if both
+ * CONFIG_BUILD_KERNEL and CONFIG_LIBC_EXECFUNCS are selected.  Why?  Because
+ * when we instantiate and initialize the address environment of the new
+ * user process, we will temporarily lose the address environment of the old
+ * user process, including its stack contents.  The kernel C logic will crash
+ * immediately with no valid stack in place.
+ *
+ * If CONFIG_ARCH_STACK_DYNAMIC=y is selected then the platform specific
+ * code must export these additional interfaces:
+ *
+ *   up_addrenv_kstackalloc  - Create a stack in the kernel address environment
+ *   up_addrenv_kstackfree   - Destroy the kernel stack.
  *
  ****************************************************************************/
 

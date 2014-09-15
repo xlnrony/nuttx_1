@@ -136,7 +136,7 @@ static void exec_ctors(FAR void *arg)
 int exec_module(FAR const struct binary_s *binp)
 {
   FAR struct task_tcb_s *tcb;
-#ifdef CONFIG_ARCH_ADDRENV
+#if defined(CONFIG_ARCH_ADDRENV) && defined(CONFIG_BUILD_KERNEL)
   save_addrenv_t oldenv;
 #endif
   FAR uint32_t *stack;
@@ -165,7 +165,7 @@ int exec_module(FAR const struct binary_s *binp)
       goto errout;
     }
 
-#ifdef CONFIG_ARCH_ADDRENV
+#if defined(CONFIG_ARCH_ADDRENV) && defined(CONFIG_BUILD_KERNEL)
   /* Instantiate the address environment containing the user heap */
 
   ret = up_addrenv_select(&binp->addrenv, &oldenv);
@@ -203,11 +203,27 @@ int exec_module(FAR const struct binary_s *binp)
     {
       err = get_errno();
       bdbg("task_init() failed: %d\n", err);
-      goto errout_with_stack;
+      goto errout_with_addrenv;
     }
+
+  /* We can free the argument buffer now */
+
+  binfmt_freeargv(binp);
 
   /* Note that tcb->flags are not modified.  0=normal task */
   /* tcb->flags |= TCB_FLAG_TTYPE_TASK; */
+
+#if defined(CONFIG_ARCH_ADDRENV) && defined(CONFIG_BUILD_KERNEL)
+  /* Allocate the kernel stack */
+
+  ret = up_addrenv_kstackalloc(&tcb->cmn);
+  if (ret < 0)
+    {
+      bdbg("ERROR: up_addrenv_select() failed: %d\n", ret);
+      err = -ret;
+      goto errout_with_tcbinit;
+    }
+#endif
 
 #ifdef CONFIG_PIC
   /* Add the D-Space address as the PIC base address.  By convention, this
@@ -229,7 +245,7 @@ int exec_module(FAR const struct binary_s *binp)
     {
       err = -ret;
       bdbg("ERROR: up_addrenv_clone() failed: %d\n", ret);
-      goto errout_with_stack;
+      goto errout_with_tcbinit;
     }
 
   /* Mark that this group has an address environment */
@@ -257,10 +273,10 @@ int exec_module(FAR const struct binary_s *binp)
     {
       err = get_errno();
       bdbg("task_activate() failed: %d\n", err);
-      goto errout_with_stack;
+      goto errout_with_tcbinit;
     }
 
-#ifdef CONFIG_ARCH_ADDRENV
+#if defined(CONFIG_ARCH_ADDRENV) && defined(CONFIG_BUILD_KERNEL)
   /* Restore the address environment of the caller */
 
   ret = up_addrenv_restore(&oldenv);
@@ -268,24 +284,26 @@ int exec_module(FAR const struct binary_s *binp)
     {
       bdbg("ERROR: up_addrenv_select() failed: %d\n", ret);
       err = -ret;
-      goto errout_with_stack;
+      goto errout_with_tcbinit;
     }
 #endif
 
   return (int)pid;
 
-errout_with_stack:
+errout_with_tcbinit:
   tcb->cmn.stack_alloc_ptr = NULL;
   sched_releasetcb(&tcb->cmn, TCB_FLAG_TTYPE_TASK);
   kumm_free(stack);
   goto errout;
 
 errout_with_addrenv:
-#ifdef CONFIG_ARCH_ADDRENV
+#if defined(CONFIG_ARCH_ADDRENV) && defined(CONFIG_BUILD_KERNEL)
   (void)up_addrenv_restore(&oldenv);
-#endif
+
 errout_with_tcb:
+#endif
   kmm_free(tcb);
+
 errout:
   set_errno(err);
   bdbg("returning errno: %d\n", err);
