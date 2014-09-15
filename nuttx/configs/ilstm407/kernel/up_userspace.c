@@ -57,13 +57,20 @@
 #  error "CONFIG_NUTTX_USERSPACE not defined"
 #endif
 
-#if CONFIG_NUTTX_USERSPACE != 0x08040000
-#  error "CONFIG_NUTTX_USERSPACE must be 0x08040000 to match memory.ld"
+#if CONFIG_NUTTX_USERSPACE != 0x08060000
+#  error "CONFIG_NUTTX_USERSPACE must be 0x08060000 to match memory.ld"
 #endif
 
 /****************************************************************************
  * Public Data
  ****************************************************************************/
+
+int (*klog)(FAR const char *fmt, ...);
+
+void sklog(int (*fp)(FAR const char *fmt, ...))
+{
+  klog = fp;
+}
 
 /* These 'addresses' of these values are setup by the linker script.  They are
  * not actual uint32_t storage locations! They are only used meaningfully in the
@@ -134,6 +141,7 @@ const struct userspace_s userspace __attribute__ ((section (".userspace"))) =
 #if defined(CONFIG_SCHED_WORKQUEUE) && defined(CONFIG_SCHED_USRWORK)
   .work_usrstart    = work_usrstart,
 #endif
+  .sklog		= sklog,
 };
 
 /****************************************************************************

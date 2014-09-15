@@ -3808,7 +3808,7 @@ static int stm32_ctrlout(FAR struct usbhost_driver_s *drvr,
               /* Start DATA out transfer (only one DATA packet) */
 
               priv->chan[priv->ep0out].outdata1 = true;
-              ret = stm32_ctrl_senddata(priv, buffer, buflen);
+              ret = stm32_ctrl_senddata(priv, (FAR uint8_t *)buffer, buflen);
               if (ret < 0)
                 {
                   usbhost_trace1(OTGFS_TRACE1_SENDDATA, -ret);

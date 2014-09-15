@@ -44,6 +44,7 @@
 #include <debug.h>
 
 #include <nuttx/mm.h>
+#include <nuttx/userspace.h>
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -60,7 +61,7 @@
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
-
+ 
 /****************************************************************************
  * Name: mm_addregion
  *
@@ -108,7 +109,14 @@ void mm_addregion(FAR struct mm_heap_s *heap, FAR void *heapstart,
   heapend  = MM_ALIGN_DOWN((uintptr_t)heapstart + (uintptr_t)heapsize);
   heapsize = heapend - heapbase;
 
+#if defined(CONFIG_BUILD_PROTECTED) && !defined(__KERNEL__)
+  if (klog!=NULL)
+  {
+    klog("Region %d: base=%p size=%u\n", IDX+1, heapstart, heapsize);
+  }	
+#else
   mlldbg("Region %d: base=%p size=%u\n", IDX+1, heapstart, heapsize);
+#endif
 
   /* Add the size of this region to the total size of the heap */
 
@@ -169,7 +177,14 @@ void mm_initialize(FAR struct mm_heap_s *heap, FAR void *heapstart,
 {
   int i;
 
+#if defined(CONFIG_BUILD_PROTECTED) && !defined(__KERNEL__)
+  if (klog!=NULL)
+  {
+    klog("Heap: start=%p size=%u\n", heapstart, heapsize);
+  }
+#else
   mlldbg("Heap: start=%p size=%u\n", heapstart, heapsize);
+#endif
 
   /* The following two lines have cause problems for some older ZiLog
    * compilers in the past (but not the more recent).  Life is easier if we

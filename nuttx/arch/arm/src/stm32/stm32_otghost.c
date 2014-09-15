@@ -38,7 +38,7 @@
  *******************************************************************************/
 
 #include <nuttx/config.h>
-
+#include <assert.h>
 #include <nuttx/usb/usbhost.h>
 
 #if defined(CONFIG_USBHOST) && (defined(CONFIG_STM32_OTGFS) || defined(CONFIG_STM32_OTGFS2))
@@ -90,7 +90,7 @@ EXTERN inline FAR struct usbhost_connection_s *stm32_otgbhost_initialize(void);
  *
  *******************************************************************************/
 
-FAR struct usbhost_connection_s *stm32_otgfshost_initialize(int controller)
+FAR struct usbhost_connection_s *usbhost_initialize(int controller)
 {
 #if defined(CONFIG_STM32_OTGFS)
   if (controller == 0)

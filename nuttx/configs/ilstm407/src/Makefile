@@ -49,7 +49,8 @@ endif
 ifeq ($(CONFIG_ARCH_LEDS),y)
 CSRCS += stm32_autoleds.c
 else
-CSRCS += stm32_userleds.c
+CSRCS += stm32_autoleds.c
+#CSRCS += stm32_userleds.c
 endif
 
 ifeq ($(CONFIG_ARCH_BUTTONS),y)
