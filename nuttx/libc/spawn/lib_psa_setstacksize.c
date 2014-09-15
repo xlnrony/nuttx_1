@@ -43,8 +43,6 @@
 #include <spawn.h>
 #include <assert.h>
 
-#ifdef CONFIG_ARCH_ADDRENV
-
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -73,5 +71,3 @@ int task_spawnattr_setstacksize(FAR posix_spawnattr_t *attr, size_t stacksize)
   attr->stacksize = stacksize;
   return OK;
 }
-
-#endif /* CONFIG_ARCH_ADDRENV */
