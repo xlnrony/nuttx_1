@@ -1,5 +1,5 @@
 /****************************************************************************
- * arch/arm/src/armv7/pginline.h
+ * arch/arm/src/armv7-a/pgalloc.h
  *
  *   Copyright (C) 2014 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -33,8 +33,8 @@
  *
  ****************************************************************************/
 
-#ifndef __ARCH_ARM_SRC_ARMV7_A_PGINLINE_H
-#define __ARCH_ARM_SRC_ARMV7_A_PGINLINE_H
+#ifndef __ARCH_ARM_SRC_ARMV7_A_PGALLOC_H
+#define __ARCH_ARM_SRC_ARMV7_A_PGALLOC_H
 
 /****************************************************************************
  * Included Files
@@ -43,23 +43,25 @@
 #include <nuttx/config.h>
 
 #include <stdint.h>
+#include <stdbool.h>
+#include <assert.h>
 
 #include <nuttx/addrenv.h>
 
 #include "mmu.h"
 
-#if defined(CONFIG_MM_PGALLOC) && defined(CONFIG_ARCH_USE_MMU)
+#ifdef CONFIG_MM_PGALLOC
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
 
 /****************************************************************************
- * Private Data
+ * Public Data
  ****************************************************************************/
 
 /****************************************************************************
- * Private Functions
+ * Inline Functions
  ****************************************************************************/
 
 /****************************************************************************
@@ -70,7 +72,7 @@
  *
  ****************************************************************************/
 
-#ifndef CONFIG_ARCH_PGPOOL_MAPPING
+#if !defined(CONFIG_ARCH_PGPOOL_MAPPING) && defined(CONFIG_ARCH_USE_MMU)
 static inline uintptr_t arm_tmpmap(uintptr_t paddr, FAR uint32_t *l1save)
 {
   *l1save = mmu_l1_getentry(ARCH_SCRATCH_VBASE);
@@ -88,7 +90,7 @@ static inline uintptr_t arm_tmpmap(uintptr_t paddr, FAR uint32_t *l1save)
  *
  ****************************************************************************/
 
-#ifndef CONFIG_ARCH_PGPOOL_MAPPING
+#if !defined(CONFIG_ARCH_PGPOOL_MAPPING) && defined(CONFIG_ARCH_USE_MMU)
 static inline void arm_tmprestore(uint32_t l1save)
 {
   mmu_l1_restore(ARCH_SCRATCH_VBASE, l1save);
@@ -99,7 +101,7 @@ static inline void arm_tmprestore(uint32_t l1save)
  * Name: arm_pgvaddr
  *
  * Description:
- *   If the page memory pool is staticly mapped, then we do not have to
+ *   If the page memory pool is statically mapped, then we do not have to
  *   go through the the temporary mapping.  We simply have to perform a
  *   physical to virtual memory address mapping.
  *
@@ -115,5 +117,57 @@ static inline uintptr_t arm_pgvaddr(uintptr_t paddr)
 }
 #endif
 
-#endif /* CONFIG_MM_PGALLOC && CONFIG_ARCH_USE_MMU */
-#endif /* __ARCH_ARM_SRC_ARMV7_A_PGINLINE_H */
+/****************************************************************************
+ * Name: arm_uservaddr
+ *
+ * Description:
+ *   Return true if the virtual address, vaddr, lies in the user address
+ *   space.
+ *
+ ****************************************************************************/
+
+static inline bool arm_uservaddr(uintptr_t vaddr)
+{
+  /* Check if this address is within the range of the virtualized .bss/.data,
+   * heap, or stack regions.
+   */
+
+  return ((vaddr >= CONFIG_ARCH_TEXT_VBASE && vaddr < ARCH_TEXT_VEND) ||
+          (vaddr >= CONFIG_ARCH_DATA_VBASE && vaddr < ARCH_DATA_VEND) ||
+          (vaddr >= CONFIG_ARCH_HEAP_VBASE && vaddr < ARCH_HEAP_VEND)
+#ifdef CONFIG_ARCH_STACK_DYNAMIC
+       || (vaddr >= CONFIG_ARCH_STACK_VBASE && vaddr < ARCH_STACK_VEND)
+#endif
+      );
+}
+
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: arm_physpgaddr
+ *
+ * Description:
+ *   Check if the virtual address lies in the user data area and, if so
+ *   get the mapping to the physical address in the page pool.
+ *
+ ****************************************************************************/
+
+uintptr_t arm_physpgaddr(uintptr_t vaddr);
+
+/****************************************************************************
+ * Name: arm_virtpgaddr
+ *
+ * Description:
+ *   Check if the physical address lies in the page pool and, if so
+ *   get the mapping to the virtual address in the user data area.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_ARCH_PGPOOL_MAPPING
+uintptr_t arm_virtpgaddr(uintptr_t paddr);
+#endif
+
+#endif /* CONFIG_MM_PGALLOC */
+#endif /* __ARCH_ARM_SRC_ARMV7_A_PGALLOC_H */

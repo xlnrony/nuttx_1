@@ -1,7 +1,7 @@
 /****************************************************************************
- * examples/null/null_main.c
+ * arch/arm/src/armv6-m/up_signal_dispatch.c
  *
- *   Copyright (C) 2007, 2009, 2011 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2013-2014 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -14,7 +14,7 @@
  *    notice, this list of conditions and the following disclaimer in
  *    the documentation and/or other materials provided with the
  *    distribution.
- * 3. Neither the name Gregory Nutt nor the names of its contributors may be
+ * 3. Neither the name NuttX nor the names of its contributors may be
  *    used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -38,13 +38,16 @@
  ****************************************************************************/
 
 #include <nuttx/config.h>
+#include <nuttx/arch.h>
+
+#include "svcall.h"
+#include "up_internal.h"
+
+#if ((defined(CONFIG_BUILD_PROTECTED) && defined(__KERNEL__)) || \
+      defined(CONFIG_BUILD_KERNEL)) && !defined(CONFIG_DISABLE_SIGNALS)
 
 /****************************************************************************
- * Definitions
- ****************************************************************************/
-
-/****************************************************************************
- * Private Types
+ * Pre-processor Definitions
  ****************************************************************************/
 
 /****************************************************************************
@@ -60,14 +63,41 @@
  ****************************************************************************/
 
 /****************************************************************************
- * Name: null_main
+ * Name: up_signal_dispatch
+ *
+ * Description:
+ *   In this kernel mode build, this function will be called to execute a
+ *   a signal handler in user-space.  When the signal is delivered, a
+ *   kernel-mode stub will first run to perform some housekeeping functions.
+ *   This kernel-mode stub will then be called transfer control to the user
+ *   mode signal handler by calling this function.
+ *
+ *   Normally the a user-mode signalling handling stub will also execute
+ *   before the ultimate signal handler is called.  See
+ *   arch/arm/src/armv[6\7]/up_signal_handler.  This function is the
+ *   user-space, signal handler trampoline function.  It is called from
+ *   up_signal_dispatch() in user-mode.
+ *
+ * Inputs:
+ *   sighand - The address user-space signal handling function
+ *   signo, info, and ucontext - Standard arguments to be passed to the
+ *     signal handling function.
+ *
+ * Return:
+ *   None.  This function does not return in the normal sense.  It returns
+ *   via an architecture specific system call made by up_signal_handler().
+ *   However, this will look like a normal return by the caller of
+ *   up_signal_dispatch.
+ *
  ****************************************************************************/
 
-#ifdef CONFIG_BUILD_KERNEL
-int main(int argc, char *argv[])
-#else
-int null_main(int argc, char *argv[])
-#endif
+void up_signal_dispatch(_sa_sigaction_t sighand, int signo,
+                        FAR siginfo_t *info, FAR void *ucontext)
 {
-  return 0;
+  /* Let sys_call4() do all of the work */
+
+  (void)sys_call4(SYS_signal_handler, (uintptr_t)sighand, (uintptr_t)signo,
+                  (uintptr_t)info, (uintptr_t)ucontext);
 }
+
+#endif /* (CONFIG_BUILD_PROTECTED || CONFIG_BUILD_KERNEL) && !CONFIG_DISABLE_PTHREAD */

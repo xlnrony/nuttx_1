@@ -1,5 +1,5 @@
 /****************************************************************************
- * arch/arm/src/common/up_signal_dispatch.c
+ * arch/arm/src/armv7-a/arm_signal_dispatch.c
  *
  *   Copyright (C) 2013-2014 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -41,6 +41,7 @@
 #include <nuttx/arch.h>
 
 #include "svcall.h"
+#include "pgalloc.h"
 #include "up_internal.h"
 
 #if ((defined(CONFIG_BUILD_PROTECTED) && defined(__KERNEL__)) || \
@@ -94,10 +95,25 @@
 void up_signal_dispatch(_sa_sigaction_t sighand, int signo,
                         FAR siginfo_t *info, FAR void *ucontext)
 {
-  /* Let sys_call4() do all of the work */
+  /* We are signalling a user group, but does the signal handler lie in the
+   * user address space?  Or the kernel address space?  The OS does
+   * intercept some signals for its own purpose (such as the death-of-child
+   * signal.
+   */
 
-  (void)sys_call4(SYS_signal_handler, (uintptr_t)sighand, (uintptr_t)signo,
-                  (uintptr_t)info, (uintptr_t)ucontext);
+  if (arm_uservaddr((uintptr_t)sighand))
+    {
+      /* Yes.. Let sys_call4() do all of the work to get us into user space */
+
+      (void)sys_call4(SYS_signal_handler, (uintptr_t)sighand, (uintptr_t)signo,
+                      (uintptr_t)info, (uintptr_t)ucontext);
+    }
+  else
+    {
+      /* No.. we are already in kernel mode so just call the handler */
+
+      sighand(signo, info, ucontext);
+    }
 }
 
-#endif /* (CONFIG_BUILD_PROTECTED || CONFIG_BUILD_KERNEL) && !CONFIG_DISABLE_PTHREAD */
+#endif /* (CONFIG_BUILD_PROTECTED || CONFIG_BUILD_KERNEL) && !CONFIG_DISABLE_SIGNALS */

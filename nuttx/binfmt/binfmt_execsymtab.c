@@ -1,5 +1,5 @@
 /****************************************************************************
- * libc/unistd/lib_execsymtab.c
+ * binfmt/binfmt_execsymtab.c
  *
  *   Copyright (C) 2013 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>

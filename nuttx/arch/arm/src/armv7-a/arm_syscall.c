@@ -352,7 +352,6 @@ uint32_t *arm_syscall(uint32_t *regs)
       case SYS_signal_handler:
         {
           FAR struct tcb_s *rtcb = sched_self();
-
           /* Remember the caller's return address */
 
           DEBUGASSERT(rtcb->xcp.sigreturn == 0);
@@ -378,7 +377,24 @@ uint32_t *arm_syscall(uint32_t *regs)
            * parameter will reside at an offset of 4 from the stack pointer.
            */
 
-          regs[REG_R3]   = *(uint32_t*)(regs[REG_SP+4]);
+          regs[REG_R3]   = *(uint32_t*)(regs[REG_SP]+4);
+
+#ifdef CONFIG_ARCH_KERNEL_STACK
+          /* If we are signalling a user process, then we must be operating
+           * on the kernel stack now.  We need to switch back to the user
+           * stack before dispatching the signal handler to the user code.
+           * The existence of an allocated kernel stack is sufficient
+           * information to make this decision.
+           */
+
+          if (rtcb->xcp.kstack != NULL)
+            {
+              DEBUGASSERT(rtcb->xcp.kstkptr == NULL && rtcb->xcp.ustkptr != NULL);
+
+              rtcb->xcp.kstkptr = (FAR uint32_t *)regs[REG_SP];
+              regs[REG_SP]      = (uint32_t)rtcb->xcp.ustkptr;
+            }
+#endif
         }
         break;
 #endif
@@ -405,6 +421,22 @@ uint32_t *arm_syscall(uint32_t *regs)
           cpsr                 = regs[REG_CPSR] & ~PSR_MODE_MASK;
           regs[REG_CPSR]       = cpsr | PSR_MODE_SVC;
           rtcb->xcp.sigreturn  = 0;
+
+#ifdef CONFIG_ARCH_KERNEL_STACK
+          /* We must enter here be using the user stack.  We need to switch
+           * to back to the kernel user stack before returning to the kernel
+           * mode signal trampoline.
+           */
+
+          if (rtcb->xcp.kstack != NULL)
+            {
+              DEBUGASSERT(rtcb->xcp.kstkptr != NULL &&
+                          (uint32_t)rtcb->xcp.ustkptr == regs[REG_SP]);
+
+              regs[REG_SP]      = (uint32_t)rtcb->xcp.kstkptr;
+              rtcb->xcp.kstkptr = NULL;
+            }
+#endif
         }
         break;
 #endif
@@ -470,7 +502,7 @@ uint32_t *arm_syscall(uint32_t *regs)
 #if defined(CONFIG_DEBUG_SYSCALL)
   /* Report what happened */
 
-  svcdbg("SYSCALL Exit: regs: %p: %d\n", regs);
+  svcdbg("SYSCALL Exit: regs: %p\n", regs);
   svcdbg("  R0: %08x %08x %08x %08x %08x %08x %08x %08x\n",
          regs[REG_R0],  regs[REG_R1],  regs[REG_R2],  regs[REG_R3],
          regs[REG_R4],  regs[REG_R5],  regs[REG_R6],  regs[REG_R7]);

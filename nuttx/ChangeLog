@@ -8547,3 +8547,34 @@
 	  arch.h, and othr files:  Add the initial implementation of the process
 	  kernel stack logic.  Not yet integrated into the main OS logic nor
 	  tested (2014-9-14).
+	* binfmt/binfmt_execsymtab.c and Makefile, sched/task/task_execv.c,
+	  task_posixspawn.c, and Make.defs, include/unistd.h,
+	  include/nuttx/binfmt/symtab.h, and libc/unistd/Make.defs: execv() is
+	  a basic system interface.  It should not be in libc/ but rather in
+	  sched/task.  Its symboltable helper logic also belongs in the kernel
+	  but belongs in binfmt/ with the other symbol table logic (2014-9-15).
+	* include/sys/syscall.h, syscall/syscall.csv, syscall_lookup.h, and
+	  syscall_stublookup.c:  execl() is not a system interface.  It belongs
+	  in libc and should not have a system call associated with it
+	  (2014-9-15).
+	* arch/arm/include/armv7-a/irq.h and src/armv7-a/arm_syscall.c: If we
+	  are configured to use a kernel stack while in SYSCALL handling, then
+	  we need to switch back to the user stack to deliver a signal (2014-9-15).
+	* arch/arm/src/armv6-m/up_svcall.c, armv7-a/arm_syscall.c, and
+	  armv7-m/up_svcall.c: Fix a typo in system call when fetching parameter
+	  from the stack:  regs[REG_PC]+4 is the address, not regs[REG_PC+4]
+	  (2014-9-15).
+	* sched/sched/sched_releasetcb.c: Don't release user stack in kernel
+	  build.  Already destroyed with all of the address environment
+	  (2014-9-15).
+	* arch/arm/src/armv6-m/up_signal_dispatch.c, src/armv7-a/arm_signal_dispatch.c,
+	  and arch/arm/src/armv7-m/up_signal_dispatch.c:  Move
+	  common/up_signal_dispatch.c to armv6-m, armv7-m, and armv7-a.  The
+	  armv7-a version needs to be different to handle the case where we
+	  are dispatch kernel mode signals when running under a user mode group
+	  (2014-9-16).
+	* arch/arm/src/armv7-a/arm_syscall.c: Correct stack handling is signal
+	  deliver to user processes (2014-9-16).
+	* arch/arm/src/armv7-a/arm_physpgaddr.c, pgalloc.h, sama5/sam_pgalloc.c,
+	  and sam_pgalloc.h: Move some share-able logic from sama5/sam_pgalloc.c
+	  to armv7-a/arm_physpgaddr.c (2014-9-16).

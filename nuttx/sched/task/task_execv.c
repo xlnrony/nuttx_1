@@ -1,5 +1,5 @@
 /****************************************************************************
- * libc/unistd/lib_execv.c
+ * sched/task/lib_execv.c
  *
  *   Copyright (C) 2013 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -45,6 +45,7 @@
 #include <debug.h>
 
 #include <nuttx/binfmt/binfmt.h>
+#include <nuttx/binfmt/symtab.h>
 
 #ifdef CONFIG_LIBC_EXECFUNCS
 
