@@ -154,8 +154,8 @@
  * Note: TIM1,8 are on APB2, others on APB1
  */
 
-#define STM32_TIM18_FREQUENCY   STM32_HCLK_FREQUENCY
-#define STM32_TIM27_FREQUENCY   STM32_HCLK_FREQUENCY
+#define STM32_TIM18_FREQUENCY   (2*STM32_PCLK2_FREQUENCY)
+#define STM32_TIM27_FREQUENCY   (2*STM32_PCLK1_FREQUENCY)
 
 /* SDIO dividers.  Note that slower clocking is required when DMA is disabled
  * in order to avoid RX overrun/TX underrun errors due to delayed responses
@@ -307,7 +307,7 @@
  * configured to output a pulse train using TIM4 CH2 on PD13.
  */
 
-#define GPIO_TIM4_CH2OUT GPIO_TIM4_CH2OUT_2
+//#define GPIO_TIM4_CH2OUT GPIO_TIM4_CH2OUT_2
 
 /* SPI - There is a MEMS device on SPI1 using these pins: */
 
@@ -317,11 +317,13 @@
 
 /* Timer Inputs/Outputs (see the README.txt file for options) */
 
-#define GPIO_TIM2_CH1IN  GPIO_TIM2_CH1IN_2
-#define GPIO_TIM2_CH2IN  GPIO_TIM2_CH2IN_1
+#define GPIO_TIM3_CH1IN  GPIO_TIM3_CH1IN_3
 
-#define GPIO_TIM8_CH1IN  GPIO_TIM8_CH1IN_1
-#define GPIO_TIM8_CH2IN  GPIO_TIM8_CH2IN_1
+//#define GPIO_TIM2_CH1IN  GPIO_TIM2_CH1IN_2
+//#define GPIO_TIM2_CH2IN  GPIO_TIM2_CH2IN_1
+
+//#define GPIO_TIM8_CH1IN  GPIO_TIM8_CH1IN_1
+//#define GPIO_TIM8_CH2IN  GPIO_TIM8_CH2IN_1
 
 /* DMA Channl/Stream Selections *****************************************************/
 /* Stream selections are arbitrary for now but might become important in the future
