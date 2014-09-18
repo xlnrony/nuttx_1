@@ -23,6 +23,7 @@
 #include <queue.h>
 #include <nuttx/binfmt/elf.h>
 #include <netinet/ether.h>
+#include <nuttx/binfmt/symtab.h>
 #include <nuttx/binfmt/binfmt.h>
 #include <fcntl.h>
 #include <errno.h>
@@ -251,9 +252,6 @@ struct symtab_s CONFIG_EXECFUNCS_SYMTAB[] =
 #endif
 #if !defined(CONFIG_BINFMT_DISABLE) && defined(CONFIG_LIBC_EXECFUNCS)
   { "exec_setsymtab", (FAR const void *)exec_setsymtab },
-#endif
-#if !defined(CONFIG_BINFMT_DISABLE) && defined(CONFIG_LIBC_EXECFUNCS)
-  { "execl", (FAR const void *)execl },
 #endif
 #if !defined(CONFIG_BINFMT_DISABLE) && defined(CONFIG_LIBC_EXECFUNCS)
   { "execv", (FAR const void *)execv },
@@ -558,7 +556,7 @@ struct symtab_s CONFIG_EXECFUNCS_SYMTAB[] =
 #if CONFIG_NFILE_DESCRIPTORS > 0 && CONFIG_NFILE_STREAMS > 0
   { "perror", (FAR const void *)perror },
 #endif
-#if defined(CONFIG_ARCH_ADDRENV) && defined(CONFIG_MM_PGALLOC) && defined(CONFIG_ARCH_USE_MMU)
+#if defined(CONFIG_BUILD_KERNEL)
   { "pgalloc", (FAR const void *)pgalloc },
 #endif
 #if CONFIG_NFILE_DESCRIPTORS > 0
@@ -1010,7 +1008,7 @@ struct symtab_s CONFIG_EXECFUNCS_SYMTAB[] =
 #if defined(CONFIG_HAVE_LONG_DOUBLE) && (defined(CONFIG_LIBM) || defined(CONFIG_ARCH_MATH))
   { "tanl", (FAR const void *)tanl },
 #endif
-#if !defined(CONFIG_ARCH_ADDRENV)
+#if !defined(CONFIG_BUILD_KERNEL)
   { "task_create", (FAR const void *)task_create },
 #endif
   { "task_delete", (FAR const void *)task_delete },

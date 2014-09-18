@@ -112,6 +112,7 @@
  * Name: ilock_main
  ****************************************************************************/
 
+#if 0
 int ilock_main(int argc, char *argv[])
 {
 //  pid_t pid;
@@ -181,7 +182,7 @@ int ilock_main(int argc, char *argv[])
         {
           printf("Failed: %d\n", errno);
           fflush(stdout);
-	   return 0;
+	      return 0;
         }
 	  
       printf("Device %s opened\n", CONFIG_EXAMPLES_EPASS3003_DEVNAME);
@@ -219,3 +220,11 @@ errout:
 
   return 0;
 }
+
+#endif
+
+int ilock_main(int argc, char *argv[])
+{
+
+}
+

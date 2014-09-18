@@ -125,6 +125,8 @@ typedef enum
 
 typedef enum
 {
+  STM32_TIM_CH_UNUSED       = -1,
+
   STM32_TIM_CH_DISABLED       = 0x00,
 
   /* Common configuration */
@@ -179,6 +181,9 @@ struct stm32_tim_ops_s
 /* Power-up timer and get its structure */
 
 FAR struct stm32_tim_dev_s *stm32_tim_init(int timer);
+
+FAR struct adc_dev_s *stm32_cap_init(int timer, uint8_t channel);
+
 
 /* Power-down timer, mark it as unused */
 
