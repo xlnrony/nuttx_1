@@ -1,5 +1,5 @@
 /****************************************************************************
- * config/sama5d4-ek/src/sam_nsh.c
+ * arch/arm/src/armv7-a/arm_virtpgaddr.c
  *
  *   Copyright (C) 2014 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -39,12 +39,34 @@
 
 #include <nuttx/config.h>
 
-#include "sama5d4-ek.h"
+#if 0
+#include <sys/types.h>
+#include <assert.h>
+#include <debug.h>
 
-#ifndef CONFIG_BUILD_KERNEL
+#include <nuttx/arch.h>
+#include <nuttx/addrenv.h>
+#include <nuttx/pgalloc.h>
+
+#include "chip.h"
+#include "mmu.h"
+#include "cache.h"
+#endif
+
+#include "pgalloc.h"
+
+#if defined(CONFIG_MM_PGALLOC) && defined(CONFIG_ARCH_PGPOOL_MAPPING)
 
 /****************************************************************************
- * Pre-Processor Definitions
+ * Pre-processor Definitions
+ ****************************************************************************/
+
+ /****************************************************************************
+ * Private Data
+ ****************************************************************************/
+
+/****************************************************************************
+ * Private Functions
  ****************************************************************************/
 
 /****************************************************************************
@@ -52,22 +74,29 @@
  ****************************************************************************/
 
 /****************************************************************************
- * Name: nsh_archinitialize
+ * Name: arm_virtpgaddr
  *
  * Description:
- *   Perform architecture specific initialization
+ *   Check if the physical address lies in the page pool and, if so
+ *   get the mapping to the virtual address in the user data area.
  *
  ****************************************************************************/
 
-int nsh_archinitialize(void)
+uintptr_t arm_virtpgaddr(uintptr_t paddr)
 {
-#ifndef CONFIG_BOARD_INITIALIZE
-  /* Perform board initialization */
+  /* REVISIT: Not implemented correctly.  The reverse lookup from physical
+   * to virtual.  This will return a kernel accessible virtual address, but
+   * not an address usable by the user code.
+   *
+   * The correct solutions is complex and, perhaps, will never be needed.
+   */
 
-  return sam_bringup();
-#else
-  return OK;
-#endif
+  if (paddr >= CONFIG_ARCH_PGPOOL_PBASE && paddr < CONFIG_ARCH_PGPOOL_PEND)
+    {
+      return paddr - CONFIG_ARCH_PGPOOL_PBASE + CONFIG_ARCH_PGPOOL_VBASE;
+    }
+
+  return 0;
 }
 
-#endif /* CONFIG_BUILD_KERNEL */
+#endif /* CONFIG_MM_PGALLOC && CONFIG_ARCH_PGPOOL_MAPPING*/
