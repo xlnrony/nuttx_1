@@ -73,6 +73,10 @@ ifeq ($(CONFIG_STM32_TIM3),y)
 CSRCS += stm32_tim.c
 endif
 
+ifeq ($(CONFIG_ADC),y)
+CSRCS += stm32_adc.c
+endif
+
 COBJS = $(CSRCS:.c=$(OBJEXT))
 
 SRCS = $(ASRCS) $(CSRCS)

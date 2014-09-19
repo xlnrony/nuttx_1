@@ -23,16 +23,4 @@ config EXAMPLES_ILOCK_STACKSIZE
 	---help---
 		Stacksize of "waiter" thread. Default 1024
 
-config EXAMPLES_EPASS3003_DEVNAME
-	string "Epass3003 Device Name"
-	default "/dev/epass3003a"
-	---help---
-		Name of epass3003 device to be used. Default: "/dev/epass3003a"
-		
-config EXAMPLES_TIM_DEVNAME
-	string "Tim 3 in 0 Device Name"
-	default "/dev/tim3in0"
-	---help---
-		Name of epass3003 device to be used. Default: "/dev/tim3in0"		
-
 endif

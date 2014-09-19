@@ -194,67 +194,214 @@ static const struct adc_ops_s g_adcops =
 /* ADC1 state */
 
 #ifdef CONFIG_STM32_ADC1
-static struct stm32_dev_s g_adcpriv1 =
+static struct stm32_dev_s g_adcpriv1[16] =
 {
+  {
 #ifdef CONFIG_STM32_STM32F10XX
-  .irq         = STM32_IRQ_ADC12,
-  .isr         = adc12_interrupt,
+    .irq         = STM32_IRQ_ADC12,
+    .isr         = adc12_interrupt,
 #else
-  .irq         = STM32_IRQ_ADC,
-  .isr         = adc123_interrupt,
+    .irq         = STM32_IRQ_ADC,
+    .isr         = adc123_interrupt,
 #endif
-  .intf        = 1,
-  .base        = STM32_ADC1_BASE,
+    .intf        = 000,
+    .base        = STM32_ADC1_BASE,
 #ifdef ADC1_HAVE_TIMER
-  .trigger     = CONFIG_STM32_ADC1_TIMTRIG,
-  .tbase       = ADC1_TIMER_BASE,
-  .extsel      = ADC1_EXTSEL_VALUE,
-  .pclck       = ADC1_TIMER_PCLK_FREQUENCY,
-  .freq        = CONFIG_STM32_ADC1_SAMPLE_FREQUENCY,
+    .trigger     = CONFIG_STM32_ADC1_TIMTRIG,
+    .tbase       = ADC1_TIMER_BASE,
+    .extsel      = ADC1_EXTSEL_VALUE,
+    .pclck       = ADC1_TIMER_PCLK_FREQUENCY,
+    .freq        = CONFIG_STM32_ADC1_SAMPLE_FREQUENCY,
 #endif
+  },
+  {
+#ifdef CONFIG_STM32_STM32F10XX
+    .irq         = STM32_IRQ_ADC12,
+    .isr         = adc12_interrupt,
+#else
+    .irq         = STM32_IRQ_ADC,
+    .isr         = adc123_interrupt,
+#endif
+    .intf        = 001,
+    .base        = STM32_ADC1_BASE,
+#ifdef ADC1_HAVE_TIMER
+    .trigger     = CONFIG_STM32_ADC1_TIMTRIG,
+    .tbase       = ADC1_TIMER_BASE,
+    .extsel      = ADC1_EXTSEL_VALUE,
+    .pclck       = ADC1_TIMER_PCLK_FREQUENCY,
+    .freq        = CONFIG_STM32_ADC1_SAMPLE_FREQUENCY,
+#endif
+  },
+  
 };
 
-static struct adc_dev_s g_adcdev1 =
+static struct adc_dev_s g_adcdev1[16] =
 {
-  .ad_ops = &g_adcops,
-  .ad_priv= &g_adcpriv1,
+  {
+    .ad_ops = &g_adcops,
+    .ad_priv= &g_adcpriv1[0],
+  },
+  {
+    .ad_ops = &g_adcops,
+    .ad_priv= &g_adcpriv1[1],
+  },
+  {
+    .ad_ops = &g_adcops,
+    .ad_priv= &g_adcpriv1[2],
+  },
+  {
+    .ad_ops = &g_adcops,
+    .ad_priv= &g_adcpriv1[3],
+  },
+  {
+    .ad_ops = &g_adcops,
+    .ad_priv= &g_adcpriv1[4],
+  },
+  {
+    .ad_ops = &g_adcops,
+    .ad_priv= &g_adcpriv1[5],
+  },
+  {
+    .ad_ops = &g_adcops,
+    .ad_priv= &g_adcpriv1[6],
+  },
+  {
+    .ad_ops = &g_adcops,
+    .ad_priv= &g_adcpriv1[7],
+  },
+  {
+    .ad_ops = &g_adcops,
+    .ad_priv= &g_adcpriv1[8],
+  },
+  {
+    .ad_ops = &g_adcops,
+    .ad_priv= &g_adcpriv1[9],
+  },
+  {
+    .ad_ops = &g_adcops,
+    .ad_priv= &g_adcpriv1[10],
+  },
+  {
+    .ad_ops = &g_adcops,
+    .ad_priv= &g_adcpriv1[11],
+  },
+  {
+    .ad_ops = &g_adcops,
+    .ad_priv= &g_adcpriv1[12],
+  },
+  {
+    .ad_ops = &g_adcops,
+    .ad_priv= &g_adcpriv1[13],
+  },
+  {
+    .ad_ops = &g_adcops,
+    .ad_priv= &g_adcpriv1[14],
+  },
+  {
+    .ad_ops = &g_adcops,
+    .ad_priv= &g_adcpriv1[15],
+  }
 };
 #endif
 
 /* ADC2 state */
 
 #ifdef CONFIG_STM32_ADC2
-static struct stm32_dev_s g_adcpriv2 =
+static struct stm32_dev_s g_adcpriv2[16] =
 {
+  {
 #ifdef CONFIG_STM32_STM32F10XX
-  .irq         = STM32_IRQ_ADC12,
-  .isr         = adc12_interrupt,
+    .irq         = STM32_IRQ_ADC12,
+    .isr         = adc12_interrupt,
 #else
-  .irq         = STM32_IRQ_ADC,
-  .isr         = adc123_interrupt,
+    .irq         = STM32_IRQ_ADC,
+    .isr         = adc123_interrupt,
 #endif
-  .intf        = 2,
-  .base        = STM32_ADC2_BASE,
+    .intf        = 2,
+    .base        = STM32_ADC2_BASE,
 #ifdef ADC2_HAVE_TIMER
-  .trigger     = CONFIG_STM32_ADC2_TIMTRIG,
-  .tbase       = ADC2_TIMER_BASE,
-  .extsel      = ADC2_EXTSEL_VALUE,
-  .pclck       = ADC2_TIMER_PCLK_FREQUENCY,
-  .freq        = CONFIG_STM32_ADC2_SAMPLE_FREQUENCY,
+    .trigger     = CONFIG_STM32_ADC2_TIMTRIG,
+    .tbase       = ADC2_TIMER_BASE,
+    .extsel      = ADC2_EXTSEL_VALUE,
+    .pclck       = ADC2_TIMER_PCLK_FREQUENCY,
+    .freq        = CONFIG_STM32_ADC2_SAMPLE_FREQUENCY,
 #endif
+  }
 };
 
-static struct adc_dev_s g_adcdev2 =
+static struct adc_dev_s g_adcdev2[16] =
 {
-  .ad_ops = &g_adcops,
-  .ad_priv= &g_adcpriv2,
+  {
+    .ad_ops = &g_adcops,
+    .ad_priv= &g_adcpriv2[0],
+  },
+  {
+    .ad_ops = &g_adcops,
+    .ad_priv= &g_adcpriv2[1],
+  },
+  {
+    .ad_ops = &g_adcops,
+    .ad_priv= &g_adcpriv2[2],
+  },
+  {
+    .ad_ops = &g_adcops,
+    .ad_priv= &g_adcpriv2[3],
+  },
+  {
+    .ad_ops = &g_adcops,
+    .ad_priv= &g_adcpriv2[4],
+  },
+  {
+    .ad_ops = &g_adcops,
+    .ad_priv= &g_adcpriv2[5],
+  },
+  {
+    .ad_ops = &g_adcops,
+    .ad_priv= &g_adcpriv2[6],
+  },
+  {
+    .ad_ops = &g_adcops,
+    .ad_priv= &g_adcpriv2[7],
+  },
+  {
+    .ad_ops = &g_adcops,
+    .ad_priv= &g_adcpriv2[8],
+  },
+  {
+    .ad_ops = &g_adcops,
+    .ad_priv= &g_adcpriv2[9],
+  },
+  {
+    .ad_ops = &g_adcops,
+    .ad_priv= &g_adcpriv2[10],
+  },
+  {
+    .ad_ops = &g_adcops,
+    .ad_priv= &g_adcpriv2[11],
+  },
+  {
+    .ad_ops = &g_adcops,
+    .ad_priv= &g_adcpriv2[12],
+  },
+  {
+    .ad_ops = &g_adcops,
+    .ad_priv= &g_adcpriv2[13],
+  },
+  {
+    .ad_ops = &g_adcops,
+    .ad_priv= &g_adcpriv2[14],
+  },
+  {
+    .ad_ops = &g_adcops,
+    .ad_priv= &g_adcpriv2[15],
+  }
 };
 #endif
 
 /* ADC3 state */
 
 #ifdef CONFIG_STM32_ADC3
-static struct stm32_dev_s g_adcpriv3 =
+static struct stm32_dev_s g_adcpriv3[16] =
 {
 #ifdef CONFIG_STM32_STM32F10XX
   .irq         = STM32_IRQ_ADC3,
@@ -274,10 +421,72 @@ static struct stm32_dev_s g_adcpriv3 =
 #endif
 };
 
-static struct adc_dev_s g_adcdev3 =
+static struct adc_dev_s g_adcdev3[16] =
 {
-  .ad_ops = &g_adcops,
-  .ad_priv= &g_adcpriv3,
+  {
+    .ad_ops = &g_adcops,
+    .ad_priv= &g_adcpriv3[0],
+  },
+  {
+    .ad_ops = &g_adcops,
+    .ad_priv= &g_adcpriv3[1],
+  },
+  {
+    .ad_ops = &g_adcops,
+    .ad_priv= &g_adcpriv3[2],
+  },
+  {
+    .ad_ops = &g_adcops,
+    .ad_priv= &g_adcpriv3[3],
+  },
+  {
+    .ad_ops = &g_adcops,
+    .ad_priv= &g_adcpriv3[4],
+  },
+  {
+    .ad_ops = &g_adcops,
+    .ad_priv= &g_adcpriv3[5],
+  },
+  {
+    .ad_ops = &g_adcops,
+    .ad_priv= &g_adcpriv3[6],
+  },
+  {
+    .ad_ops = &g_adcops,
+    .ad_priv= &g_adcpriv3[7],
+  },
+  {
+    .ad_ops = &g_adcops,
+    .ad_priv= &g_adcpriv3[8],
+  },
+  {
+    .ad_ops = &g_adcops,
+    .ad_priv= &g_adcpriv3[9],
+  },
+  {
+    .ad_ops = &g_adcops,
+    .ad_priv= &g_adcpriv3[10],
+  },
+  {
+    .ad_ops = &g_adcops,
+    .ad_priv= &g_adcpriv3[11],
+  },
+  {
+    .ad_ops = &g_adcops,
+    .ad_priv= &g_adcpriv3[12],
+  },
+  {
+    .ad_ops = &g_adcops,
+    .ad_priv= &g_adcpriv3[13],
+  },
+  {
+    .ad_ops = &g_adcops,
+    .ad_priv= &g_adcpriv3[14],
+  },
+  {
+    .ad_ops = &g_adcops,
+    .ad_priv= &g_adcpriv3[15],
+  }
 };
 #endif
 
@@ -1515,7 +1724,7 @@ struct adc_dev_s *stm32_adcinitialize(int intf, const uint8_t *chanlist, int nch
   if (intf == 1)
     {
       avdbg("ADC1 Selected\n");
-      dev = &g_adcdev1;
+      dev = &g_adcdev1[0];
     }
   else
 #endif

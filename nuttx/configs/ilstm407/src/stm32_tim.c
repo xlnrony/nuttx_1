@@ -84,7 +84,6 @@ int tim_devinit(void)
   static bool initialized = false;
   struct adc_dev_s *tim;
   int ret;
-  int i;
 
   /* Check if we have already initialized */
 
@@ -101,7 +100,7 @@ int tim_devinit(void)
 
       /* Register the ADC driver at "/dev/tim3in0" */
 
-      ret = adc_register(CONFIG_EXAMPLES_TIM_DEVNAME, tim);
+      ret = adc_register(CONFIG_TIM_DEVNAME, tim);
       if (ret < 0)
         {
           adbg("adc_register failed: %d\n", ret);

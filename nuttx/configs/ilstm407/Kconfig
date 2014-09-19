@@ -3,55 +3,36 @@
 # see misc/tools/kconfig-language.txt.
 #
 
-if ARCH_BOARD_STM32F4_DISCOVERY
+if ARCH_BOARD_ILOCK_STM32F407
 
-config PM_BUTTONS
-	bool "PM Button support"
-	default n
-	depends on PM && ARCH_IRQBUTTONS
+config EPASS3003_DEVNAME
+	string "Epass3003 Device Name"
+	default "/dev/epass3003a"
 	---help---
-		Enable PM button EXTI interrupts to support PM testing
-
-config PM_BUTTON_ACTIVITY
-	int "Button PM activity weight"
-	default 10
-	depends on PM_BUTTONS
+		Name of epass3003 device to be used. Default: "/dev/epass3003a"
+		
+config TIM_DEVNAME
+	string "MAGNET LX TIM3IN1 Device Name"
+	default "/dev/tim0"
 	---help---
-		The activity weight to report to the power management subsystem when a button is pressed.
+		Name of tim device to be used. Default: "/dev/tim0"		
 
-config PM_ALARM_SEC
-	int "PM_STANDBY delay (seconds)"
-	default 15
-	depends on PM && RTC_ALARM
+config ADC0_DEVNAME
+	string "SHOCK RESISTOR SENSOR ADC Device Name"
+	default "/dev/adc0"
 	---help---
-		Number of seconds to wait in PM_STANDBY before going to PM_STANDBY mode.
+		Name of adc device to be used. Default: "/dev/adc0"		
 
-config PM_ALARM_NSEC
-	int "PM_STANDBY delay (nanoseconds)"
-	default 0
-	depends on PM && RTC_ALARM
+config ADC1_DEVNAME
+	string "PHOTO RESISTOR SENSOR ADC Device Name"
+	default "/dev/adc1"
 	---help---
-		Number of additional nanoseconds to wait in PM_STANDBY before going to PM_STANDBY mode.
+		Name of adc device to be used. Default: "/dev/adc1"		
 
-config PM_SLEEP_WAKEUP
-	bool "PM_SLEEP wake-up alarm"
-	default n
-	depends on PM && RTC_ALARM
+config ADC2_DEVNAME
+	string "INFRA-RED SENSOR ADC Device Name"
+	default "/dev/adc2"
 	---help---
-		Wake-up of PM_SLEEP mode after a delay and resume normal operation.
-
-config PM_SLEEP_WAKEUP_SEC
-	int "PM_SLEEP delay (seconds)"
-	default 10
-	depends on PM && RTC_ALARM
-	---help---
-		Number of seconds to wait in PM_SLEEP before going to PM_STANDBY mode.
-
-config PM_SLEEP_WAKEUP_NSEC
-	int "PM_SLEEP delay (nanoseconds)"
-	default 0
-	depends on PM && RTC_ALARM
-	---help---
-		Number of additional nanoseconds to wait in PM_SLEEP before going to PM_STANDBY mode.
-
+		Name of adc device to be used. Default: "/dev/adc2"		
+		
 endif

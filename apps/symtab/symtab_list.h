@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <sys/socket.h>
 #include <nuttx/math.h>
+#include <nuttx/analog/adc.h>
 #include <stdio.h>
 #include <fixedmath.h>
 #include <libgen.h>
@@ -81,6 +82,9 @@ struct symtab_s CONFIG_EXECFUNCS_SYMTAB[] =
 #endif
 #if defined(CONFIG_HAVE_LONG_DOUBLE) && (defined(CONFIG_LIBM) || defined(CONFIG_ARCH_MATH))
   { "acosl", (FAR const void *)acosl },
+#endif
+#if defined(CONFIG_ADC)
+  { "adc_devinit", (FAR const void *)adc_devinit },
 #endif
 #if defined(CONFIG_HAVE_DOUBLE) && (defined(CONFIG_LIBM) || defined(CONFIG_ARCH_MATH))
   { "asin", (FAR const void *)asin },
