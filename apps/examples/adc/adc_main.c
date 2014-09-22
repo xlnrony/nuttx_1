@@ -122,6 +122,8 @@ static void adc_help(FAR struct adc_state_s *adc)
          CONFIG_EXAMPLES_ADC_DEVPATH, g_adcstate.devpath ? g_adcstate.devpath : "NONE");
   message("  [-n count] selects the samples to collect.  "
          "Default: 1 Current: %d\n", adc->count);
+  message("  [-c count] selects the channel to collect.  "
+         "Default: 4 Current: %d\n", adc->channel);	
   message("  [-h] shows this message and exits\n");
 }
 #endif
@@ -188,6 +190,18 @@ static void parse_args(FAR struct adc_state_s *adc, int argc, FAR char **argv)
 
       switch (ptr[1])
         {
+          case 'c':
+            nargs = arg_decimal(&argv[index], &value);
+            if (value < 0)
+              {
+                message("Count must be non-negative: %ld\n", value);
+                exit(1);
+              }
+
+            adc->channel = (uint32_t)value;
+            index += nargs;
+            break;
+        
           case 'n':
             nargs = arg_decimal(&argv[index], &value);
             if (value < 0)
@@ -267,6 +281,8 @@ int adc_main(int argc, char *argv[])
 #else
       g_adcstate.count = 1;
 #endif
+      g_adcstate.channel = 4;
+
       g_adcstate.initialized = true;
     }
 
@@ -318,7 +334,7 @@ int adc_main(int argc, char *argv[])
 #ifdef CONFIG_EXAMPLES_ADC_SWTRIG
     /* Issue the software trigger to start ADC conversion */
 
-    ret = ioctl(fd, ANIOC_TRIGGER, 0);
+    ret = ioctl(fd, ANIOC_TRIGGER, g_adcstate.channel);
     if (ret < 0)
       {
         int errcode = errno;

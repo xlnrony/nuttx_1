@@ -78,30 +78,9 @@
 #  warning "Channel information only available for ADC1"
 #endif
 
-/* The number of ADC channels in the conversion list */
-
-#define ADC1_NCHANNELS 1
-
 /************************************************************************************
  * Private Data
  ************************************************************************************/
-/* The STM3240G-EVAL has a 10 Kohm potentiometer RV1 connected to PF9 of
- * STM32F407IGH6 on the board: TIM14_CH1/FSMC_CD/ADC3_IN7
- */
-
-/* Identifying number of each ADC channel: Variable Resistor. */
-
-#ifdef CONFIG_STM32_ADC1
-//shock resistor sensor
-static const uint8_t  adc1_in4_chanlist[ADC1_NCHANNELS] = {4};
-static const uint32_t adc1_in4_pinlist[ADC1_NCHANNELS]  = {GPIO_ADC1_IN4};
-//photo resistor sensor
-static const uint8_t  adc1_in5_chanlist[ADC1_NCHANNELS] = {5};
-static const uint32_t adc1_in5_pinlist[ADC1_NCHANNELS]  = {GPIO_ADC1_IN5};
-//infra-red sensor
-static const uint8_t  adc1_in6_chanlist[ADC1_NCHANNELS] = {6};
-static const uint32_t adc1_in6_pinlist[ADC1_NCHANNELS]  = {GPIO_ADC1_IN6};
-#endif
 
 /************************************************************************************
  * Private Functions
@@ -132,69 +111,51 @@ int adc_devinit(void)
 
   if (!initialized)
     {
-//////////////////////////////////////////////////////////////////////////////////////////////////    
-      /* Configure the pins as analog inputs for the selected channels */
-
-      for (i = 0; i < ADC1_NCHANNELS; i++)
-        {
-          stm32_configgpio(adc1_in4_pinlist[i]);
-        }
-
-      /* Call stm32_adcinitialize() to get an instance of the ADC interface */
-
-      adc = stm32_adcinitialize(1, adc1_in4_chanlist, ADC1_NCHANNELS);
-      if (adc == NULL)
-        {
-          adbg("ERROR: Failed to get ADC interface\n");
-          return -ENODEV;
-        }
-
-      /* Register the ADC driver at "/dev/adc0" */
-
-      ret = adc_register(CONFIG_ADC0_DEVNAME, adc);
-      if (ret < 0)
-        {
-          adbg("adc_register failed: %d\n", ret);
-          return ret;
-        }
-			
 //////////////////////////////////////////////////////////////////////////////////////////////////
-	/* Configure the pins as analog inputs for the selected channels */
-
-      for (i = 0; i < ADC1_NCHANNELS; i++)
-        {
-          stm32_configgpio(adc1_in5_pinlist[i]);
-        }
-
+#ifdef CONFIG_STM32_ADC1
       /* Call stm32_adcinitialize() to get an instance of the ADC interface */
 
-      adc = stm32_adcinitialize(1, adc1_in5_chanlist, ADC1_NCHANNELS);
+      adc = stm32_adcinitialize(1);
       if (adc == NULL)
         {
           adbg("ERROR: Failed to get ADC interface\n");
           return -ENODEV;
         }
 
-      /* Register the ADC driver at "/dev/adc0" */
+      /* Register the ADC driver at "/dev/adc1" */
 
       ret = adc_register(CONFIG_ADC1_DEVNAME, adc);
       if (ret < 0)
         {
           adbg("adc_register failed: %d\n", ret);
           return ret;
-        }
-			
+        }			
+#endif			
 //////////////////////////////////////////////////////////////////////////////////////////////////
-	/* Configure the pins as analog inputs for the selected channels */
-
-      for (i = 0; i < ADC1_NCHANNELS; i++)
-        {
-          stm32_configgpio(adc1_in6_pinlist[i]);
-        }
-
+#ifdef CONFIG_STM32_ADC2
       /* Call stm32_adcinitialize() to get an instance of the ADC interface */
 
-      adc = stm32_adcinitialize(1, adc1_in6_chanlist, ADC1_NCHANNELS);
+      adc = stm32_adcinitialize(1);
+      if (adc == NULL)
+        {
+          adbg("ERROR: Failed to get ADC interface\n");
+          return -ENODEV;
+        }
+
+      /* Register the ADC driver at "/dev/adc2" */
+
+      ret = adc_register(CONFIG_ADC2_DEVNAME, adc);
+      if (ret < 0)
+        {
+          adbg("adc_register failed: %d\n", ret);
+          return ret;
+        }			
+#endif			
+//////////////////////////////////////////////////////////////////////////////////////////////////
+#ifdef CONFIG_STM32_ADC3
+      /* Call stm32_adcinitialize() to get an instance of the ADC interface */
+
+      adc = stm32_adcinitialize(3);
       if (adc == NULL)
         {
           adbg("ERROR: Failed to get ADC interface\n");
@@ -203,12 +164,13 @@ int adc_devinit(void)
 
       /* Register the ADC driver at "/dev/adc0" */
 
-      ret = adc_register(CONFIG_ADC2_DEVNAME, adc);
+      ret = adc_register(CONFIG_ADC3_DEVNAME, adc);
       if (ret < 0)
         {
           adbg("adc_register failed: %d\n", ret);
           return ret;
         }
+#endif			
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
       /* Now we are initialized */

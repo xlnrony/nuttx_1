@@ -13,25 +13,25 @@ config EPASS3003_DEVNAME
 		
 config TIM_DEVNAME
 	string "MAGNET LX TIM3IN1 Device Name"
-	default "/dev/tim0"
+	default "/dev/tim3in1"
 	---help---
 		Name of tim device to be used. Default: "/dev/tim0"		
 
-config ADC0_DEVNAME
+config ADC1_DEVNAME
 	string "SHOCK RESISTOR SENSOR ADC Device Name"
-	default "/dev/adc0"
+	default "/dev/adc1"
 	---help---
 		Name of adc device to be used. Default: "/dev/adc0"		
 
-config ADC1_DEVNAME
+config ADC2_DEVNAME
 	string "PHOTO RESISTOR SENSOR ADC Device Name"
-	default "/dev/adc1"
+	default "/dev/adc2"
 	---help---
 		Name of adc device to be used. Default: "/dev/adc1"		
 
-config ADC2_DEVNAME
+config ADC3_DEVNAME
 	string "INFRA-RED SENSOR ADC Device Name"
-	default "/dev/adc2"
+	default "/dev/adc3"
 	---help---
 		Name of adc device to be used. Default: "/dev/adc2"		
 		

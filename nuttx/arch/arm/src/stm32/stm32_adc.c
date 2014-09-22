@@ -127,6 +127,7 @@ struct stm32_dev_s
   uint32_t pclck;     /* The PCLK frequency that drives this timer */
   uint32_t freq;      /* The desired frequency of conversions */
 #endif
+  uint32_t pinlist[16];
   uint8_t  chanlist[ADC_MAX_SAMPLES];
 };
 
@@ -194,214 +195,75 @@ static const struct adc_ops_s g_adcops =
 /* ADC1 state */
 
 #ifdef CONFIG_STM32_ADC1
-static struct stm32_dev_s g_adcpriv1[16] =
+static struct stm32_dev_s g_adcpriv1 =
 {
-  {
 #ifdef CONFIG_STM32_STM32F10XX
-    .irq         = STM32_IRQ_ADC12,
-    .isr         = adc12_interrupt,
+  .irq         = STM32_IRQ_ADC12,
+  .isr         = adc12_interrupt,
 #else
-    .irq         = STM32_IRQ_ADC,
-    .isr         = adc123_interrupt,
+  .irq         = STM32_IRQ_ADC,
+  .isr         = adc123_interrupt,
 #endif
-    .intf        = 000,
-    .base        = STM32_ADC1_BASE,
+  .intf        = 1,
+  .base        = STM32_ADC1_BASE,
 #ifdef ADC1_HAVE_TIMER
-    .trigger     = CONFIG_STM32_ADC1_TIMTRIG,
-    .tbase       = ADC1_TIMER_BASE,
-    .extsel      = ADC1_EXTSEL_VALUE,
-    .pclck       = ADC1_TIMER_PCLK_FREQUENCY,
-    .freq        = CONFIG_STM32_ADC1_SAMPLE_FREQUENCY,
+  .trigger     = CONFIG_STM32_ADC1_TIMTRIG,
+  .tbase       = ADC1_TIMER_BASE,
+  .extsel      = ADC1_EXTSEL_VALUE,
+  .pclck       = ADC1_TIMER_PCLK_FREQUENCY,
+  .freq        = CONFIG_STM32_ADC1_SAMPLE_FREQUENCY,
 #endif
-  },
-  {
-#ifdef CONFIG_STM32_STM32F10XX
-    .irq         = STM32_IRQ_ADC12,
-    .isr         = adc12_interrupt,
-#else
-    .irq         = STM32_IRQ_ADC,
-    .isr         = adc123_interrupt,
-#endif
-    .intf        = 001,
-    .base        = STM32_ADC1_BASE,
-#ifdef ADC1_HAVE_TIMER
-    .trigger     = CONFIG_STM32_ADC1_TIMTRIG,
-    .tbase       = ADC1_TIMER_BASE,
-    .extsel      = ADC1_EXTSEL_VALUE,
-    .pclck       = ADC1_TIMER_PCLK_FREQUENCY,
-    .freq        = CONFIG_STM32_ADC1_SAMPLE_FREQUENCY,
-#endif
-  },
-  
+  .pinlist	= {GPIO_ADC1_IN0, GPIO_ADC1_IN1, GPIO_ADC1_IN2, GPIO_ADC1_IN3,
+					 GPIO_ADC1_IN4, GPIO_ADC1_IN5, GPIO_ADC1_IN6, GPIO_ADC1_IN7,
+					 GPIO_ADC1_IN8, GPIO_ADC1_IN9, GPIO_ADC1_IN10, GPIO_ADC1_IN11,
+					 GPIO_ADC1_IN12, GPIO_ADC1_IN13, GPIO_ADC1_IN14, GPIO_ADC1_IN15}
 };
 
-static struct adc_dev_s g_adcdev1[16] =
+static struct adc_dev_s g_adcdev1 =
 {
-  {
-    .ad_ops = &g_adcops,
-    .ad_priv= &g_adcpriv1[0],
-  },
-  {
-    .ad_ops = &g_adcops,
-    .ad_priv= &g_adcpriv1[1],
-  },
-  {
-    .ad_ops = &g_adcops,
-    .ad_priv= &g_adcpriv1[2],
-  },
-  {
-    .ad_ops = &g_adcops,
-    .ad_priv= &g_adcpriv1[3],
-  },
-  {
-    .ad_ops = &g_adcops,
-    .ad_priv= &g_adcpriv1[4],
-  },
-  {
-    .ad_ops = &g_adcops,
-    .ad_priv= &g_adcpriv1[5],
-  },
-  {
-    .ad_ops = &g_adcops,
-    .ad_priv= &g_adcpriv1[6],
-  },
-  {
-    .ad_ops = &g_adcops,
-    .ad_priv= &g_adcpriv1[7],
-  },
-  {
-    .ad_ops = &g_adcops,
-    .ad_priv= &g_adcpriv1[8],
-  },
-  {
-    .ad_ops = &g_adcops,
-    .ad_priv= &g_adcpriv1[9],
-  },
-  {
-    .ad_ops = &g_adcops,
-    .ad_priv= &g_adcpriv1[10],
-  },
-  {
-    .ad_ops = &g_adcops,
-    .ad_priv= &g_adcpriv1[11],
-  },
-  {
-    .ad_ops = &g_adcops,
-    .ad_priv= &g_adcpriv1[12],
-  },
-  {
-    .ad_ops = &g_adcops,
-    .ad_priv= &g_adcpriv1[13],
-  },
-  {
-    .ad_ops = &g_adcops,
-    .ad_priv= &g_adcpriv1[14],
-  },
-  {
-    .ad_ops = &g_adcops,
-    .ad_priv= &g_adcpriv1[15],
-  }
+  .ad_ops = &g_adcops,
+  .ad_priv= &g_adcpriv1,
 };
 #endif
 
 /* ADC2 state */
 
 #ifdef CONFIG_STM32_ADC2
-static struct stm32_dev_s g_adcpriv2[16] =
+static struct stm32_dev_s g_adcpriv2 =
 {
-  {
 #ifdef CONFIG_STM32_STM32F10XX
-    .irq         = STM32_IRQ_ADC12,
-    .isr         = adc12_interrupt,
+  .irq         = STM32_IRQ_ADC12,
+  .isr         = adc12_interrupt,
 #else
-    .irq         = STM32_IRQ_ADC,
-    .isr         = adc123_interrupt,
+  .irq         = STM32_IRQ_ADC,
+  .isr         = adc123_interrupt,
 #endif
-    .intf        = 2,
-    .base        = STM32_ADC2_BASE,
+  .intf        = 2,
+  .base        = STM32_ADC2_BASE,
 #ifdef ADC2_HAVE_TIMER
-    .trigger     = CONFIG_STM32_ADC2_TIMTRIG,
-    .tbase       = ADC2_TIMER_BASE,
-    .extsel      = ADC2_EXTSEL_VALUE,
-    .pclck       = ADC2_TIMER_PCLK_FREQUENCY,
-    .freq        = CONFIG_STM32_ADC2_SAMPLE_FREQUENCY,
+  .trigger     = CONFIG_STM32_ADC2_TIMTRIG,
+  .tbase       = ADC2_TIMER_BASE,
+  .extsel      = ADC2_EXTSEL_VALUE,
+  .pclck       = ADC2_TIMER_PCLK_FREQUENCY,
+  .freq        = CONFIG_STM32_ADC2_SAMPLE_FREQUENCY,
 #endif
-  }
+  .pinlist	= {GPIO_ADC2_IN0, GPIO_ADC2_IN1, GPIO_ADC2_IN2, GPIO_ADC2_IN3,
+					 GPIO_ADC2_IN4, GPIO_ADC2_IN5, GPIO_ADC2_IN6, GPIO_ADC2_IN7,
+					 GPIO_ADC2_IN8, GPIO_ADC2_IN9, GPIO_ADC2_IN10, GPIO_ADC2_IN11,
+					 GPIO_ADC2_IN12, GPIO_ADC2_IN13, GPIO_ADC2_IN14, GPIO_ADC2_IN15}
 };
 
-static struct adc_dev_s g_adcdev2[16] =
+static struct adc_dev_s g_adcdev2 =
 {
-  {
-    .ad_ops = &g_adcops,
-    .ad_priv= &g_adcpriv2[0],
-  },
-  {
-    .ad_ops = &g_adcops,
-    .ad_priv= &g_adcpriv2[1],
-  },
-  {
-    .ad_ops = &g_adcops,
-    .ad_priv= &g_adcpriv2[2],
-  },
-  {
-    .ad_ops = &g_adcops,
-    .ad_priv= &g_adcpriv2[3],
-  },
-  {
-    .ad_ops = &g_adcops,
-    .ad_priv= &g_adcpriv2[4],
-  },
-  {
-    .ad_ops = &g_adcops,
-    .ad_priv= &g_adcpriv2[5],
-  },
-  {
-    .ad_ops = &g_adcops,
-    .ad_priv= &g_adcpriv2[6],
-  },
-  {
-    .ad_ops = &g_adcops,
-    .ad_priv= &g_adcpriv2[7],
-  },
-  {
-    .ad_ops = &g_adcops,
-    .ad_priv= &g_adcpriv2[8],
-  },
-  {
-    .ad_ops = &g_adcops,
-    .ad_priv= &g_adcpriv2[9],
-  },
-  {
-    .ad_ops = &g_adcops,
-    .ad_priv= &g_adcpriv2[10],
-  },
-  {
-    .ad_ops = &g_adcops,
-    .ad_priv= &g_adcpriv2[11],
-  },
-  {
-    .ad_ops = &g_adcops,
-    .ad_priv= &g_adcpriv2[12],
-  },
-  {
-    .ad_ops = &g_adcops,
-    .ad_priv= &g_adcpriv2[13],
-  },
-  {
-    .ad_ops = &g_adcops,
-    .ad_priv= &g_adcpriv2[14],
-  },
-  {
-    .ad_ops = &g_adcops,
-    .ad_priv= &g_adcpriv2[15],
-  }
+  .ad_ops = &g_adcops,
+  .ad_priv= &g_adcpriv2,
 };
 #endif
 
 /* ADC3 state */
 
 #ifdef CONFIG_STM32_ADC3
-static struct stm32_dev_s g_adcpriv3[16] =
+static struct stm32_dev_s g_adcpriv3 =
 {
 #ifdef CONFIG_STM32_STM32F10XX
   .irq         = STM32_IRQ_ADC3,
@@ -419,74 +281,16 @@ static struct stm32_dev_s g_adcpriv3[16] =
   .pclck       = ADC3_TIMER_PCLK_FREQUENCY,
   .freq        = CONFIG_STM32_ADC3_SAMPLE_FREQUENCY,
 #endif
+  .pinlist	= {GPIO_ADC3_IN0, GPIO_ADC3_IN1, GPIO_ADC3_IN2, GPIO_ADC3_IN3,
+					 GPIO_ADC3_IN4, GPIO_ADC3_IN5, GPIO_ADC3_IN6, GPIO_ADC3_IN7,
+					 0							, GPIO_ADC3_IN9, GPIO_ADC3_IN10, GPIO_ADC3_IN11,
+					 GPIO_ADC3_IN12, GPIO_ADC3_IN13, GPIO_ADC3_IN14, GPIO_ADC3_IN15}
 };
 
-static struct adc_dev_s g_adcdev3[16] =
+static struct adc_dev_s g_adcdev3 =
 {
-  {
-    .ad_ops = &g_adcops,
-    .ad_priv= &g_adcpriv3[0],
-  },
-  {
-    .ad_ops = &g_adcops,
-    .ad_priv= &g_adcpriv3[1],
-  },
-  {
-    .ad_ops = &g_adcops,
-    .ad_priv= &g_adcpriv3[2],
-  },
-  {
-    .ad_ops = &g_adcops,
-    .ad_priv= &g_adcpriv3[3],
-  },
-  {
-    .ad_ops = &g_adcops,
-    .ad_priv= &g_adcpriv3[4],
-  },
-  {
-    .ad_ops = &g_adcops,
-    .ad_priv= &g_adcpriv3[5],
-  },
-  {
-    .ad_ops = &g_adcops,
-    .ad_priv= &g_adcpriv3[6],
-  },
-  {
-    .ad_ops = &g_adcops,
-    .ad_priv= &g_adcpriv3[7],
-  },
-  {
-    .ad_ops = &g_adcops,
-    .ad_priv= &g_adcpriv3[8],
-  },
-  {
-    .ad_ops = &g_adcops,
-    .ad_priv= &g_adcpriv3[9],
-  },
-  {
-    .ad_ops = &g_adcops,
-    .ad_priv= &g_adcpriv3[10],
-  },
-  {
-    .ad_ops = &g_adcops,
-    .ad_priv= &g_adcpriv3[11],
-  },
-  {
-    .ad_ops = &g_adcops,
-    .ad_priv= &g_adcpriv3[12],
-  },
-  {
-    .ad_ops = &g_adcops,
-    .ad_priv= &g_adcpriv3[13],
-  },
-  {
-    .ad_ops = &g_adcops,
-    .ad_priv= &g_adcpriv3[14],
-  },
-  {
-    .ad_ops = &g_adcops,
-    .ad_priv= &g_adcpriv3[15],
-  }
+  .ad_ops = &g_adcops,
+  .ad_priv= &g_adcpriv3,
 };
 #endif
 
@@ -1075,20 +879,20 @@ static void adc_rccreset(struct stm32_dev_s *priv, bool reset)
 #ifdef CONFIG_STM32_STM32F10XX
   /* For the STM32 F1, there is an individual bit to reset each ADC. */
 
-  switch (priv->intf)
+  switch (priv->base)
     {
 #ifdef CONFIG_STM32_ADC1
-      case 1:
+      case STM32_ADC1_BASE:
         adcbit = RCC_APB2RSTR_ADC1RST;
         break;
 #endif
 #ifdef CONFIG_STM32_ADC2
-      case 2:
+      case STM32_ADC2_BASE:
         adcbit = RCC_APB2RSTR_ADC2RST;
         break;
 #endif
 #ifdef CONFIG_STM32_ADC3
-      case 3:
+      case STM32_ADC3_BASE:
         adcbit = RCC_APB2RSTR_ADC3RST;
         break;
 #endif
@@ -1375,25 +1179,10 @@ static void adc_reset(FAR struct adc_dev_s *dev)
 
 static int adc_setup(FAR struct adc_dev_s *dev)
 {
-  FAR struct stm32_dev_s *priv = (FAR struct stm32_dev_s *)dev->ad_priv;
-  int ret;
+  return OK;	
+  //FAR struct stm32_dev_s *priv = (FAR struct stm32_dev_s *)dev->ad_priv;
 
-  /* Attach the ADC interrupt */
-
-  ret = irq_attach(priv->irq, priv->isr);
-  if (ret == OK)
-    {
-      /* Make sure that the ADC device is in the powered up, reset state */
-
-      adc_reset(dev);
-
-      /* Enable the ADC interrupt */
-
-      avdbg("Enable the ADC interrupt: irq=%d\n", priv->irq);
-      up_enable_irq(priv->irq);
-    }
-
-  return ret;
+  //return ret;
 }
 
 /****************************************************************************
@@ -1472,7 +1261,60 @@ static void adc_rxint(FAR struct adc_dev_s *dev, bool enable)
 
 static int adc_ioctl(FAR struct adc_dev_s *dev, int cmd, unsigned long arg)
 {
-  return -ENOTTY;
+  struct stm32_dev_s *priv = (struct stm32_dev_s *)dev->ad_priv;
+  int ret = OK;
+  uint8_t  chanlist[ADC_MAX_SAMPLES];
+  uint8_t  *p;
+  int i;
+  
+  avdbg("cmd=%d arg=%ld\n", cmd, arg);
+
+  switch (cmd)
+    {
+      case ANIOC_TRIGGER: /* Software trigger */
+        {
+			 /* Attach the ADC interrupt */
+
+			if (arg >= 0 && arg < 16)
+			  {
+			    priv->chanlist[0] = arg;
+			    priv->nchannels = 1;
+				stm32_configgpio(priv->pinlist[priv->chanlist[0]]);
+			  }
+			else
+			  {
+			    for(p = (uint8_t  *)arg, i = 0; *p!= 0 || i < ADC_MAX_SAMPLES; p++, i++)
+			     {
+			       priv->chanlist[i] = *p;
+					stm32_configgpio(priv->pinlist[priv->chanlist[i]]);					
+			     }
+              priv->nchannels = i;			  
+			  }
+			DEBUGASSERT(priv->nchannels <= ADC_MAX_SAMPLES);
+
+			ret = irq_attach(priv->irq, priv->isr);
+			if (ret == OK)
+			  {
+			    /* Make sure that the ADC device is in the powered up, reset state */
+
+			    adc_reset(dev);
+
+			    /* Enable the ADC interrupt */
+
+			    avdbg("Enable the ADC interrupt: irq=%d\n", priv->irq);
+			    up_enable_irq(priv->irq);
+			  }
+        }
+        break;
+
+      /* Unsupported or invalid command */
+
+      default:
+        ret = -ENOTTY;
+        break;
+    }
+
+  return ret;
 }
 
 /****************************************************************************
@@ -1713,7 +1555,7 @@ static int adc123_interrupt(int irq, void *context)
  *
  ****************************************************************************/
 
-struct adc_dev_s *stm32_adcinitialize(int intf, const uint8_t *chanlist, int nchannels)
+struct adc_dev_s *stm32_adcinitialize(int intf)
 {
   FAR struct adc_dev_s   *dev;
   FAR struct stm32_dev_s *priv;
@@ -1724,7 +1566,7 @@ struct adc_dev_s *stm32_adcinitialize(int intf, const uint8_t *chanlist, int nch
   if (intf == 1)
     {
       avdbg("ADC1 Selected\n");
-      dev = &g_adcdev1[0];
+      dev = &g_adcdev1;
     }
   else
 #endif
@@ -1753,10 +1595,6 @@ struct adc_dev_s *stm32_adcinitialize(int intf, const uint8_t *chanlist, int nch
 
   priv = dev->ad_priv;
 
-  DEBUGASSERT(nchannels <= ADC_MAX_SAMPLES);
-  priv->nchannels = nchannels;
-
-  memcpy(priv->chanlist, chanlist, nchannels);
   return dev;
 }
 

@@ -593,8 +593,7 @@ extern "C" {
  ****************************************************************************/
 
 struct adc_dev_s;
-EXTERN struct adc_dev_s *stm32_adcinitialize(int intf, const uint8_t *chanlist,
-                                             int nchannels);
+EXTERN struct adc_dev_s *stm32_adcinitialize(int intf);
 
 #undef EXTERN
 #ifdef __cplusplus
