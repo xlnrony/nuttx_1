@@ -4460,6 +4460,9 @@ Configurations
               nxplayer> device pcm0
               nxplayer> play <filename>
 
+       STATUS:  Not yet functional.  See the To-Do list at the bottom of this
+       README file.
+
    20. The SAMA5D4-EK includes for an AT25 serial DataFlash.  That support is
        NOT enabled in this configuration.  Support for that serial FLASH could
        be enabled by modifying the NuttX configuration as described above in
@@ -4515,7 +4518,7 @@ Configurations
 
        - It boots into a graphic, window manage environment instead of
          the serial console command line.
-       - The console command line is still available within NxConsole
+       - The console command line is still available within NxTerm
          windows.
        - Obviously, the nx and touchscreen built in applications cannot
          be supported.
@@ -4581,11 +4584,11 @@ Configurations
 
        Access to the NSH console is available in two ways:
 
-       a. The NxWM provides a graphics-based terminals (called NxConsoles);
-          The console command line is still available within NxConsole
+       a. The NxWM provides a graphics-based terminals (called NxTerms);
+          The console command line is still available within NxTerm
           windows once NxWM is up and running.  The console input (stdin) is
           provided via a USB HID keyboard, but console output will go to the
-          NxConsole terminal.  See below for more information about the USB
+          NxTerm terminal.  See below for more information about the USB
           HID keyboard input,
 
 |      b. Telnet NSH sessions are still supported and this is, in general,
@@ -4593,7 +4596,7 @@ Configurations
 
        As with the NSH configuration, debug output will still go to the
        circular RAMLOG buffer but cannot be accessed from a serial console.
-       Instead, you will need use the dmesg command from an NxConsole or
+       Instead, you will need use the dmesg command from an NxTerm or
        from a Telnet session to see the debug output
 
     5. USB HID Keyboard Input
@@ -4608,19 +4611,19 @@ Configurations
 
        The USB keyboard is configured to replace the NSH stdin device some
        that NSH will take input from the USB keyboard.  This has to be
-       done a little differently for the case of NxWM::CNxConsoles than
+       done a little differently for the case of NxWM::CNxTerms than
        in the standard NSH configuration.  Here the relevant configuration
        options are:
 
          CONFIG_NXWM_KEYBOARD_USBHOST=y
          CONFIG_NXWM_KEYBOARD_DEVPATH="/dev/kbda"
 
-       NSH will then automatically start when the NxConsole is started:
+       NSH will then automatically start when the NxTerm is started:
 
          NuttShell (NSH) NuttX-7.3
          nsh>
 
-       When the NxConsole comes up, it will attempt to use /dev/kbda device
+       When the NxTerm comes up, it will attempt to use /dev/kbda device
        for input.  Obviously, you cannot enter text if there is no keyboard
        but otherwise you will not see any indication whether a keyboard is
        connected or not.
@@ -4688,6 +4691,12 @@ Configurations
          c. Then if you close the old media player window and bring up a
             new one, you should see the .WAV files on the SD card in the lis
             box.
+
+         STATUS:  Despite the comments above, WM8904 support has *NOT* yet
+         been enabled in this configuration.  This is because it is not yet
+         working in the nxwm configuration.  See the To-Do list at the
+         bottom of this README file.  The current nxwm configuration is still
+         set up for the Rev C board using the "NULL" audio device.
 
        Things still to do:
 
@@ -4815,3 +4824,41 @@ To-Do List
    for the PWM and the Timer/Counter drivers.  These drivers use the
    BOARD_MCK_FREQUENCY definition in more complex ways and will require some
    minor redesign and re-testing before they can be available.
+
+5) The WM8904 is not usable on the Rev C version of the board due to some I2C
+   related issues.  These issues seem to be resolved on the Rev E version of
+   the board.  However, the WM8904 is still not function:
+
+   a) With a logic analyzer I can see that the I2C writes to the WM8904
+      device look good.  This is the same setup that was used in the working
+      SAMA5D3x-EK nxplayer configuration and so should be correct (you
+      cannot even get this far on the Rev C board).
+   b) I2C readback of the WM8904 registers (via CONFIG_WM8904_REGDUMP) does
+      not, however, show proper registers contents.  Groups of extra bits
+      (apparently 0x01fd) appear to be set in many registers on reading.
+      This is assumed to be some interference from some other device on the
+      I2C bus rather that errors in writing.  This assumption is credible
+      since the bad bits appear immediately after resetting the WM8904 and
+      before anything has been written to it.
+   c) Also with the logic analyzer, I can that the 12MHz MCLK input is
+      being provided to the WM8904.
+   d) However, no bit clock (BLCK) is being generated by the WM8904.  This
+      should appear on both AUDIO_TK0_PB27 and AUDIO_RK0_PB28, but I do not
+      see a clock on these pins.
+   e) With no BCLK, I would expect the SSC0 DMA transfers to hang... they do
+      not.  No errors of any kind are detected by the firmware; it believes
+      that it is successfully playing .WAV files.  This leads to believe
+      that there may be some schematic error.
+   e) There is, of course, no audio output.
+
+   You can replace the WM8904 with the "NULL" audio driver by:
+
+      CONFIG_AUDIO_WM8904=n                         : Disable the WM8904
+      CONFIG_SAMA5_SSC0=n                           : Disable SSC0
+
+      CONFIG_AUDIO_NULL=y                           : Enable the NULL audio device
+      CONFIG_AUDIO_NULL_BUFFER_SIZE=8192
+      CONFIG_AUDIO_NULL_MSG_PRIO=1
+      CONFIG_AUDIO_NULL_NUM_BUFFERS=4
+      CONFIG_AUDIO_NULL_WORKER_STACKSIZE=768
+      CONFIG_AUDIO_NUM_BUFFERS=2

@@ -158,8 +158,8 @@ ifeq ($(CONFIG_EXAMPLES_NX),y)
 CONFIGURED_APPS += examples/nx
 endif
 
-ifeq ($(CONFIG_EXAMPLES_NXCONSOLE),y)
-CONFIGURED_APPS += examples/nxconsole
+ifeq ($(CONFIG_EXAMPLES_NXTERM),y)
+CONFIGURED_APPS += examples/nxterm
 endif
 
 ifeq ($(CONFIG_EXAMPLES_NXFFS),y)
