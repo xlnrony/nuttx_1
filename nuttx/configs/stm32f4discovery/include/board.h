@@ -156,6 +156,36 @@
 #define STM32_TIM18_FREQUENCY   STM32_HCLK_FREQUENCY
 #define STM32_TIM27_FREQUENCY   (STM32_HCLK_FREQUENCY/2)
 
+/* SDIO dividers.  Note that slower clocking is required when DMA is disabled
+ * in order to avoid RX overrun/TX underrun errors due to delayed responses
+ * to service FIFOs in interrupt driven mode.  These values have not been
+ * tuned!!!
+ *
+ * SDIOCLK=48MHz, SDIO_CK=SDIOCLK/(118+2)=400 KHz
+ */
+
+#define SDIO_INIT_CLKDIV        (118 << SDIO_CLKCR_CLKDIV_SHIFT)
+
+/* DMA ON:  SDIOCLK=48MHz, SDIO_CK=SDIOCLK/(1+2)=16 MHz
+ * DMA OFF: SDIOCLK=48MHz, SDIO_CK=SDIOCLK/(2+2)=12 MHz
+ */
+
+#ifdef CONFIG_SDIO_DMA
+#  define SDIO_MMCXFR_CLKDIV    (1 << SDIO_CLKCR_CLKDIV_SHIFT)
+#else
+#  define SDIO_MMCXFR_CLKDIV    (2 << SDIO_CLKCR_CLKDIV_SHIFT)
+#endif
+
+/* DMA ON:  SDIOCLK=48MHz, SDIO_CK=SDIOCLK/(1+2)=16 MHz
+ * DMA OFF: SDIOCLK=48MHz, SDIO_CK=SDIOCLK/(2+2)=12 MHz
+ */
+
+#ifdef CONFIG_SDIO_DMA
+#  define SDIO_SDXFR_CLKDIV     (1 << SDIO_CLKCR_CLKDIV_SHIFT)
+#else
+#  define SDIO_SDXFR_CLKDIV     (2 << SDIO_CLKCR_CLKDIV_SHIFT)
+#endif
+
 /* LED definitions ******************************************************************/
 /* If CONFIG_ARCH_LEDS is not defined, then the user can control the LEDs in any
  * way.  The following definitions are used to access individual LEDs.
@@ -226,8 +256,8 @@
  */
 
 #ifdef CONFIG_STM32F4DISBB
-#  define GPIO_USART6_RX GPIO_USART6_RX_1 
-#  define GPIO_USART6_TX GPIO_USART6_TX_1 
+#  define GPIO_USART6_RX GPIO_USART6_RX_1
+#  define GPIO_USART6_TX GPIO_USART6_TX_1
 #endif
 
 /* PWM
@@ -254,7 +284,6 @@
 
 /* Ethernet *************************************************************************/
 
-
 #if defined(CONFIG_STM32F4DISBB) && defined(CONFIG_STM32_ETHMAC)
   /* RMII interface to the LAN8720 PHY */
 
@@ -270,12 +299,23 @@
 
   /* Pin disambiguation */
 
-#  define GPIO_ETH_RMII_TX_EN GPIO_ETH_RMII_TX_EN_1 
-#  define GPIO_ETH_RMII_TXD0  GPIO_ETH_RMII_TXD0_1 
-#  define GPIO_ETH_RMII_TXD1  GPIO_ETH_RMII_TXD1_1 
-#  define GPIO_ETH_PPS_OUT    GPIO_ETH_PPS_OUT_1 
+#  define GPIO_ETH_RMII_TX_EN GPIO_ETH_RMII_TX_EN_1
+#  define GPIO_ETH_RMII_TXD0  GPIO_ETH_RMII_TXD0_1
+#  define GPIO_ETH_RMII_TXD1  GPIO_ETH_RMII_TXD1_1
+#  define GPIO_ETH_PPS_OUT    GPIO_ETH_PPS_OUT_1
 
 #endif
+
+/* DMA Channl/Stream Selections *****************************************************/
+/* Stream selections are arbitrary for now but might become important in the future
+ * if we set aside more DMA channels/streams.
+ *
+ * SDIO DMA
+ *   DMAMAP_SDIO_1 = Channel 4, Stream 3
+ *   DMAMAP_SDIO_2 = Channel 4, Stream 6
+ */
+
+#define DMAMAP_SDIO DMAMAP_SDIO_1
 
 /************************************************************************************
  * Public Data
