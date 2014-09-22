@@ -861,6 +861,27 @@ int usbhost_kbdinit(void);
 int usbhost_mouse_init(void);
 #endif
 
+#ifdef CONFIG_USBHOST_EPASS3003
+/****************************************************************************
+ * Name: usbhost_epass3003init
+ *
+ * Description:
+ *   Initialize the Epass3003 USB Token class driver.  This function
+ *   should be called be platform-specific code in order to initialize and
+ *   register support for the Epass3003 USB Token class device.
+ *
+ * Input Parameters:
+ *   None
+ *
+ * Returned Values:
+ *   On success this function will return zero (OK);  A negated errno value
+ *   will be returned on failure.
+ *
+ ****************************************************************************/
+
+int usbhost_epass3003init(void);
+#endif
+
 /****************************************************************************
  * Name: usbhost_wlaninit
  *
@@ -920,6 +941,12 @@ int usbhost_wlaninit(void);
 int usbhost_enumerate(FAR struct usbhost_driver_s *drvr, uint8_t funcaddr,
                       FAR struct usbhost_class_s **class);
 
+
+FAR struct usbhost_connection_s *usbhost_initialize(int controller);
+
+int usbhost_connection_wait(FAR struct usbhost_connection_s *conn, FAR const bool *connected);
+int usbhost_connection_enumerate(FAR struct usbhost_connection_s *conn, int rhpndx);
+	
 #undef EXTERN
 #if defined(__cplusplus)
 }

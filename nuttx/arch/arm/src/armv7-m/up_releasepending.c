@@ -77,7 +77,7 @@ void up_release_pending(void)
 {
   struct tcb_s *rtcb = (struct tcb_s*)g_readytorun.head;
 
-  slldbg("From TCB=%p\n", rtcb);
+  sllvdbg("From TCB=%p\n", rtcb);
 
   /* Merge the g_pendingtasks list into the g_readytorun task list */
 

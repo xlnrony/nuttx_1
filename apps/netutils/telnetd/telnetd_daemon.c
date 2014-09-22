@@ -165,11 +165,11 @@ static int telnetd_daemon(int argc, char *argv[])
    * being available.
    */
 
-#ifndef CONFIG_DEBUG
+//#ifndef CONFIG_DEBUG
   close(0);
   close(1);
   close(2);
-#endif
+//#endif
 
   /* Begin accepting connections */
 

@@ -93,6 +93,7 @@
 #  define umm_realloc(p,s)    USERSPACE->mm_realloc(p,s)
 #  define umm_memalign(a,s)   USERSPACE->mm_memalign(a,s)
 #  define umm_free(p)         USERSPACE->mm_free(p)
+#  define sklog(p)         USERSPACE->sklog(p)
 #endif
 
 /****************************************************************************
@@ -152,6 +153,8 @@ struct userspace_s
 #if defined(CONFIG_SCHED_WORKQUEUE) && defined(CONFIG_SCHED_USRWORK)
   int (*work_usrstart)(void);
 #endif
+
+void (*sklog)(int (*fp)(FAR const char *fmt, ...));
 };
 
 /****************************************************************************
@@ -164,6 +167,10 @@ extern "C"
 {
 #else
 #define EXTERN extern
+#endif
+
+#if defined(CONFIG_BUILD_PROTECTED) && !defined(__KERNEL__)
+EXTERN int (*klog)(FAR const char *fmt, ...);
 #endif
 
 /****************************************************************************

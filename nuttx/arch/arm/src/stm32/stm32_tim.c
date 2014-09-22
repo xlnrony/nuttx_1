@@ -54,6 +54,7 @@
 #include <debug.h>
 
 #include <arch/board/board.h>
+#include <nuttx/analog/adc.h>
 
 #include "chip.h"
 #include "up_internal.h"
@@ -164,6 +165,7 @@ struct stm32_tim_priv_s
   struct stm32_tim_ops_s *ops;
   stm32_tim_mode_t        mode;
   uint32_t                base;   /* TIMn base address */
+  uint8_t			channel;
 };
 
 /************************************************************************************
@@ -405,18 +407,69 @@ static int stm32_tim_setisr(FAR struct stm32_tim_dev_s *dev,
 static void stm32_tim_enableint(FAR struct stm32_tim_dev_s *dev, int source)
 {
   ASSERT(dev);
-  stm32_modifyreg16(dev, STM32_BTIM_DIER_OFFSET, 0, ATIM_DIER_UIE);
+  switch(source)
+    {
+      case 0:
+        stm32_modifyreg16(dev, STM32_BTIM_DIER_OFFSET, 0, ATIM_DIER_UIE);
+        break;
+      case 1:
+        stm32_modifyreg16(dev, STM32_BTIM_DIER_OFFSET, 0, ATIM_DIER_CC1IE);
+        break;
+      case 2:
+        stm32_modifyreg16(dev, STM32_BTIM_DIER_OFFSET, 0, ATIM_DIER_CC2IE);
+        break;
+      case 3:
+        stm32_modifyreg16(dev, STM32_BTIM_DIER_OFFSET, 0, ATIM_DIER_CC3IE);
+        break;
+      case 4:
+        stm32_modifyreg16(dev, STM32_BTIM_DIER_OFFSET, 0, ATIM_DIER_CC4IE);
+        break;
+    }	  	
 }
 
 static void stm32_tim_disableint(FAR struct stm32_tim_dev_s *dev, int source)
 {
   ASSERT(dev);
-  stm32_modifyreg16(dev, STM32_BTIM_DIER_OFFSET, ATIM_DIER_UIE, 0);
+  switch(source)
+    {
+      case 0:
+        stm32_modifyreg16(dev, STM32_BTIM_DIER_OFFSET, ATIM_DIER_UIE, 0);
+        break;
+      case 1:
+        stm32_modifyreg16(dev, STM32_BTIM_DIER_OFFSET, ATIM_DIER_CC1IE, 0);
+        break;
+      case 2:
+        stm32_modifyreg16(dev, STM32_BTIM_DIER_OFFSET, ATIM_DIER_CC2IE, 0);
+        break;
+      case 3:
+        stm32_modifyreg16(dev, STM32_BTIM_DIER_OFFSET, ATIM_DIER_CC3IE, 0);
+        break;
+      case 4:
+        stm32_modifyreg16(dev, STM32_BTIM_DIER_OFFSET, ATIM_DIER_CC4IE, 0);
+        break;
+    }	  	
 }
 
 static void stm32_tim_ackint(FAR struct stm32_tim_dev_s *dev, int source)
 {
-  stm32_putreg16(dev, STM32_BTIM_SR_OFFSET, ~ATIM_SR_UIF);
+  switch(source)
+    {
+      case 0:
+        stm32_putreg16(dev, STM32_BTIM_SR_OFFSET, ~ATIM_SR_UIF);
+        break;
+      case 1:
+        stm32_putreg16(dev, STM32_BTIM_SR_OFFSET, ~ATIM_SR_CC1IF);
+        break;
+      case 2:
+        stm32_putreg16(dev, STM32_BTIM_SR_OFFSET, ~ATIM_SR_CC2IF);
+        break;
+      case 3:
+        stm32_putreg16(dev, STM32_BTIM_SR_OFFSET, ~ATIM_SR_CC3IF);
+        break;
+      case 4:
+        stm32_putreg16(dev, STM32_BTIM_SR_OFFSET, ~ATIM_SR_CC4IF);
+        break;
+    }	  	
 }
 
 /************************************************************************************
@@ -505,7 +558,7 @@ static int stm32_tim_setchannel(FAR struct stm32_tim_dev_s *dev, uint8_t channel
 
   /* Assume that channel is disabled and polarity is active high */
 
-  ccer_val &= ~(3 << (channel << 2));
+  ccer_val &= ~(0xf << (channel << 2));
 
   /* This function is not supported on basic timers. To enable or
    * disable it, simply set its clock to valid frequency or zero.
@@ -533,6 +586,11 @@ static int stm32_tim_setchannel(FAR struct stm32_tim_dev_s *dev, uint8_t channel
 
       case STM32_TIM_CH_OUTPWM:
         ccmr_val  =  (ATIM_CCMR_MODE_PWM1 << ATIM_CCMR1_OC1M_SHIFT) + ATIM_CCMR1_OC1PE;
+        ccer_val |= ATIM_CCER_CC1E << (channel << 2);
+        break;
+
+      case STM32_TIM_CH_INCAPTURE:
+        ccmr_val  =  (ATIM_CCMR_CCS_CCIN1 << ATIM_CCMR1_CC1S_SHIFT) | (ATIM_CCMR_ICF_NOFILT << ATIM_CCMR1_IC1F_SHIFT) ;
         ccer_val |= ATIM_CCER_CC1E << (channel << 2);
         break;
 
@@ -594,6 +652,29 @@ static int stm32_tim_setchannel(FAR struct stm32_tim_dev_s *dev, uint8_t channel
               stm32_tim_gpioconfig(GPIO_TIM2_CH4OUT, mode);
               break;
 #endif
+
+
+#if defined(GPIO_TIM2_CH1IN)
+            case 0:
+              stm32_tim_gpioconfig(GPIO_TIM2_CH1IN, mode);
+              break;
+#endif
+#if defined(GPIO_TIM2_CH2IN)
+            case 1:
+              stm32_tim_gpioconfig(GPIO_TIM2_CH2IN, mode);
+              break;
+#endif
+#if defined(GPIO_TIM2_CH3IN)
+            case 2:
+              stm32_tim_gpioconfig(GPIO_TIM2_CH3IN, mode);
+              break;
+#endif
+#if defined(GPIO_TIM2_CH4IN)
+            case 3:
+              stm32_tim_gpioconfig(GPIO_TIM2_CH4IN, mode);
+              break;
+#endif
+
             default:
               return ERROR;
           }
@@ -621,6 +702,28 @@ static int stm32_tim_setchannel(FAR struct stm32_tim_dev_s *dev, uint8_t channel
 #if defined(GPIO_TIM3_CH4OUT)
             case 3:
               stm32_tim_gpioconfig(GPIO_TIM3_CH4OUT, mode);
+              break;
+#endif
+
+
+#if defined(GPIO_TIM3_CH1IN)
+            case 0:
+              stm32_tim_gpioconfig(GPIO_TIM3_CH1IN, mode);
+              break;
+#endif
+#if defined(GPIO_TIM3_CH2IN)
+            case 1:
+              stm32_tim_gpioconfig(GPIO_TIM3_CH2IN, mode);
+              break;
+#endif
+#if defined(GPIO_TIM3_CH3IN)
+            case 2:
+              stm32_tim_gpioconfig(GPIO_TIM3_CH3IN, mode);
+              break;
+#endif
+#if defined(GPIO_TIM3_CH4IN)
+            case 3:
+              stm32_tim_gpioconfig(GPIO_TIM3_CH4IN, mode);
               break;
 #endif
             default:
@@ -652,6 +755,28 @@ static int stm32_tim_setchannel(FAR struct stm32_tim_dev_s *dev, uint8_t channel
               stm32_tim_gpioconfig(GPIO_TIM4_CH4OUT, mode);
               break;
 #endif
+
+
+#if defined(GPIO_TIM4_CH1IN)
+            case 0:
+              stm32_tim_gpioconfig(GPIO_TIM4_CH1IN, mode);
+              break;
+#endif
+#if defined(GPIO_TIM4_CH2IN)
+            case 1:
+              stm32_tim_gpioconfig(GPIO_TIM4_CH2IN, mode);
+              break;
+#endif
+#if defined(GPIO_TIM4_CH3IN)
+            case 2:
+              stm32_tim_gpioconfig(GPIO_TIM4_CH3IN, mode);
+              break;
+#endif
+#if defined(GPIO_TIM4_CH4IN)
+            case 3:
+              stm32_tim_gpioconfig(GPIO_TIM4_CH4IN, mode);
+              break;
+#endif
             default: return ERROR;
           }
         break;
@@ -680,6 +805,27 @@ static int stm32_tim_setchannel(FAR struct stm32_tim_dev_s *dev, uint8_t channel
               stm32_tim_gpioconfig(GPIO_TIM5_CH4OUT, mode);
               break;
 #endif
+
+#if defined(GPIO_TIM5_CH1IN)
+            case 0:
+              stm32_tim_gpioconfig(GPIO_TIM5_CH1IN, mode);
+              break;
+#endif
+#if defined(GPIO_TIM5_CH2IN)
+            case 1:
+              stm32_tim_gpioconfig(GPIO_TIM5_CH2IN, mode);
+              break;
+#endif
+#if defined(GPIO_TIM5_CH3IN)
+            case 2:
+              stm32_tim_gpioconfig(GPIO_TIM5_CH3IN, mode);
+              break;
+#endif
+#if defined(GPIO_TIM5_CH4IN)
+            case 3:
+              stm32_tim_gpioconfig(GPIO_TIM5_CH4IN, mode);
+              break;
+#endif
             default: return ERROR;
           }
         break;
@@ -706,6 +852,24 @@ static int stm32_tim_setchannel(FAR struct stm32_tim_dev_s *dev, uint8_t channel
             case 3:
               stm32_tim_gpioconfig(GPIO_TIM1_CH4OUT, mode); break;
 #endif
+
+
+#if defined(GPIO_TIM1_CH1IN)
+            case 0:
+              stm32_tim_gpioconfig(GPIO_TIM1_CH1IN, mode); break;
+#endif
+#if defined(GPIO_TIM1_CH2IN)
+            case 1:
+              stm32_tim_gpioconfig(GPIO_TIM1_CH2IN, mode); break;
+#endif
+#if defined(GPIO_TIM1_CH3IN)
+            case 2:
+              stm32_tim_gpioconfig(GPIO_TIM1_CH3IN, mode); break;
+#endif
+#if defined(GPIO_TIM1_CH4IN)
+            case 3:
+              stm32_tim_gpioconfig(GPIO_TIM1_CH4IN, mode); break;
+#endif
             default: return ERROR;
           }
         break;
@@ -729,6 +893,24 @@ static int stm32_tim_setchannel(FAR struct stm32_tim_dev_s *dev, uint8_t channel
 #if defined(GPIO_TIM8_CH4OUT)
             case 3:
               stm32_tim_gpioconfig(GPIO_TIM8_CH4OUT, mode); break;
+#endif
+
+
+#if defined(GPIO_TIM8_CH1IN)
+            case 0:
+              stm32_tim_gpioconfig(GPIO_TIM8_CH1IN, mode); break;
+#endif
+#if defined(GPIO_TIM8_CH2IN)
+            case 1:
+              stm32_tim_gpioconfig(GPIO_TIM8_CH2IN, mode); break;
+#endif
+#if defined(GPIO_TIM8_CH3IN)
+            case 2:
+              stm32_tim_gpioconfig(GPIO_TIM8_CH3IN, mode); break;
+#endif
+#if defined(GPIO_TIM8_CH4IN)
+            case 3:
+              stm32_tim_gpioconfig(GPIO_TIM8_CH4IN, mode); break;
 #endif
             default:
               return ERROR;
@@ -787,159 +969,43 @@ static int stm32_tim_getcapture(FAR struct stm32_tim_dev_s *dev, uint8_t channel
   return ERROR;
 }
 
-/************************************************************************************
- * Advanced Functions
- ************************************************************************************/
-
-/* TODO: Advanced functions for the STM32_ATIM */
-
-/************************************************************************************
- * Device Structures, Instantiation
- ************************************************************************************/
-
-struct stm32_tim_ops_s stm32_tim_ops =
+static int  stm32_tim_setup(FAR struct stm32_tim_dev_s *dev)
 {
-  .setmode        = &stm32_tim_setmode,
-  .setclock       = &stm32_tim_setclock,
-  .setperiod      = &stm32_tim_setperiod,
-  .setchannel     = &stm32_tim_setchannel,
-  .setcompare     = &stm32_tim_setcompare,
-  .getcapture     = &stm32_tim_getcapture,
-  .setisr         = &stm32_tim_setisr,
-  .enableint      = &stm32_tim_enableint,
-  .disableint     = &stm32_tim_disableint,
-  .ackint         = &stm32_tim_ackint
-};
+  ASSERT(dev);
 
-#if CONFIG_STM32_TIM2
-struct stm32_tim_priv_s stm32_tim2_priv =
-{
-  .ops        = &stm32_tim_ops,
-  .mode       = STM32_TIM_MODE_UNUSED,
-  .base       = STM32_TIM2_BASE,
-};
-#endif
-
-#if CONFIG_STM32_TIM3
-struct stm32_tim_priv_s stm32_tim3_priv =
-{
-  .ops        = &stm32_tim_ops,
-  .mode       = STM32_TIM_MODE_UNUSED,
-  .base       = STM32_TIM3_BASE,
-};
-#endif
-
-#if CONFIG_STM32_TIM4
-struct stm32_tim_priv_s stm32_tim4_priv =
-{
-  .ops        = &stm32_tim_ops,
-  .mode       = STM32_TIM_MODE_UNUSED,
-  .base       = STM32_TIM4_BASE,
-};
-#endif
-
-#if CONFIG_STM32_TIM5
-struct stm32_tim_priv_s stm32_tim5_priv =
-{
-  .ops        = &stm32_tim_ops,
-  .mode       = STM32_TIM_MODE_UNUSED,
-  .base       = STM32_TIM5_BASE,
-};
-#endif
-
-#if STM32_NBTIM > 0
-#if CONFIG_STM32_TIM6
-struct stm32_tim_priv_s stm32_tim6_priv =
-{
-  .ops        = &stm32_tim_ops,
-  .mode       = STM32_TIM_MODE_UNUSED,
-  .base       = STM32_TIM6_BASE,
-};
-#endif
-#endif
-
-#if STM32_NBTIM > 1
-#if CONFIG_STM32_TIM7
-struct stm32_tim_priv_s stm32_tim7_priv =
-{
-  .ops        = &stm32_tim_ops,
-  .mode       = STM32_TIM_MODE_UNUSED,
-  .base       = STM32_TIM7_BASE,
-};
-#endif
-#endif
-
-#if STM32_NATIM > 0
-
-#if CONFIG_STM32_TIM1
-struct stm32_tim_priv_s stm32_tim1_priv =
-{
-  .ops        = &stm32_tim_ops,
-  .mode       = STM32_TIM_MODE_UNUSED,
-  .base       = STM32_TIM1_BASE,
-};
-#endif
-
-#if CONFIG_STM32_TIM8
-struct stm32_tim_priv_s stm32_tim8_priv =
-{
-  .ops        = &stm32_tim_ops,
-  .mode       = STM32_TIM_MODE_UNUSED,
-  .base       = STM32_TIM8_BASE,
-};
-#endif
-
-#endif
-
-/************************************************************************************
- * Public Function - Initialization
- ************************************************************************************/
-
-FAR struct stm32_tim_dev_s *stm32_tim_init(int timer)
-{
-  struct stm32_tim_dev_s *dev = NULL;
-
-  /* Get structure and enable power */
-
-  switch (timer)
+  switch (((struct stm32_tim_priv_s *)dev)->base)
     {
 #if CONFIG_STM32_TIM2
-      case 2:
-        dev = (struct stm32_tim_dev_s *)&stm32_tim2_priv;
+      case STM32_TIM2_BASE:
         modifyreg32(STM32_RCC_APB1ENR, 0, RCC_APB1ENR_TIM2EN);
         break;
 #endif
 #if CONFIG_STM32_TIM3
-      case 3:
-        dev = (struct stm32_tim_dev_s *)&stm32_tim3_priv;
+      case STM32_TIM3_BASE:
         modifyreg32(STM32_RCC_APB1ENR, 0, RCC_APB1ENR_TIM3EN);
         break;
 #endif
 #if CONFIG_STM32_TIM4
-      case 4:
-        dev = (struct stm32_tim_dev_s *)&stm32_tim4_priv;
+      case STM32_TIM4_BASE:
         modifyreg32(STM32_RCC_APB1ENR, 0, RCC_APB1ENR_TIM4EN);
         break;
 #endif
 #if CONFIG_STM32_TIM5
-      case 5:
-        dev = (struct stm32_tim_dev_s *)&stm32_tim5_priv;
+      case STM32_TIM5_BASE:
         modifyreg32(STM32_RCC_APB1ENR, 0, RCC_APB1ENR_TIM5EN);
         break;
 #endif
 
 #if STM32_NBTIM > 0
 #if CONFIG_STM32_TIM6
-      case 6:
-        dev = (struct stm32_tim_dev_s *)&stm32_tim6_priv;
+      case STM32_TIM6_BASE:
         modifyreg32(STM32_RCC_APB1ENR, 0, RCC_APB1ENR_TIM6EN);
         break;
 #endif
 #endif
 #if STM32_NBTIM > 1
 #if CONFIG_STM32_TIM7
-      case 7:
-        dev = (struct stm32_tim_dev_s *)&stm32_tim7_priv;
+      case STM32_TIM7_BASE:
         modifyreg32(STM32_RCC_APB1ENR, 0, RCC_APB1ENR_TIM7EN);
         break;
 #endif
@@ -947,14 +1013,12 @@ FAR struct stm32_tim_dev_s *stm32_tim_init(int timer)
 
 #if STM32_NATIM > 0
 #if CONFIG_STM32_TIM1
-      case 1:
-        dev = (struct stm32_tim_dev_s *)&stm32_tim1_priv;
+      case STM32_TIM1_BASE:
         modifyreg32(STM32_RCC_APB2ENR, 0, RCC_APB2ENR_TIM1EN);
         break;
 #endif
 #if CONFIG_STM32_TIM8
-      case 8:
-        dev = (struct stm32_tim_dev_s *)&stm32_tim8_priv;
+      case STM32_TIM8_BASE:
         modifyreg32(STM32_RCC_APB2ENR, 0, RCC_APB2ENR_TIM8EN);
         break;
 #endif
@@ -963,21 +1027,12 @@ FAR struct stm32_tim_dev_s *stm32_tim_init(int timer)
         return NULL;
     }
 
-  /* Is device already allocated */
-
-  if (((struct stm32_tim_priv_s *)dev)->mode != STM32_TIM_MODE_UNUSED)
-    {
-      return NULL;
-    }
-
   stm32_tim_reset(dev);
 
-  return dev;
+  return OK;	
 }
 
-/* TODO: Detach interrupts, and close down all TIM Channels */
-
-int stm32_tim_deinit(FAR struct stm32_tim_dev_s * dev)
+static void stm32_tim_shutdown(FAR struct stm32_tim_dev_s *dev)
 {
   ASSERT(dev);
 
@@ -1032,9 +1087,298 @@ int stm32_tim_deinit(FAR struct stm32_tim_dev_s * dev)
         break;
 #endif
 #endif
-      default:
-        return ERROR;
     }
+
+}
+
+static void stm32_cap_reset(FAR struct adc_dev_s *dev)
+{
+  stm32_tim_reset((struct stm32_tim_dev_s *)(dev->ad_priv));
+}
+
+static int  stm32_cap_setup(FAR struct adc_dev_s *dev)
+{
+  int ret;
+
+  ret = stm32_tim_setup((struct stm32_tim_dev_s *)(dev->ad_priv));
+
+  if (ret = OK)
+    {  
+      ret = stm32_tim_setchannel((struct stm32_tim_dev_s *)(dev->ad_priv),
+  							    ((struct stm32_tim_priv_s *)(dev->ad_priv))->channel,
+  							    STM32_TIM_CH_POLARITY_POS | STM32_TIM_CH_INCAPTURE);
+      if (ret = OK)
+        {
+          stm32_tim_enable((struct stm32_tim_dev_s *)(dev->ad_priv));
+        }
+    }
+  
+  return ret;
+}
+
+static void stm32_cap_shutdown(FAR struct adc_dev_s *dev)
+{
+  stm32_tim_shutdown((struct stm32_tim_dev_s *)(dev->ad_priv));
+}
+
+static void stm32_cap_rxint(FAR struct adc_dev_s *dev, bool enable)
+{
+  if (enable)
+    {
+	stm32_tim_enableint((struct stm32_tim_dev_s *)(dev->ad_priv),((struct stm32_tim_priv_s *)(dev->ad_priv))->channel+1);    
+    }
+  else
+    {
+       stm32_tim_disableint((struct stm32_tim_dev_s *)(dev->ad_priv),((struct stm32_tim_priv_s *)(dev->ad_priv))->channel+1);
+    }
+}
+
+static int stm32_cap_ioctl(FAR struct adc_dev_s *dev, int cmd, unsigned long arg)
+{
+  return -ENOTTY;
+}
+
+
+/************************************************************************************
+ * Advanced Functions
+ ************************************************************************************/
+
+/* TODO: Advanced functions for the STM32_ATIM */
+
+/************************************************************************************
+ * Device Structures, Instantiation
+ ************************************************************************************/
+
+static const struct adc_ops_s stm32_tim_adcops =
+{
+  .ao_reset    = stm32_tim_adc_reset,
+  .ao_setup    = stm32_tim_adc_setup,
+  .ao_shutdown = stm32_tim_adc_shutdown,
+  .ao_rxint    = stm32_tim_adc_rxint,
+  .ao_ioctl    = stm32_tim_adc_ioctl,
+};
+
+struct stm32_tim_ops_s stm32_tim_ops =
+{
+  .setmode        = &stm32_tim_setmode,
+  .setclock       = &stm32_tim_setclock,
+  .setperiod      = &stm32_tim_setperiod,
+  .setchannel     = &stm32_tim_setchannel,
+  .setcompare     = &stm32_tim_setcompare,
+  .getcapture     = &stm32_tim_getcapture,
+  .setisr         = &stm32_tim_setisr,
+  .enableint      = &stm32_tim_enableint,
+  .disableint     = &stm32_tim_disableint,
+  .ackint         = &stm32_tim_ackint
+};
+
+#if CONFIG_STM32_TIM2
+static struct stm32_tim_priv_s stm32_tim2_priv =
+{
+  .ops        = &stm32_tim_ops,
+  .mode       = STM32_TIM_MODE_UNUSED,
+  .base       = STM32_TIM2_BASE,
+};
+
+static struct adc_dev_s stm32_tim2_dev =
+{
+  .ad_ops = &stm32_tim_adcops,
+  .ad_priv= &stm32_tim2_priv,
+};
+#endif
+
+#if CONFIG_STM32_TIM3
+static struct stm32_tim_priv_s stm32_tim3_priv =
+{
+  .ops        = &stm32_tim_ops,
+  .mode       = STM32_TIM_MODE_UNUSED,
+  .base       = STM32_TIM3_BASE,
+};
+
+static struct adc_dev_s stm32_tim3_dev =
+{
+  .ad_ops = &stm32_tim_adcops,
+  .ad_priv= &stm32_tim3_priv,
+};
+#endif
+
+#if CONFIG_STM32_TIM4
+static struct stm32_tim_priv_s stm32_tim4_priv =
+{
+  .ops        = &stm32_tim_ops,
+  .mode       = STM32_TIM_MODE_UNUSED,
+  .base       = STM32_TIM4_BASE,
+};
+
+static struct adc_dev_s stm32_tim4_dev =
+{
+  .ad_ops = &stm32_tim_adcops,
+  .ad_priv= &stm32_tim4_priv,
+};
+#endif
+
+#if CONFIG_STM32_TIM5
+static struct stm32_tim_priv_s stm32_tim5_priv =
+{
+  .ops        = &stm32_tim_ops,
+  .mode       = STM32_TIM_MODE_UNUSED,
+  .base       = STM32_TIM5_BASE,
+};
+
+static struct adc_dev_s stm32_tim6_dev =
+{
+  .ad_ops = &stm32_tim_adcops,
+  .ad_priv= &stm32_tim6_priv,
+};
+#endif
+
+#if STM32_NBTIM > 0
+#if CONFIG_STM32_TIM6
+static struct stm32_tim_priv_s stm32_tim6_priv =
+{
+  .ops        = &stm32_tim_ops,
+  .mode       = STM32_TIM_MODE_UNUSED,
+  .base       = STM32_TIM6_BASE,
+};
+
+static struct adc_dev_s stm32_tim6_dev =
+{
+  .ad_ops = &stm32_tim_adcops,
+  .ad_priv= &stm32_tim6_priv,
+};
+#endif
+#endif
+
+#if STM32_NBTIM > 1
+#if CONFIG_STM32_TIM7
+static struct stm32_tim_priv_s stm32_tim7_priv =
+{
+  .ops        = &stm32_tim_ops,
+  .mode       = STM32_TIM_MODE_UNUSED,
+  .base       = STM32_TIM7_BASE,
+};
+
+static struct adc_dev_s stm32_tim7_dev =
+{
+  .ad_ops = &stm32_tim_adcops,
+  .ad_priv= &stm32_tim7_priv,
+};
+#endif
+#endif
+
+#if STM32_NATIM > 0
+
+#if CONFIG_STM32_TIM1
+static struct stm32_tim_priv_s stm32_tim1_priv =
+{
+  .ops        = &stm32_tim_ops,
+  .mode       = STM32_TIM_MODE_UNUSED,
+  .base       = STM32_TIM1_BASE,
+};
+
+static struct adc_dev_s stm32_tim1_dev =
+{
+  .ad_ops = &stm32_tim_adcops,
+  .ad_priv= &stm32_tim1_priv,
+};
+#endif
+
+#if CONFIG_STM32_TIM8
+static struct stm32_tim_priv_s stm32_tim8_priv =
+{
+  .ops        = &stm32_tim_ops,
+  .mode       = STM32_TIM_MODE_UNUSED,
+  .base       = STM32_TIM8_BASE,
+};
+
+static struct adc_dev_s stm32_tim8_dev =
+{
+  .ad_ops = &stm32_tim_adcops,
+  .ad_priv= &stm32_tim8_priv,
+};
+#endif
+
+#endif
+
+/************************************************************************************
+ * Public Function - Initialization
+ ************************************************************************************/
+
+FAR struct stm32_tim_dev_s *stm32_tim_init(int timer)
+{
+  struct stm32_tim_dev_s *dev = NULL;
+
+  /* Get structure and enable power */
+
+  switch (timer)
+    {
+#if CONFIG_STM32_TIM2
+      case 2:
+        dev = (struct stm32_tim_dev_s *)&stm32_tim2_priv;
+        break;
+#endif
+#if CONFIG_STM32_TIM3
+      case 3:
+        dev = (struct stm32_tim_dev_s *)&stm32_tim3_priv;
+        break;
+#endif
+#if CONFIG_STM32_TIM4
+      case 4:
+        dev = (struct stm32_tim_dev_s *)&stm32_tim4_priv;
+        break;
+#endif
+#if CONFIG_STM32_TIM5
+      case 5:
+        dev = (struct stm32_tim_dev_s *)&stm32_tim5_priv;
+        break;
+#endif
+
+#if STM32_NBTIM > 0
+#if CONFIG_STM32_TIM6
+      case 6:
+        dev = (struct stm32_tim_dev_s *)&stm32_tim6_priv;
+        break;
+#endif
+#endif
+#if STM32_NBTIM > 1
+#if CONFIG_STM32_TIM7
+      case 7:
+        dev = (struct stm32_tim_dev_s *)&stm32_tim7_priv;
+        break;
+#endif
+#endif
+
+#if STM32_NATIM > 0
+#if CONFIG_STM32_TIM1
+      case 1:
+        dev = (struct stm32_tim_dev_s *)&stm32_tim1_priv;
+        break;
+#endif
+#if CONFIG_STM32_TIM8
+      case 8:
+        dev = (struct stm32_tim_dev_s *)&stm32_tim8_priv;
+        break;
+#endif
+#endif
+      default:
+        return NULL;
+    }
+
+  /* Is device already allocated */
+
+  if (((struct stm32_tim_priv_s *)dev)->mode != STM32_TIM_MODE_UNUSED)
+    {
+      return NULL;
+    }
+
+  return dev;
+}
+
+/* TODO: Detach interrupts, and close down all TIM Channels */
+
+int stm32_tim_deinit(FAR struct stm32_tim_dev_s * dev)
+{
+  ASSERT(dev);
 
   /* Mark it as free */
 

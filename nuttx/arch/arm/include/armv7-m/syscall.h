@@ -241,6 +241,37 @@ static inline uintptr_t sys_call6(unsigned int nbr, uintptr_t parm1,
   return reg0;
 }
 
+/* SVC call with SYS_ call number and six parameters.
+ *
+ * NOTE the nonstandard parameter passing:  parm4-parm7 are in R4-R7
+ */
+
+static inline uintptr_t sys_call7(unsigned int nbr, uintptr_t parm1,
+                                  uintptr_t parm2, uintptr_t parm3,
+                                  uintptr_t parm4, uintptr_t parm5,
+                                  uintptr_t parm6, uintptr_t parm7)
+{
+  register long reg0 __asm__("r0") = (long)(nbr);
+  register long reg7 __asm__("r7") = (long)(parm7);
+  register long reg6 __asm__("r6") = (long)(parm6);
+  register long reg5 __asm__("r5") = (long)(parm5);
+  register long reg4 __asm__("r4") = (long)(parm4);
+  register long reg3 __asm__("r3") = (long)(parm3);
+  register long reg2 __asm__("r2") = (long)(parm2);
+  register long reg1 __asm__("r1") = (long)(parm1);
+
+  __asm__ __volatile__
+  (
+    "svc %1"
+    : "=r"(reg0)
+    : "i"(SYS_syscall), "r"(reg0), "r"(reg1), "r"(reg2),
+      "r"(reg3), "r"(reg4), "r"(reg5), "r"(reg6), "r"(reg7)
+    : "memory"
+  );
+
+  return reg0;
+}
+
 /****************************************************************************
  * Public Variables
  ****************************************************************************/

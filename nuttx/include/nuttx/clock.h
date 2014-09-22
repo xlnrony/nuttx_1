@@ -192,13 +192,17 @@ struct cpuload_s
 #  ifdef CONFIG_SYSTEM_TIME64
 
 extern volatile uint64_t g_system_timer;
-#define clock_systimer()  (uint32_t)(g_system_timer & 0x00000000ffffffff)
-#define clock_systimer64() g_system_timer
+uint32_t clock_systimer(void);
+//#define clock_systimer()  (uint32_t)(g_system_timer & 0x00000000ffffffff)
+uint64_t clock_systimer64(void);
+//#define clock_systimer64() g_system_timer
 
 #  else
 
 extern volatile uint32_t g_system_timer;
-#define clock_systimer() g_system_timer
+uint32_t clock_systimer(void);
+
+//#define clock_systimer() g_system_timer
 
 #  endif
 #endif
@@ -267,11 +271,11 @@ void clock_synchronize(void);
  ****************************************************************************/
 
 #ifndef __HAVE_KERNEL_GLOBALS
-#  ifdef CONFIG_SYSTEM_TIME64
-#    define clock_systimer()  (uint32_t)(clock_systimer64() & 0x00000000ffffffff)
-#  else
+//#  if defined(CONFIG_SYSTEM_TIME64) && !defined(CONFIG_LIB_SYSCALL)
+//#    define clock_systimer()  (uint32_t)(clock_systimer64() & 0x00000000ffffffff)
+//#  else
 uint32_t clock_systimer(void);
-#  endif
+//#  endif
 #endif
 
 /****************************************************************************

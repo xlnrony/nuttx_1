@@ -53,9 +53,6 @@
  * Public Function Prototypes
  ****************************************************************************/
 
-FAR struct sdio_dev_s *sdio_initialize(int slotno);
-void sdio_mediachange(FAR struct sdio_dev_s *dev, bool cardinslot);
-
 // TODO get the structure out from the slot number
 static FAR struct sdio_dev_s *sdio = NULL;
 

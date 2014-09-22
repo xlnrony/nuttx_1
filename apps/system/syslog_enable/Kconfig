@@ -1,0 +1,20 @@
+#
+# For a description of the syntax of this configuration file,
+# see misc/tools/kconfig-language.txt.
+#
+
+config SYSTEM_SYSLOG_ENABLE
+	bool "NSH syslog_enable command"
+	default n
+	depends on SYSLOG_ENABLE
+	---help---
+		Enable support for the NSH syslog_enable command.
+
+if SYSTEM_SYSLOG_ENABLE
+
+config SYSTEM_SYSLOG_ENABLE_STACKSIZE
+	int "NSH syslog_enable stack size"
+	default 1024
+
+endif
+

@@ -76,4 +76,9 @@ const int g_builtin_count = sizeof(g_builtins) / sizeof(g_builtins[0]);
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
+ 
+void builtin_list_initialize(void)
+{
+  builtin_setbuiltins(g_builtins,g_builtin_count);	
+}
 

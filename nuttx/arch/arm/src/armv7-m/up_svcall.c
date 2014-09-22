@@ -123,16 +123,17 @@ static void dispatch_syscall(void)
 {
   __asm__ __volatile__
   (
-    " sub sp, sp, #16\n"           /* Create a stack frame to hold 3 parms + lr */
+    " sub sp, sp, #20\n"           /* Create a stack frame to hold 3 parms + lr */
     " str r4, [sp, #0]\n"          /* Move parameter 4 (if any) into position */
     " str r5, [sp, #4]\n"          /* Move parameter 5 (if any) into position */
     " str r6, [sp, #8]\n"          /* Move parameter 6 (if any) into position */
-    " str lr, [sp, #12]\n"         /* Save lr in the stack frame */
+    " str r7, [sp, #12]\n" 		   /* Move parameter 7 (if any) into position */
+    " str lr, [sp, #16]\n"         /* Save lr in the stack frame */
     " ldr ip, =g_stublookup\n"     /* R12=The base of the stub lookup table */
     " ldr ip, [ip, r0, lsl #2]\n"  /* R12=The address of the stub for this syscall */
     " blx ip\n"                    /* Call the stub (modifies lr)*/
-    " ldr lr, [sp, #12]\n"         /* Restore lr */
-    " add sp, sp, #16\n"           /* Destroy the stack frame */
+    " ldr lr, [sp, #16]\n"         /* Restore lr */
+    " add sp, sp, #20\n"           /* Destroy the stack frame */
     " mov r2, r0\n"                /* R2=Save return value in R2 */
     " mov r0, #3\n"                /* R0=SYS_syscall_return */
     " svc 0"                       /* Return from the syscall */

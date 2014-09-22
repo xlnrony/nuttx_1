@@ -51,7 +51,7 @@
 /* Debug output is initially disabled */
 
 #ifdef CONFIG_SYSLOG_ENABLE
-bool g_syslogenable;
+bool g_syslogenable = true;
 #endif
 
 /****************************************************************************

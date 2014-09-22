@@ -40,7 +40,7 @@ ifeq ($(CONFIG_USBHOST),y)
 # Include built-in USB host driver logic
 
 CSRCS += usbhost_registry.c usbhost_registerclass.c usbhost_findclass.c
-CSRCS += usbhost_enumerate.c usbhost_storage.c usbhost_devaddr.c
+CSRCS += usbhost_enumerate.c usbhost_storage.c usbhost_devaddr.c usbhost_connection.c
 
 ifeq ($(CONFIG_USBHOST_HIDKBD),y)
 CSRCS += usbhost_hidkbd.c
@@ -48,6 +48,10 @@ endif
 
 ifeq ($(CONFIG_USBHOST_HIDMOUSE),y)
 CSRCS += usbhost_hidmouse.c
+endif
+
+ifeq ($(CONFIG_USBHOST_EPASS3003),y)
+CSRCS += usbhost_epass3003.c
 endif
 
 # HCD debug/trace logic

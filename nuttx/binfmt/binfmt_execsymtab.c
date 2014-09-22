@@ -53,39 +53,30 @@
  * following must also be defined:
  */
 
-#ifdef CONFIG_EXECFUNCS_HAVE_SYMTAB
-  /* Symbol table used by exec[l|v] */
+/* Symbol table used by exec[l|v] */
 
-#  ifndef CONFIG_EXECFUNCS_SYMTAB
-#    error "CONFIG_EXECFUNCS_SYMTAB must be defined"
-#  endif
+//#ifndef CONFIG_EXECFUNCS_SYMTAB
+//#  error "CONFIG_EXECFUNCS_SYMTAB must be defined"
+//#endif
 
-  /* Number of Symbols in the Table */
+/* Number of Symbols in the Table */
 
-#  ifndef CONFIG_EXECFUNCS_NSYMBOLS
-#    error "CONFIG_EXECFUNCS_NSYMBOLS must be defined"
-#  endif
-#endif
+//#ifndef CONFIG_EXECFUNCS_NSYMBOLS
+//#  error "CONFIG_EXECFUNCS_NSYMBOLS must be defined"
+//#endif
 
 /****************************************************************************
  * Public Variables
  ****************************************************************************/
 
-#ifdef CONFIG_EXECFUNCS_HAVE_SYMTAB
-extern const struct symtab_s CONFIG_EXECFUNCS_SYMTAB;
-#endif
+//extern const struct symtab_s CONFIG_EXECFUNCS_SYMTAB;
 
 /****************************************************************************
  * Private Data
  ****************************************************************************/
 
-#ifdef CONFIG_EXECFUNCS_HAVE_SYMTAB
-static FAR const struct symtab_s *g_exec_symtab = &CONFIG_EXECFUNCS_SYMTAB;
-static int g_exec_nsymbols = CONFIG_EXECFUNCS_NSYMBOLS;
-#else
-static FAR const struct symtab_s *g_exec_symtab;
-static int g_exec_nsymbols;
-#endif
+static FAR const struct symtab_s *g_exec_symtab = NULL;
+static int g_exec_nsymbols = 0;
 
 /****************************************************************************
  * Public Functions
@@ -110,6 +101,8 @@ void exec_getsymtab(FAR const struct symtab_s **symtab, FAR int *nsymbols)
 {
   irqstate_t flags;
 
+  DEBUGASSERT(g_exec_symtab);
+	
   DEBUGASSERT(symtab && nsymbols);
 
   /* Disable interrupts very briefly so that both the symbol table and its

@@ -1,0 +1,32 @@
+#
+# For a description of the syntax of this configuration file,
+# see misc/tools/kconfig-language.txt.
+#
+
+config EXAMPLES_ILOCK
+	bool "iLock application example"
+	default n
+	---help---
+		Enable the iLock application example
+
+if EXAMPLES_ILOCK
+
+config EXAMPLES_ILOCK_DEFPRIO
+	int "Waiter Thread Priority"
+	default 100
+	---help---
+		Priority of "waiter" thread.  Default: 50
+
+config EXAMPLES_ILOCK_STACKSIZE
+	int "Waiter Thread Stack Size"
+	default 2048
+	---help---
+		Stacksize of "waiter" thread. Default 1024
+
+config EXAMPLES_EPASS3003_DEVNAME
+	string "Epass3003 Device Name"
+	default "/dev/epass3003a"
+	---help---
+		Name of epass3003 device to be used. Default: "/dev/epass3003a"
+
+endif

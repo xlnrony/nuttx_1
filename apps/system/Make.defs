@@ -106,6 +106,10 @@ ifeq ($(CONFIG_SYSTEM_SYSINFO),y)
 CONFIGURED_APPS += system/sysinfo
 endif
 
+ifeq ($(CONFIG_SYSTEM_SYSLOG_ENABLE),y)
+CONFIGURED_APPS += system/syslog_enable
+endif
+
 ifeq ($(CONFIG_SYSTEM_USBMONITOR),y)
 CONFIGURED_APPS += system/usbmonitor
 endif

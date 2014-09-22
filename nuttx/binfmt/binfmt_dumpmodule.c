@@ -42,6 +42,7 @@
 #include <sched.h>
 #include <debug.h>
 #include <errno.h>
+#include <libgen.h>
 
 #include <nuttx/binfmt/binfmt.h>
 
@@ -91,6 +92,7 @@ int dump_module(FAR const struct binary_s *bin)
       bdbg("  argv:      %p\n", bin->argv);
       bdbg("  entrypt:   %p\n", bin->entrypt);
       bdbg("  mapped:    %p size=%d\n", bin->mapped, bin->mapsize);
+      bdbg("  gdb cmd:   add-symbol-file %s 0x%p", basename((FAR char *)bin->filename), bin->mapped);
       bdbg("  alloc:     %p %p %p\n", bin->alloc[0], bin->alloc[1], bin->alloc[2]);
 #ifdef CONFIG_BINFMT_CONSTRUCTORS
       bdbg("  ctors:     %p nctors=%d\n", bin->ctors, bin->nctors);

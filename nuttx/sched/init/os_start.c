@@ -252,6 +252,18 @@ void os_start(void)
 
   slldbg("Entry\n");
 
+#if defined(CONFIG_BUILD_PROTECTED) && defined(__KERNEL__)
+#ifdef CONFIG_DEBUG  
+#  ifdef CONFIG_ARCH_LOWPUTC
+#    ifdef CONFIG_CPP_HAVE_VARARGS
+  sklog(lowsyslog);
+#    else
+  sklog(lldbg);
+#    endif /* CONFIG_CPP_HAVE_VARARGS */
+#  endif
+#endif /* CONFIG_DEBUG */
+#endif
+  
   /* Initialize RTOS Data ***************************************************/
   /* Initialize all task lists */
 

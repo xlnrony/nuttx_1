@@ -1,10 +1,8 @@
 /****************************************************************************
- * apps/builtin/builtin.c
+ * include/apps/symtab.h
  *
- *   Copyright (C) 2011 Uros Platise. All rights reserved.
- *   Copyright (C) 2011 Gregory Nutt. All rights reserved.
- *   Authors: Uros Platise <uros.platise@isotel.eu>
- *            Gregory Nutt <gnutt@nuttx.org>
+ *   Copyright (C) 2009 Gregory Nutt. All rights reserved.
+ *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -35,46 +33,42 @@
  *
  ****************************************************************************/
 
+#ifndef __INCLUDE_APPS_SYMTAB_H
+#define __INCLUDE_APPS_SYMTAB_H
+
 /****************************************************************************
  * Included Files
  ****************************************************************************/
 
 #include <nuttx/config.h>
 
-#include <nuttx/binfmt/builtin.h>
-
 /****************************************************************************
- * Private Types
+ * Pre-processor Definitions
  ****************************************************************************/
 
 /****************************************************************************
- * Private Function Prototypes
- ****************************************************************************/
-
-/****************************************************************************
- * Public Data
- ****************************************************************************/
-
-extern const struct builtin_s g_builtins[];
-extern const int g_builtin_count;
-
-/****************************************************************************
- * Private Data
- ****************************************************************************/
-
-/****************************************************************************
- * Private Functions
+ * Public Types
  ****************************************************************************/
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
-FAR const struct builtin_s *builtin_for_index(int index)
-{
-  if (index < g_builtin_count)
-    {
-      return &g_builtins[index];
-    }
-  return NULL;
+#undef EXTERN
+#if defined(__cplusplus)
+#define EXTERN extern "C"
+extern "C" {
+#else
+#define EXTERN extern
+#endif
+
+EXTERN void symtab_list_initialize(void);
+
+#undef EXTERN
+#if defined(__cplusplus)
 }
+#endif
+
+#endif /* __INCLUDE_APPS_SYMTAB_H */
+
+

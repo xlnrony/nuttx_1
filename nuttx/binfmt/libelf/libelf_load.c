@@ -265,10 +265,14 @@ int elf_load(FAR struct elf_loadinfo_s *loadinfo)
 
   /* Determine the heapsize to allocate */
 
-#ifdef CONFIG_ARCH_STACK_DYNAMIC
+#ifdef CONFIG_ARCH_ADDRENV
+#  ifdef CONFIG_ARCH_STACK_DYNAMIC
   heapsize = ARCH_HEAP_SIZE;
-#else
+#  else
   heapsize = MIN(ARCH_HEAP_SIZE, CONFIG_ELF_STACKSIZE);
+#  endif
+#else
+  heapsize = CONFIG_ELF_STACKSIZE;
 #endif
 
   /* Allocate (and zero) memory for the ELF file. */

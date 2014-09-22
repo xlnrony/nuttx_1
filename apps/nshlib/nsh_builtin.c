@@ -55,7 +55,6 @@
 #include <string.h>
 
 #include <nuttx/binfmt/builtin.h>
-#include <apps/builtin.h>
 
 #include "nsh.h"
 #include "nsh_console.h"
@@ -126,7 +125,7 @@ int nsh_builtin(FAR struct nsh_vtbl_s *vtbl, FAR const char *cmd,
    * applications.
    */
 
-  ret = exec_builtin(cmd, (FAR char * const *)argv, redirfile, oflags);
+  ret = builtin_exec(cmd, (FAR char * const *)argv, redirfile, oflags);
   if (ret >= 0)
     {
       /* The application was successfully started with pre-emption disabled.

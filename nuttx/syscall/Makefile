@@ -41,9 +41,9 @@ include stubs$(DELIM)Make.defs
 
 MKSYSCALL = "$(TOPDIR)$(DELIM)tools$(DELIM)mksyscall$(EXEEXT)"
 CSVFILE = "$(TOPDIR)$(DELIM)syscall$(DELIM)syscall.csv"
+SORTCSVFILE = "$(TOPDIR)$(DELIM)syscall$(DELIM).syscall"
 
-STUB_SRCS += syscall_funclookup.c syscall_stublookup.c syscall_nparms.c
-STUB_SRCS += syscall_clock_systimer.c
+STUB_SRCS += syscall_stublookup.c
 
 ASRCS =
 AOBJS = $(ASRCS:.S=$(OBJEXT))
@@ -91,8 +91,12 @@ $(MKSYSCALL):
 	$(Q) $(MAKE) -C $(TOPDIR)$(DELIM)tools -f Makefile.host mksyscall
 
 .context: syscall.csv
-	$(Q) (cd proxies; $(MKSYSCALL) -p $(CSVFILE);)
-	$(Q) (cd stubs; $(MKSYSCALL) -s $(CSVFILE);)
+	$(Q) cat $(CSVFILE) | sort > $(SORTCSVFILE)
+	$(Q) (cd proxies; $(MKSYSCALL) -p $(SORTCSVFILE);)
+	$(Q) (cd stubs; $(MKSYSCALL) -s $(SORTCSVFILE);)
+	$(Q) ($(MKSYSCALL) -h $(SORTCSVFILE);)	
+	$(Q) (cd $(TOPDIR)$(DELIM)include$(DELIM)sys; $(MKSYSCALL) -l $(SORTCSVFILE);)	
+	$(call DELFILE, $(SORTCSVFILE))	
 	$(Q) touch $@
 
 context: $(MKSYSCALL) .context
@@ -111,7 +115,9 @@ distclean: clean
 	$(call DELFILE, Make.dep)
 	$(call DELFILE, .depend)
 	$(call DELFILE, proxies$(DELIM)*.c)
-	$(call DELFILE, stubs$(DELIM)*.c)
+	$(call DELFILE, stubs$(DELIM)*.c)	
+	$(call DELFILE, syscall_stub.h)
+	$(call DELFILE, $(TOPDIR)$(DELIM)include$(DELIM)sys$(DELIM)syscall_lookup.h)
 
 -include Make.dep
 
