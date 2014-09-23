@@ -46,6 +46,7 @@
 #include <errno.h>
 #include <debug.h>
 
+#include <nuttx/kthread.h>
 #include <nuttx/usb/usbdev.h>
 #include <nuttx/usb/usbhost.h>
 #include <nuttx/usb/usbdev_trace.h>
@@ -145,15 +146,6 @@ static int usbhost_waiter(int argc, char *argv[])
 
 void stm32_usbinitialize(void)
 {
-  /* The OTG FS has an internal soft pull-up.  No GPIO configuration is required */
-
-  /* Configure the OTG FS VBUS sensing GPIO, Power On, and Overcurrent GPIOs */
-
-#ifdef CONFIG_STM32_OTGFS
-//  stm32_configgpio(GPIO_OTGFS_VBUS);
-//  stm32_configgpio(GPIO_OTGFS_PWRON);
-//  stm32_configgpio(GPIO_OTGFS_OVER);
-#endif
 }
 
 /***********************************************************************************
@@ -166,7 +158,7 @@ void stm32_usbinitialize(void)
  *
  ***********************************************************************************/
 
-#if 0 //CONFIG_USBHOST
+#ifdef CONFIG_USBHOST
 int stm32_usbhost_initialize(void)
 {
   int pid;
@@ -176,9 +168,9 @@ int stm32_usbhost_initialize(void)
    * that we care about:
    */
 
-  uvdbg("Register class drivers\n");
-
 #ifdef CONFIG_USBHOST_MSC
+  uvdbg("Register mass storage usb class drivers\n");
+
   ret = usbhost_storageinit();
   if (ret != OK)
     {
@@ -187,6 +179,8 @@ int stm32_usbhost_initialize(void)
 #endif
 
 #ifdef CONFIG_USBHOST_HIDKBD
+  uvdbg("Register HID keyboard usb class drivers\n");
+
   ret = usbhost_kbdinit();
   if (ret != OK)
     {
@@ -195,6 +189,8 @@ int stm32_usbhost_initialize(void)
 #endif
 
 #ifdef CONFIG_USBHOST_HIDMOUSE
+  uvdbg("Register HID mouse usb class drivers\n");
+
   ret = usbhost_mouse_init();
   if (ret != OK)
     {
@@ -205,14 +201,14 @@ int stm32_usbhost_initialize(void)
   /* Then get an instance of the USB host interface */
 
   uvdbg("Initialize USB host\n");
-  g_usbconn = stm32_otgfshost_initialize(0);
+  g_usbconn = usbhost_initialize(0);
   if (g_usbconn)
     {
       /* Start a thread to handle device connection. */
 
       uvdbg("Start usbhost_waiter\n");
 
-      pid = task_create("usbhost", CONFIG_USBHOST_DEFPRIO,
+      pid = kernel_thread("usbhost", CONFIG_USBHOST_DEFPRIO,
                         CONFIG_USBHOST_STACKSIZE,
                         (main_t)usbhost_waiter, (FAR char * const *)NULL);
       return pid < 0 ? -ENOEXEC : OK;
@@ -251,43 +247,6 @@ int stm32_usbhost_initialize(void)
 #ifdef CONFIG_USBHOST
 void stm32_usbhost_vbusdrive(int iface, bool enable)
 {
-  DEBUGASSERT(iface == 0);
-
-  if (enable)
-    {
-      /* Enable the Power Switch by driving the enable pin low */
-
-//      stm32_gpiowrite(GPIO_OTGFS_PWRON, false);
-    }
-  else
-    {
-      /* Disable the Power Switch by driving the enable pin high */
-
-//      stm32_gpiowrite(GPIO_OTGFS_PWRON, true);
-    }
-}
-#endif
-
-/************************************************************************************
- * Name: stm32_setup_overcurrent
- *
- * Description:
- *   Setup to receive an interrupt-level callback if an overcurrent condition is
- *   detected.
- *
- * Input Parameter:
- *   handler - New overcurrent interrupt handler
- *
- * Returned value:
- *   Old overcurrent interrupt handler
- *
- ************************************************************************************/
-
-#ifdef CONFIG_USBHOST
-xcpt_t stm32_setup_overcurrent(xcpt_t handler)
-{
-//  return stm32_gpiosetevent(GPIO_OTGFS_OVER, true, true, true, handler);
-	return NULL;
 }
 #endif
 

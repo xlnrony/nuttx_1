@@ -102,81 +102,72 @@
 int adc_devinit(void)
 {
 #ifdef CONFIG_STM32_ADC1
-  static bool initialized = false;
   struct adc_dev_s *adc;
   int ret;
-  int i;
 
   /* Check if we have already initialized */
 
-  if (!initialized)
-    {
 //////////////////////////////////////////////////////////////////////////////////////////////////
 #ifdef CONFIG_STM32_ADC1
-      /* Call stm32_adcinitialize() to get an instance of the ADC interface */
+  /* Call stm32_adcinitialize() to get an instance of the ADC interface */
 
-      adc = stm32_adcinitialize(1);
-      if (adc == NULL)
-        {
-          adbg("ERROR: Failed to get ADC interface\n");
-          return -ENODEV;
-        }
+  adc = stm32_adcinitialize(1);
+  if (adc == NULL)
+    {
+      adbg("ERROR: Failed to get ADC interface\n");
+      return -ENODEV;
+    }
 
-      /* Register the ADC driver at "/dev/adc1" */
+  /* Register the ADC driver at "/dev/adc1" */
 
-      ret = adc_register(CONFIG_ADC1_DEVNAME, adc);
-      if (ret < 0)
-        {
-          adbg("adc_register failed: %d\n", ret);
-          return ret;
-        }			
+  ret = adc_register(CONFIG_ADC1_DEVNAME, adc);
+  if (ret < 0)
+    {
+      adbg("adc_register failed: %d\n", ret);
+      return ret;
+    }			
 #endif			
 //////////////////////////////////////////////////////////////////////////////////////////////////
 #ifdef CONFIG_STM32_ADC2
-      /* Call stm32_adcinitialize() to get an instance of the ADC interface */
+  /* Call stm32_adcinitialize() to get an instance of the ADC interface */
 
-      adc = stm32_adcinitialize(1);
-      if (adc == NULL)
-        {
-          adbg("ERROR: Failed to get ADC interface\n");
-          return -ENODEV;
-        }
+  adc = stm32_adcinitialize(1);
+  if (adc == NULL)
+    {
+      adbg("ERROR: Failed to get ADC interface\n");
+      return -ENODEV;
+    }
 
-      /* Register the ADC driver at "/dev/adc2" */
+  /* Register the ADC driver at "/dev/adc2" */
 
-      ret = adc_register(CONFIG_ADC2_DEVNAME, adc);
-      if (ret < 0)
-        {
-          adbg("adc_register failed: %d\n", ret);
-          return ret;
-        }			
+  ret = adc_register(CONFIG_ADC2_DEVNAME, adc);
+  if (ret < 0)
+    {
+      adbg("adc_register failed: %d\n", ret);
+      return ret;
+    }			
 #endif			
 //////////////////////////////////////////////////////////////////////////////////////////////////
 #ifdef CONFIG_STM32_ADC3
-      /* Call stm32_adcinitialize() to get an instance of the ADC interface */
+  /* Call stm32_adcinitialize() to get an instance of the ADC interface */
 
-      adc = stm32_adcinitialize(3);
-      if (adc == NULL)
-        {
-          adbg("ERROR: Failed to get ADC interface\n");
-          return -ENODEV;
-        }
+  adc = stm32_adcinitialize(3);
+  if (adc == NULL)
+    {
+      adbg("ERROR: Failed to get ADC interface\n");
+      return -ENODEV;
+    }
 
-      /* Register the ADC driver at "/dev/adc0" */
+  /* Register the ADC driver at "/dev/adc0" */
 
-      ret = adc_register(CONFIG_ADC3_DEVNAME, adc);
-      if (ret < 0)
-        {
-          adbg("adc_register failed: %d\n", ret);
-          return ret;
-        }
+  ret = adc_register(CONFIG_ADC3_DEVNAME, adc);
+  if (ret < 0)
+    {
+      adbg("adc_register failed: %d\n", ret);
+      return ret;
+    }
 #endif			
 //////////////////////////////////////////////////////////////////////////////////////////////////
-
-      /* Now we are initialized */
-
-      initialized = true;
-    }
 
   return OK;	
 #else

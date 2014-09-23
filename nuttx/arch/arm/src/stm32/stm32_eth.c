@@ -1658,7 +1658,7 @@ static void stm32_receive(FAR struct stm32_ethmac_s *priv)
         }
       else
         {
-          nlldbg("DROPPED: Unknown type: %04x\n", BUF->type);
+          nllvdbg("DROPPED: Unknown type: %04x\n", BUF->type);
         }
 
       /* We are finished with the RX buffer.  NOTE:  If the buffer is
@@ -2987,7 +2987,7 @@ static int stm32_phyinit(FAR struct stm32_ethmac_s *priv)
 #endif
 #endif
 
-  ndbg("Duplex: %s Speed: %d MBps\n",
+  nvdbg("Duplex: %s Speed: %d MBps\n",
        priv->fduplex ? "FULL" : "HALF",
        priv->mbps100 ? 100 : 10);
 

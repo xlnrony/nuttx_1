@@ -1,8 +1,7 @@
 /************************************************************************************
- * configs/stm32f4discovery/include/board.h
- * include/arch/board/board.h
+ * configs/ilstm407/include/board.h
  *
- *   Copyright (C) 2012 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2012, 2014 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -265,6 +264,16 @@
 #define GPIO_USART1_RX GPIO_USART1_RX_1
 #define GPIO_USART1_TX GPIO_USART1_TX_1
 
+/* SPI - There is a MEMS device on SPI1 using these pins: */
+
+#define GPIO_SPI1_MISO GPIO_SPI1_MISO_1
+#define GPIO_SPI1_MOSI GPIO_SPI1_MOSI_1
+#define GPIO_SPI1_SCK  GPIO_SPI1_SCK_1
+
+/* Timer Inputs/Outputs (see the README.txt file for options) */
+
+#define GPIO_TIM3_CH1IN  GPIO_TIM3_CH1IN_3
+
 /* Ethernet:
  *
  * - PA2  is ETH_MDIO
@@ -301,33 +310,9 @@
 //#define GPIO_ETH_RMII_TXD0  GPIO_ETH_RMII_TXD0_2
 //#define GPIO_ETH_RMII_TXD1  GPIO_ETH_RMII_TXD1_2
 
-/* PWM
- *
- * The STM32F4 Discovery has no real on-board PWM devices, but the board can be
- * configured to output a pulse train using TIM4 CH2 on PD13.
- */
-
-//#define GPIO_TIM4_CH2OUT GPIO_TIM4_CH2OUT_2
-
-/* SPI - There is a MEMS device on SPI1 using these pins: */
-
-#define GPIO_SPI1_MISO GPIO_SPI1_MISO_1
-#define GPIO_SPI1_MOSI GPIO_SPI1_MOSI_1
-#define GPIO_SPI1_SCK  GPIO_SPI1_SCK_1
-
-/* Timer Inputs/Outputs (see the README.txt file for options) */
-
-#define GPIO_TIM3_CH1IN  GPIO_TIM3_CH1IN_3
-
-//#define GPIO_TIM2_CH1IN  GPIO_TIM2_CH1IN_2
-//#define GPIO_TIM2_CH2IN  GPIO_TIM2_CH2IN_1
-
-//#define GPIO_TIM8_CH1IN  GPIO_TIM8_CH1IN_1
-//#define GPIO_TIM8_CH2IN  GPIO_TIM8_CH2IN_1
-
 /* DMA Channl/Stream Selections *****************************************************/
 /* Stream selections are arbitrary for now but might become important in the future
- * is we set aside more DMA channels/streams.
+ * if we set aside more DMA channels/streams.
  *
  * SDIO DMA
  *   DMAMAP_SDIO_1 = Channel 4, Stream 3
@@ -345,7 +330,8 @@
 #undef EXTERN
 #if defined(__cplusplus)
 #define EXTERN extern "C"
-extern "C" {
+extern "C"
+{
 #else
 #define EXTERN extern
 #endif
@@ -358,7 +344,7 @@ extern "C" {
  *
  * Description:
  *   All STM32 architectures must provide the following entry point.  This entry point
- *   is called early in the intitialization -- after all memory has been configured
+ *   is called early in the initialization -- after all memory has been configured
  *   and mapped but before any devices have been initialized.
  *
  ************************************************************************************/

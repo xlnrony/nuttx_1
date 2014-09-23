@@ -1,7 +1,7 @@
 /****************************************************************************
- * config/ilstm407/src/stm32_nsh.c
+ * config/stm32f4discovery/src/stm32_sdio.c
  *
- *   Copyright (C) 2012, 2014 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2014 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,38 +39,89 @@
 
 #include <nuttx/config.h>
 
+#include <stdbool.h>
+#include <stdio.h>
+#include <debug.h>
+#include <errno.h>
+
+#include <nuttx/sdio.h>
+#include <nuttx/mmcsd.h>
+#include <sys/mount.h>
+
+#include "stm32.h"
 #include "stm32f4discovery.h"
+
+#ifdef HAVE_SDIO
 
 /****************************************************************************
  * Pre-Processor Definitions
  ****************************************************************************/
 
-#ifndef OK
-#  define OK 0
-#endif
+/****************************************************************************
+ * Private Data
+ ****************************************************************************/
+
+static FAR struct sdio_dev_s *g_sdio_dev;
+
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Name: nsh_archinitialize
+ * Name: stm32_sdio_initialize
  *
  * Description:
- *   Perform architecture-specific initialization (if this was not already
- *   done by board_initialize();
+ *   Initialize SDIO-based MMC/SD card support
  *
  ****************************************************************************/
 
-int nsh_archinitialize(void)
+int stm32_sdio_initialize(void)
 {
-#ifdef CONFIG_BOARD_INITIALIZE
-  /* Board initialization already performed by board_initialize() */
+  int ret;
+  char devname[16];
 
+  /* Mount the SDIO-based MMC/SD block driver */
+  /* First, get an instance of the SDIO interface */
+
+  fvdbg("Initializing SDIO slot %d\n", SDIO_SLOTNO);
+
+  g_sdio_dev = sdio_initialize(SDIO_SLOTNO);
+  if (!g_sdio_dev)
+    {
+      fdbg("Failed to initialize SDIO slot %d\n", SDIO_SLOTNO);
+      return -ENODEV;
+    }
+
+  /* Now bind the SDIO interface to the MMC/SD driver */
+
+  fvdbg("Bind SDIO to the MMC/SD driver, minor=%d\n", SDIO_MINOR);
+
+  ret = mmcsd_slotinitialize(SDIO_MINOR, g_sdio_dev);
+  if (ret != OK)
+    {
+      fdbg("Failed to bind SDIO to the MMC/SD driver: %d\n", ret);
+      return ret;
+    }
+
+  fvdbg("Successfully bound SDIO to the MMC/SD driver\n");
+
+  /* Assume that the SD card is inserted.  What choice do we have? */
+
+  sdio_mediachange(g_sdio_dev, true);
+
+  snprintf(devname, 16, "/dev/mmcsd%d", SDIO_MINOR);	
+  ret = mount(devname, CONFIG_SDCARD_MAPPED_PATH, "vfat", 0, NULL);
+  if (ret != OK)
+  	{
+      fdbg("Failed to mount sdcard: %d\n", ret);
+      return ret;
+  	}	
+	
   return OK;
-#else
-  /* Perform board-specific initialization */
-
-  return stm32_bringup();
-#endif
 }
+
+#endif /* HAVE_SDIO */

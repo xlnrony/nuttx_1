@@ -166,7 +166,7 @@ int udp_input(FAR struct net_driver_s *dev)
         }
       else
         {
-          nlldbg("No listener on UDP port\n");
+          nllvdbg("No listener on UDP port\n");
           dev->d_len = 0;
         }
     }

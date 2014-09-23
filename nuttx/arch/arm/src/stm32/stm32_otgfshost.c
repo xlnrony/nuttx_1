@@ -4400,11 +4400,11 @@ static FAR struct usbhost_connection_s *stm32_otgfshost_initialize(int controlle
 #ifdef CONFIG_STM32_OTGFS2
   stm32_configgpio(GPIO_OTGFS2_DM);
   stm32_configgpio(GPIO_OTGFS2_DP);
-  stm32_configgpio(GPIO_OTGFS2_ID);   /* Only needed for OTG */
+//  stm32_configgpio(GPIO_OTGFS2_ID);   /* Only needed for OTG */
 #else
   stm32_configgpio(GPIO_OTGFS_DM);
   stm32_configgpio(GPIO_OTGFS_DP);
-  stm32_configgpio(GPIO_OTGFS_ID);    /* Only needed for OTG */
+//  stm32_configgpio(GPIO_OTGFS_ID);    /* Only needed for OTG */
 #endif
 
   /* SOF output pin configuration is configurable */

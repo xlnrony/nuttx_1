@@ -1449,11 +1449,11 @@ static int stm32_tim_interrupt(int irq, void *context)
 		  return OK;
   	}
 
-  if (stm32_tim_getintstatus(dev, 0))
+  if (stm32_tim_getintstatus((struct stm32_tim_dev_s *)(dev->ad_priv), 0))
   	{
-		stm32_tim_ackint(dev, 0);
-		t = stm32_tim_getcapture(dev, ((struct stm32_tim_priv_s *)dev)->channel);
-		adc_receive(dev, ((struct stm32_tim_priv_s *)dev)->channel, t);
+		stm32_tim_ackint((struct stm32_tim_dev_s *)(dev->ad_priv), 0);
+		t = stm32_tim_getcapture((struct stm32_tim_dev_s *)(dev->ad_priv), ((struct stm32_tim_priv_s *)(dev->ad_priv))->channel);
+		adc_receive(dev, ((struct stm32_tim_priv_s *)(dev->ad_priv))->channel, t);
   	}
 
   return OK;

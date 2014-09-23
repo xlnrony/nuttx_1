@@ -11,6 +11,12 @@ config EPASS3003_DEVNAME
 	---help---
 		Name of epass3003 device to be used. Default: "/dev/epass3003a"
 		
+config SDCARD_MAPPED_PATH
+	string "Mapped path of sdcard "
+	default "/mnt/sd"
+	---help---
+		Mapped path of sdcard to be used. Default: "/mnt/sd"
+		
 config TIM_DEVNAME
 	string "MAGNET LX TIM3IN1 Device Name"
 	default "/dev/tim3in1"

@@ -40,7 +40,7 @@ CFLAGS += -I$(TOPDIR)/sched
 ASRCS =
 AOBJS = $(ASRCS:.S=$(OBJEXT))
 
-CSRCS = stm32_boot.c
+CSRCS = stm32_boot.c stm32_bringup.c
 
 ifeq ($(CONFIG_HAVE_CXX),y)
 CSRCS += stm32_cxxinitialize.c
@@ -59,6 +59,10 @@ endif
 
 ifeq ($(CONFIG_STM32_OTGFS),y)
 CSRCS += stm32_usb.c
+endif
+
+ifeq ($(CONFIG_STM32_SDIO),y)
+CSRCS += stm32_sdio.c
 endif
 
 ifeq ($(CONFIG_WATCHDOG),y)
