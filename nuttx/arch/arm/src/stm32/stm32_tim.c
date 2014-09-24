@@ -245,7 +245,6 @@ static void stm32_tim_reset(FAR struct stm32_tim_dev_s *dev)
 {
   //((struct stm32_tim_priv_s *)dev)->mode = STM32_TIM_CH_DISABLED;
   stm32_tim_disable(dev);
-  stm32_tim_enable(dev);	
 }
 
 static void stm32_tim_gpioconfig(uint32_t cfg, stm32_tim_channel_t mode)
@@ -416,16 +415,16 @@ static void stm32_tim_enableint(FAR struct stm32_tim_dev_s *dev, int source)
     {
       switch(((struct stm32_tim_priv_s *)dev)->channel)
       	{
-         case 0:
+         case 1:
            stm32_modifyreg16(dev, STM32_GTIM_DIER_OFFSET, 0, GTIM_DIER_CC1IE);
            break;
-         case 1:
+         case 2:
            stm32_modifyreg16(dev, STM32_GTIM_DIER_OFFSET, 0, GTIM_DIER_CC2IE);
            break;
-         case 2:
+         case 3:
            stm32_modifyreg16(dev, STM32_GTIM_DIER_OFFSET, 0, GTIM_DIER_CC3IE);
            break;
-         case 3:
+         case 4:
            stm32_modifyreg16(dev, STM32_GTIM_DIER_OFFSET, 0, GTIM_DIER_CC4IE);
            break;
 	}	  	
@@ -443,16 +442,16 @@ static void stm32_tim_disableint(FAR struct stm32_tim_dev_s *dev, int source)
     {
       switch(((struct stm32_tim_priv_s *)dev)->channel)
       	{
-         case 0:
+         case 1:
            stm32_modifyreg16(dev, STM32_GTIM_DIER_OFFSET, GTIM_DIER_CC1IE, 0);
            break;
-         case 1:
+         case 2:
            stm32_modifyreg16(dev, STM32_GTIM_DIER_OFFSET, GTIM_DIER_CC2IE, 0);
            break;
-         case 2:
+         case 3:
            stm32_modifyreg16(dev, STM32_GTIM_DIER_OFFSET, GTIM_DIER_CC3IE, 0);
            break;
-         case 3:
+         case 4:
            stm32_modifyreg16(dev, STM32_GTIM_DIER_OFFSET, GTIM_DIER_CC4IE, 0);
            break;
 	}	  	
@@ -470,16 +469,16 @@ static void stm32_tim_ackint(FAR struct stm32_tim_dev_s *dev, int source)
     {
       switch(((struct stm32_tim_priv_s *)dev)->channel)
       	{
-         case 0:
+         case 1:
            stm32_putreg16(dev, STM32_GTIM_SR_OFFSET, ~GTIM_SR_CC1IF);
            break;
-         case 1:
+         case 2:
            stm32_putreg16(dev, STM32_GTIM_SR_OFFSET, ~GTIM_SR_CC2IF);
            break;
-         case 2:
+         case 3:
            stm32_putreg16(dev, STM32_GTIM_SR_OFFSET, ~GTIM_SR_CC3IF);
            break;
-         case 3:
+         case 4:
            stm32_putreg16(dev, STM32_GTIM_SR_OFFSET, ~GTIM_SR_CC4IF);
            break;
 	}	  	
@@ -502,19 +501,19 @@ static bool stm32_tim_getintstatus(FAR struct stm32_tim_dev_s *dev, int source)
     {
       switch(((struct stm32_tim_priv_s *)dev)->channel)
       	{
-         case 0:
+         case 1:
 	       itstatus = stm32_getreg16(dev, STM32_GTIM_SR_OFFSET) & GTIM_SR_CC1IF; 	
 	       itenable = stm32_getreg16(dev, STM32_GTIM_DIER_OFFSET) & GTIM_DIER_CC1IE;
            break;
-         case 1:
+         case 2:
 	       itstatus = stm32_getreg16(dev, STM32_GTIM_SR_OFFSET) & GTIM_SR_CC2IF; 	
 	       itenable = stm32_getreg16(dev, STM32_GTIM_DIER_OFFSET) & GTIM_DIER_CC2IE;
            break;
-         case 2:
+         case 3:
 	       itstatus = stm32_getreg16(dev, STM32_GTIM_SR_OFFSET) & GTIM_SR_CC3IF; 	
 	       itenable = stm32_getreg16(dev, STM32_GTIM_DIER_OFFSET) & GTIM_DIER_CC3IE;
            break;
-         case 3:
+         case 4:
 	       itstatus = stm32_getreg16(dev, STM32_GTIM_SR_OFFSET) & GTIM_SR_CC4IF; 	
 	       itenable = stm32_getreg16(dev, STM32_GTIM_DIER_OFFSET) & GTIM_DIER_CC4IE;
            break;
@@ -1005,16 +1004,16 @@ static int stm32_tim_setcompare(FAR struct stm32_tim_dev_s *dev, uint8_t channel
 
   switch (channel)
     {
-      case 0:
+      case 1:
         stm32_putreg32(dev, STM32_GTIM_CCR1_OFFSET, compare);
         break;
-      case 1:
+      case 2:
         stm32_putreg32(dev, STM32_GTIM_CCR2_OFFSET, compare);
         break;
-      case 2:
+      case 3:
         stm32_putreg32(dev, STM32_GTIM_CCR3_OFFSET, compare);
         break;
-      case 3:
+      case 4:
         stm32_putreg32(dev, STM32_GTIM_CCR4_OFFSET, compare);
         break;
       default:
@@ -1029,13 +1028,13 @@ static int stm32_tim_getcapture(FAR struct stm32_tim_dev_s *dev, uint8_t channel
 
   switch (channel)
     {
-      case 0:
-        return stm32_getreg32(dev, STM32_GTIM_CCR1_OFFSET);
       case 1:
-        return stm32_getreg32(dev, STM32_GTIM_CCR2_OFFSET);
+        return stm32_getreg32(dev, STM32_GTIM_CCR1_OFFSET);
       case 2:
-        return stm32_getreg32(dev, STM32_GTIM_CCR3_OFFSET);
+        return stm32_getreg32(dev, STM32_GTIM_CCR2_OFFSET);
       case 3:
+        return stm32_getreg32(dev, STM32_GTIM_CCR3_OFFSET);
+      case 4:
         return stm32_getreg32(dev, STM32_GTIM_CCR4_OFFSET);
     }
 
@@ -1186,13 +1185,13 @@ static int  stm32_cap_setup(FAR struct adc_dev_s *dev)
       if (ret == OK)
         {
         	stm32_tim_selectinputtrigger((struct stm32_tim_dev_s *)(dev->ad_priv), 
-						((struct stm32_tim_priv_s *)(dev->ad_priv))->channel==0 ? GTIM_SMCR_TI1FP1 : GTIM_SMCR_TI2FP2);
+						((struct stm32_tim_priv_s *)(dev->ad_priv))->channel == 1 ? GTIM_SMCR_TI1FP1 : GTIM_SMCR_TI2FP2);
 			stm32_tim_selectslavemode((struct stm32_tim_dev_s *)(dev->ad_priv), GTIM_SMCR_RESET);
 //			stm32_tim_selectmasterslavemode((struct stm32_tim_dev_s *)(dev->ad_priv), GTIM_SMCR_MSM);
           stm32_tim_enable((struct stm32_tim_dev_s *)(dev->ad_priv));
 
 			stm32_tim_setisr((struct stm32_tim_dev_s *)(dev->ad_priv), stm32_tim_interrupt, 0);
-			stm32_tim_enableint((struct stm32_tim_dev_s *)(dev->ad_priv), 0);
+			//stm32_tim_enableint((struct stm32_tim_dev_s *)(dev->ad_priv), 0);
         }
     }
   
@@ -1209,11 +1208,11 @@ static void stm32_cap_rxint(FAR struct adc_dev_s *dev, bool enable)
 {
   if (enable)
     {
-	stm32_tim_enableint((struct stm32_tim_dev_s *)(dev->ad_priv),((struct stm32_tim_priv_s *)(dev->ad_priv))->channel+1);    
+	   stm32_tim_enableint((struct stm32_tim_dev_s *)(dev->ad_priv),0);    
     }
   else
     {
-       stm32_tim_disableint((struct stm32_tim_dev_s *)(dev->ad_priv),((struct stm32_tim_priv_s *)(dev->ad_priv))->channel+1);
+      stm32_tim_disableint((struct stm32_tim_dev_s *)(dev->ad_priv),0);
     }
 }
 

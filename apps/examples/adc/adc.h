@@ -96,12 +96,12 @@
 
 struct adc_state_s
 {
-  bool      initialized;
   FAR char *devpath;
 #if defined(CONFIG_NSH_BUILTIN_APPS) || defined(CONFIG_EXAMPLES_ADC_NSAMPLES)
   int       count;
 #endif
   int 		  channel;
+  int	 	  swtrig;
 };
 
 /****************************************************************************

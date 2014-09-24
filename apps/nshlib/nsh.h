@@ -565,6 +565,7 @@
  */
 
 #if defined(CONFIG_BUILD_PROTECTED) || defined(CONFIG_BUILD_KERNEL)
+#if 0
 #  undef CONFIG_NSH_DISABLE_PS          /* 'ps' depends on sched_foreach */
 #  define CONFIG_NSH_DISABLE_PS 1
 #  undef CONFIG_NSH_DISABLE_DF          /* 'df' depends on foreach_mountpoint */
@@ -575,6 +576,7 @@
 #  define CONFIG_NSH_DISABLE_LOSETUP 1
 #  undef CONFIG_NSH_DISABLE_MKFATFS     /* 'mkfatfs' depends on mkfatfs interface */
 #  define CONFIG_NSH_DISABLE_MKFATFS 1
+#endif
 #  undef CONFIG_NSH_DISABLE_MKRD        /* 'mkrd' depends on ramdisk_register */
 #  define CONFIG_NSH_DISABLE_MKRD 1
 #endif

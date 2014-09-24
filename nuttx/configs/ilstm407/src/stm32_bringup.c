@@ -92,6 +92,15 @@ int stm32_bringup(void)
     }
 #endif	
 
+#if defined(CONFIG_ADC) && defined(CONFIG_STM32_TIM3)
+  ret = tim_devinit();
+  if (ret != OK)
+    {
+      adbg("Failed to initialize TIM driver: %d\n", ret);
+      return ret;
+    }
+#endif	
+
 #ifdef HAVE_USBHOST
   /* Initialize USB host operation.  stm32_usbhost_initialize() starts a thread
    * will monitor for USB connection and disconnection events.

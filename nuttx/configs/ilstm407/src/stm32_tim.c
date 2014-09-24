@@ -49,7 +49,8 @@
 #include "chip.h"
 #include "up_arch.h"
 
-#include "stm32_tim.h"
+#include "stm32.h"
+#include "stm32f4discovery.h"
 
 #ifdef CONFIG_STM32_TIM3
 
@@ -91,10 +92,10 @@ int tim_devinit(void)
     {
       /* Call stm32_cap_init() to get an instance of the CAP interface */
 
-      tim = stm32_cap_init(3, 0); 
+      tim = stm32_cap_init(3, 1); 
       if (tim == NULL)
         {
-          adbg("ERROR: Failed to get ADC interface\n");
+          adbg("ERROR: Failed to get TIM interface\n");
           return -ENODEV;
         }
 

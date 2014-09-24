@@ -2987,7 +2987,7 @@ static int stm32_phyinit(FAR struct stm32_ethmac_s *priv)
 #endif
 #endif
 
-  nvdbg("Duplex: %s Speed: %d MBps\n",
+  ndbg("Duplex: %s Speed: %d MBps\n",
        priv->fduplex ? "FULL" : "HALF",
        priv->mbps100 ? 100 : 10);
 
