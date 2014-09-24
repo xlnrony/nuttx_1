@@ -1,7 +1,7 @@
 /****************************************************************************
- * arch/arm/src/armv7-a/addrenv.h
+ * mm/mm_gran/mm_graninit.c
  *
- *   Copyright (C) 2014 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2012 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,105 +33,91 @@
  *
  ****************************************************************************/
 
-#ifndef __ARCH_ARM_SRC_ARMV7_A_ADDRENV_H
-#define __ARCH_ARM_SRC_ARMV7_A_ADDRENV_H
-
 /****************************************************************************
  * Included Files
  ****************************************************************************/
 
 #include <nuttx/config.h>
 
-#include <sys/types.h>
-#include <stdint.h>
+#include <assert.h>
+#include <errno.h>
 
-#ifdef CONFIG_ARCH_ADDRENV
+#include <nuttx/gran.h>
+#include <nuttx/kmalloc.h>
+
+#include "mm_gran/mm_gran.h"
+
+#ifdef CONFIG_GRAN
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
 
-/* Aligned size of the kernel stack */
-
-#ifdef CONFIG_ARCH_KERNEL_STACK
-#  define ARCH_KERNEL_STACKSIZE ((CONFIG_ARCH_KERNEL_STACKSIZE + 7) & ~7)
-#endif
-
-/* Using a 4KiB page size, each 1MiB section maps to a PTE containing
- * 256*2KiB entries
- */
-
-#define ENTRIES_PER_L2TABLE 256
-
 /****************************************************************************
- * Inline Functions
+ * Public Data
  ****************************************************************************/
 
-#ifndef __ASSEMBLY__
+/* State of the single GRAN allocator */
 
-#endif /* __ASSEMBLY__ */
-
-/****************************************************************************
- * Public Variables
- ****************************************************************************/
-
-#ifndef __ASSEMBLY__
-#ifdef __cplusplus
-#define EXTERN extern "C"
-extern "C"
-{
-#else
-#define EXTERN extern
+#ifdef CONFIG_GRAN_SINGLE
+FAR struct gran_s *g_graninfo;
 #endif
 
 /****************************************************************************
- * Public Function Prototypes
+ * Private Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Name: set_l2_entry
+ * Name: gran_release_common
  *
  * Description:
- *   Set the L2 table entry as part of the initialization of the L2 Page
- *   table.
+ *   Perform common GRAN initialization.
  *
- ****************************************************************************/
-
-void set_l2_entry(FAR uint32_t *l2table, uintptr_t paddr, uintptr_t vaddr,
-                  uint32_t mmuflags);
-
-/****************************************************************************
- * Name: arm_addrenv_create_region
- *
- * Description:
- *   Create one memory region.
+ * Input Parameters:
+ *   priv - Reference to the granule heap structure to be released.
  *
  * Returned Value:
- *   On success, the number of pages allocated is returned.  Otherwise, a
- *   negated errno value is returned.
+ *   None
  *
  ****************************************************************************/
 
-int arm_addrenv_create_region(FAR uintptr_t **list, unsigned int listlen,
-                              uintptr_t vaddr, size_t regionsize,
-                              uint32_t mmuflags);
+static inline void gran_release_common(FAR struct gran_s *priv)
+{
+  DEBUGASSERT(priv);
+  sem_destroy(&priv->exclsem);
+  kmm_free(priv);
+}
 
 /****************************************************************************
- * Name: arm_addrenv_destroy_region
+ * Public Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: gran_release
  *
  * Description:
- *   Destroy one memory region.
+ *   Uninitialize a gram memory allocator and release resources held by the
+ *   allocator.
+ *
+ * Input Parameters:
+ *   handle - The handle previously returned by gran_initialize
+ *
+ * Returned Value:
+ *   None.
  *
  ****************************************************************************/
 
-void arm_addrenv_destroy_region(FAR uintptr_t **list, unsigned int listlen,
-                                uintptr_t vaddr, bool keep);
-
-#undef EXTERN
-#ifdef __cplusplus
+#ifdef CONFIG_GRAN_SINGLE
+void gran_release(void)
+{
+  gran_release_common(g_graninfo);
+  g_graninfo = NULL;
+}
+#else
+void gran_release(GRAN_HANDLE handle)
+{
+  gran_release_common(handle);
 }
 #endif
-#endif /* __ASSEMBLY__ */
 
-#endif  /* CONFIG_ARCH_ADDRENV */
-#endif  /* __ARCH_ARM_SRC_ARMV7_A_ADDRENV_H */
+#endif /* CONFIG_GRAN */

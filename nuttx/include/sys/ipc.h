@@ -48,11 +48,12 @@
  * Pre-Processor Definitions
  ****************************************************************************/
 
-/* Mode bits: */
+/* Mode bits:  The lower order 9-bit bits are the standard mode bits */
 
-#define IPC_CREAT   0x01  /* Create entry if key does not exist */
-#define IPC_EXCL    0x02  /* Fail if key exists */
-#define IPC_NOWAIT  0x04  /* Error if request must wait */
+#define IPC_MODE    0x01ff     /* Mode bit mask */
+#define IPC_CREAT   (1 << 10)  /* Create entry if key does not exist */
+#define IPC_EXCL    (1 << 11)  /* Fail if key exists */
+#define IPC_NOWAIT  (1 << 12)  /* Error if request must wait */
 
 /* Keys: */
 
@@ -89,10 +90,12 @@ extern "C"
 
 struct ipc_perm
 {
+#if 0 /* User and group IDs not yet supported by NuttX */
   uid_t  uid;    /* Owner's user ID */
   gid_t  gid;    /* Owner's group ID */
   uid_t  cuid;   /* Creator's user ID */
   gid_t  cgid;   /* Creator's group ID */
+#endif
   mode_t mode;   /* Read/write permission */
 };
 

@@ -1,5 +1,5 @@
 /****************************************************************************
- * arch/arm/src/armv7-a/addrenv.h
+ * mm/shm/shm.h
  *
  *   Copyright (C) 2014 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -33,8 +33,8 @@
  *
  ****************************************************************************/
 
-#ifndef __ARCH_ARM_SRC_ARMV7_A_ADDRENV_H
-#define __ARCH_ARM_SRC_ARMV7_A_ADDRENV_H
+#ifndef __MM_SHM_SHM_H
+#define __MM_SHM_SHM_H
 
 /****************************************************************************
  * Included Files
@@ -42,96 +42,92 @@
 
 #include <nuttx/config.h>
 
-#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
 #include <stdint.h>
+#include <semaphore.h>
 
-#ifdef CONFIG_ARCH_ADDRENV
+#include <nuttx/addrenv.h>
+
+#ifdef CONFIG_MM_SHM
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
+/* Bit definitions for the struct shm_region_s sr_flags field */
 
-/* Aligned size of the kernel stack */
+#define SRFLAG_AVAILABLE 0        /* Available if no flag bits set */
+#define SRFLAG_INUSE     (1 << 0) /* Bit 0: Region is in use */
+#define SRFLAG_UNLINKED  (1 << 1) /* Bit 1: Region perists while references */
 
-#ifdef CONFIG_ARCH_KERNEL_STACK
-#  define ARCH_KERNEL_STACKSIZE ((CONFIG_ARCH_KERNEL_STACKSIZE + 7) & ~7)
-#endif
+/****************************************************************************
+ * Public Types
+ ****************************************************************************/
 
-/* Using a 4KiB page size, each 1MiB section maps to a PTE containing
- * 256*2KiB entries
+/* This structure represents the state of one shared memory region
+ * allocation.  Cast compatible with struct shmid_ds.
  */
 
-#define ENTRIES_PER_L2TABLE 256
-
-/****************************************************************************
- * Inline Functions
- ****************************************************************************/
-
-#ifndef __ASSEMBLY__
-
-#endif /* __ASSEMBLY__ */
-
-/****************************************************************************
- * Public Variables
- ****************************************************************************/
-
-#ifndef __ASSEMBLY__
-#ifdef __cplusplus
-#define EXTERN extern "C"
-extern "C"
+struct shm_region_s
 {
-#else
-#define EXTERN extern
-#endif
+  struct shmid_ds sr_ds; /* Region info */
+  bool  sr_flags;        /* See SRFLAGS_* definitions */
+  key_t sr_key;          /* Lookup key */
+  sem_t sr_sem;          /* Manages exclusive access to this region */
+
+  /* List of physical pages allocated for this memory region */
+
+  uintptr_t sr_pages[CONFIG_ARCH_SHM_NPAGES];
+};
+
+/* This structure represents the set of all shared memory regions.
+ * Access to the region 
+ */
+
+struct shm_info_s
+{
+  sem_t si_sem;         /* Manages exclusive access to the region list */
+  struct shm_region_s si_region[CONFIG_ARCH_SHM_MAXREGIONS];
+};
+
+/****************************************************************************
+ * Public Data
+ ****************************************************************************/
+
+/* State of the all shared memory */
+
+extern struct shm_info_s g_shminfo;
 
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
 
 /****************************************************************************
- * Name: set_l2_entry
+ * Name: shm_destroy
  *
  * Description:
- *   Set the L2 table entry as part of the initialization of the L2 Page
- *   table.
+ *   Destroy a memory region.  This function is called:
  *
- ****************************************************************************/
-
-void set_l2_entry(FAR uint32_t *l2table, uintptr_t paddr, uintptr_t vaddr,
-                  uint32_t mmuflags);
-
-/****************************************************************************
- * Name: arm_addrenv_create_region
+ *   - On certain conditions when shmget() is not successful in instantiating
+ *     the full memory region and we need to clean up and free a table entry.
+ *   - When shmctl() is called with cmd == IPC_RMID and there are no
+ *     processes attached to the memory region.
+ *   - When shmdt() is called after the last process detaches from memory
+ *     region after it was previously marked for deletion by shmctl().
  *
- * Description:
- *   Create one memory region.
+ * Input Parameters:
+ *   shmid - Shared memory identifier
  *
  * Returned Value:
- *   On success, the number of pages allocated is returned.  Otherwise, a
- *   negated errno value is returned.
+ *   None
+ *
+ * Assumption:
+ *   The caller holds either the region table semaphore or else the
+ *   semaphore on the particular entry being deleted.
  *
  ****************************************************************************/
 
-int arm_addrenv_create_region(FAR uintptr_t **list, unsigned int listlen,
-                              uintptr_t vaddr, size_t regionsize,
-                              uint32_t mmuflags);
+void shm_destroy(int shmid);
 
-/****************************************************************************
- * Name: arm_addrenv_destroy_region
- *
- * Description:
- *   Destroy one memory region.
- *
- ****************************************************************************/
-
-void arm_addrenv_destroy_region(FAR uintptr_t **list, unsigned int listlen,
-                                uintptr_t vaddr, bool keep);
-
-#undef EXTERN
-#ifdef __cplusplus
-}
-#endif
-#endif /* __ASSEMBLY__ */
-
-#endif  /* CONFIG_ARCH_ADDRENV */
-#endif  /* __ARCH_ARM_SRC_ARMV7_A_ADDRENV_H */
+#endif /* CONFIG_MM_SHM */
+#endif /* __MM_SHM_SHM_H */

@@ -1,5 +1,5 @@
 /****************************************************************************
- * arch/arm/src/armv7-a/addrenv.h
+ * mm/shm/shm_initialize.c
  *
  *   Copyright (C) 2014 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -33,105 +33,144 @@
  *
  ****************************************************************************/
 
-#ifndef __ARCH_ARM_SRC_ARMV7_A_ADDRENV_H
-#define __ARCH_ARM_SRC_ARMV7_A_ADDRENV_H
-
 /****************************************************************************
  * Included Files
  ****************************************************************************/
 
 #include <nuttx/config.h>
 
-#include <sys/types.h>
-#include <stdint.h>
+#include <assert.h>
+#include <errno.h>
 
-#ifdef CONFIG_ARCH_ADDRENV
+#include <nuttx/addrenv.h>
+#include <nuttx/sched.h>
+#include <nuttx/gran.h>
+#include <nuttx/pgalloc.h>
+#include <nuttx/shm.h>
+
+#include "shm/shm.h"
+
+#ifdef CONFIG_MM_SHM
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
 
-/* Aligned size of the kernel stack */
-
-#ifdef CONFIG_ARCH_KERNEL_STACK
-#  define ARCH_KERNEL_STACKSIZE ((CONFIG_ARCH_KERNEL_STACKSIZE + 7) & ~7)
-#endif
-
-/* Using a 4KiB page size, each 1MiB section maps to a PTE containing
- * 256*2KiB entries
- */
-
-#define ENTRIES_PER_L2TABLE 256
-
 /****************************************************************************
- * Inline Functions
- ****************************************************************************/
-
-#ifndef __ASSEMBLY__
-
-#endif /* __ASSEMBLY__ */
-
-/****************************************************************************
- * Public Variables
- ****************************************************************************/
-
-#ifndef __ASSEMBLY__
-#ifdef __cplusplus
-#define EXTERN extern "C"
-extern "C"
-{
-#else
-#define EXTERN extern
-#endif
-
-/****************************************************************************
- * Public Function Prototypes
+ * Private Types
  ****************************************************************************/
 
 /****************************************************************************
- * Name: set_l2_entry
+ * Public Data
+ ****************************************************************************/
+
+/* State of the all shared memory */
+
+struct shm_info_s g_shminfo;
+
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: shm_initialize
  *
  * Description:
- *   Set the L2 table entry as part of the initialization of the L2 Page
- *   table.
+ *   Perform one time, start-up initialization of the shared memor logic.
  *
- ****************************************************************************/
-
-void set_l2_entry(FAR uint32_t *l2table, uintptr_t paddr, uintptr_t vaddr,
-                  uint32_t mmuflags);
-
-/****************************************************************************
- * Name: arm_addrenv_create_region
- *
- * Description:
- *   Create one memory region.
+ * Input Parameters:
+ *   None
  *
  * Returned Value:
- *   On success, the number of pages allocated is returned.  Otherwise, a
- *   negated errno value is returned.
+ *   None
  *
  ****************************************************************************/
 
-int arm_addrenv_create_region(FAR uintptr_t **list, unsigned int listlen,
-                              uintptr_t vaddr, size_t regionsize,
-                              uint32_t mmuflags);
+void shm_initialize(void)
+{
+#if 0
+  FAR struct shm_region_s *region;
+  int i;
+#endif
+
+  /* Initialize the shared memory region list */
+
+  sem_init(&g_shminfo.si_sem, 0, 1);
+
+#if 0
+  /* Initialize each shared memory region */
+
+  for (i = 0; i < CONFIG_ARCH_SHM_NPAGES; i++)
+    {
+      region = &g_shminfo.si_region[i];
+
+      /* Nothing to be done */
+    }
+#endif
+}
 
 /****************************************************************************
- * Name: arm_addrenv_destroy_region
+ * Name: shm_group_initialize
  *
  * Description:
- *   Destroy one memory region.
+ *   Initialize the group shared memory data structures when a new task
+ *   group is initialized.
+ *
+ * Input Parameters:
+ *   group - A reference to the new group structure to be initialized.
+ *
+ * Returned Value:
+ *   Zero (OK) on success; a negated errno value on failure.
  *
  ****************************************************************************/
 
-void arm_addrenv_destroy_region(FAR uintptr_t **list, unsigned int listlen,
-                                uintptr_t vaddr, bool keep);
+int shm_group_initialize(FAR struct task_group_s *group)
+{
+  DEBUGASSERT(group && !group->tg_shm.gs_handle);
 
-#undef EXTERN
-#ifdef __cplusplus
+  group->tg_shm.gs_handle =
+    gran_initialize((FAR void *)CONFIG_ARCH_SHM_VBASE,
+                    ARCH_SHM_MAXPAGES << MM_PGSHIFT,
+                    MM_PGSHIFT, MM_PGSHIFT);
+
+  if (!group->tg_shm.gs_handle)
+    {
+      shmdbg("gran_initialize() failed\n");
+      return -ENOMEM;
+    }
+
+  return OK;
 }
-#endif
-#endif /* __ASSEMBLY__ */
 
-#endif  /* CONFIG_ARCH_ADDRENV */
-#endif  /* __ARCH_ARM_SRC_ARMV7_A_ADDRENV_H */
+/****************************************************************************
+ * Name: shm_group_release
+ *
+ * Description:
+ *   Release resources used by the group shared memory logic.  This function
+ *   is called at the time at the group is destroyed.
+ *
+ * Input Parameters:
+ *   group - A reference to the group structure to be un-initialized.
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+
+void shm_group_release(FAR struct task_group_s *group)
+{
+  GRAN_HANDLE handle;
+  DEBUGASSERT(group)
+
+  handle = group->tg_shm.gs_handle;
+  if (handle)
+    {
+      gran_release(handle);
+    }
+}
+
+#endif /* CONFIG_MM_SHM */

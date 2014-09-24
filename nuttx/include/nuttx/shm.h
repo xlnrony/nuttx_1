@@ -1,5 +1,5 @@
 /****************************************************************************
- * arch/arm/src/armv7-a/addrenv.h
+ * include/nuttx/shm.h
  *
  *   Copyright (C) 2014 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -33,8 +33,8 @@
  *
  ****************************************************************************/
 
-#ifndef __ARCH_ARM_SRC_ARMV7_A_ADDRENV_H
-#define __ARCH_ARM_SRC_ARMV7_A_ADDRENV_H
+#ifndef __INCLUDE_NUTTX_SHM_H
+#define __INCLUDE_NUTTX_SHM_H
 
 /****************************************************************************
  * Included Files
@@ -42,96 +42,140 @@
 
 #include <nuttx/config.h>
 
-#include <sys/types.h>
-#include <stdint.h>
+#include <debug.h>
 
-#ifdef CONFIG_ARCH_ADDRENV
+#include <nuttx/gran.h>
+
+#ifdef CONFIG_MM_SHM
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
+/* Configuration ************************************************************/
 
-/* Aligned size of the kernel stack */
-
-#ifdef CONFIG_ARCH_KERNEL_STACK
-#  define ARCH_KERNEL_STACKSIZE ((CONFIG_ARCH_KERNEL_STACKSIZE + 7) & ~7)
+#ifndef CONFIG_ARCH_ADDRENV
+#  error CONFIG_ARCH_ADDRENV must be selected with CONFIG_MM_SHM
 #endif
 
-/* Using a 4KiB page size, each 1MiB section maps to a PTE containing
- * 256*2KiB entries
+#ifndef CONFIG_BUILD_KERNEL
+#  error CONFIG_BUILD_KERNEL must be selected with CONFIG_MM_SHM
+#endif
+
+#ifndef CONFIG_GRAN
+#  error CONFIG_GRAN must be selected with CONFIG_MM_SHM
+#endif
+
+#ifdef CONFIG_GRAN_SINGLE
+#  error CONFIG_GRAN_SINGLE must NOT be selected with CONFIG_MM_SHM
+#endif
+
+#ifndef CONFIG_MM_PGALLOC
+#  error CONFIG_MM_PGALLOC must be selected with CONFIG_MM_SHM
+#endif
+
+/* Debug */
+
+#ifdef CONFIG_CPP_HAVE_VARARGS
+#  ifdef CONFIG_DEBUG_SHM
+#    define shmdbg(format, ...)       dbg(format, ##__VA_ARGS__)
+#    define shmvdbg(format, ...)      vdbg(format, ##__VA_ARGS__)
+#  else
+#    define shmdbg(format, ...)       mdbg(format, ##__VA_ARGS__)
+#    define shmvdbg(format, ...)      mvdbg(format, ##__VA_ARGS__)
+#  endif
+#else
+#  ifdef CONFIG_DEBUG_SHM
+#    define shmdbg                    dbg
+#    define shmvdbg                   vdbg
+#  else
+#    define shmdbg                    (void)
+#    define shmvdbg                   (void)
+#  endif
+#endif
+
+/****************************************************************************
+ * Public Types
+ ****************************************************************************/
+
+/* This structure describes the virtual page allocator that is use to manage
+ * the mapping of shared memory into the group/process address space.
  */
 
-#define ENTRIES_PER_L2TABLE 256
-
-/****************************************************************************
- * Inline Functions
- ****************************************************************************/
-
-#ifndef __ASSEMBLY__
-
-#endif /* __ASSEMBLY__ */
-
-/****************************************************************************
- * Public Variables
- ****************************************************************************/
-
-#ifndef __ASSEMBLY__
-#ifdef __cplusplus
-#define EXTERN extern "C"
-extern "C"
+struct group_shm_s
 {
-#else
-#define EXTERN extern
-#endif
+  /* Handle returned by gran_initialize() when the virtual page allocator
+   * was created.
+   */
+
+  GRAN_HANDLE gs_handle;
+
+  /* This array is used to do a reverse lookup:  Give the virtual address
+   * of a shared memory region, find the region index that performs that
+   * mapping.
+   */
+
+  uintptr_t gs_vaddr[CONFIG_ARCH_SHM_MAXREGIONS];
+};
+
+/****************************************************************************
+ * Public Data
+ ****************************************************************************/
 
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
 
 /****************************************************************************
- * Name: set_l2_entry
+ * Name: shm_initialize
  *
  * Description:
- *   Set the L2 table entry as part of the initialization of the L2 Page
- *   table.
+ *   Perform one time, start-up initialization of the shared memor logic.
  *
- ****************************************************************************/
-
-void set_l2_entry(FAR uint32_t *l2table, uintptr_t paddr, uintptr_t vaddr,
-                  uint32_t mmuflags);
-
-/****************************************************************************
- * Name: arm_addrenv_create_region
- *
- * Description:
- *   Create one memory region.
+ * Input Parameters:
+ *   None
  *
  * Returned Value:
- *   On success, the number of pages allocated is returned.  Otherwise, a
- *   negated errno value is returned.
+ *   None
  *
  ****************************************************************************/
 
-int arm_addrenv_create_region(FAR uintptr_t **list, unsigned int listlen,
-                              uintptr_t vaddr, size_t regionsize,
-                              uint32_t mmuflags);
+void shm_initialize(void);
 
 /****************************************************************************
- * Name: arm_addrenv_destroy_region
+ * Name: shm_group_initialize
  *
  * Description:
- *   Destroy one memory region.
+ *   Initialize the group shared memory data structures when a new task
+ *   group is initialized.
+ *
+ * Input Parameters:
+ *   group - A reference to the new group structure to be initialized.
+ *
+ * Returned Value:
+ *   Zero (OK) on success; a negated errno value on failure.
  *
  ****************************************************************************/
 
-void arm_addrenv_destroy_region(FAR uintptr_t **list, unsigned int listlen,
-                                uintptr_t vaddr, bool keep);
+struct task_group_s; /* Forward reference */
+int shm_group_initialize(FAR struct task_group_s *group);
 
-#undef EXTERN
-#ifdef __cplusplus
-}
-#endif
-#endif /* __ASSEMBLY__ */
+/****************************************************************************
+ * Name: shm_group_release
+ *
+ * Description:
+ *   Release resources used by the group shared memory logic.  This function
+ *   is called at the time at the group is destroyed.
+ *
+ * Input Parameters:
+ *   group - A reference to the group structure to be un-initialized.
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
 
-#endif  /* CONFIG_ARCH_ADDRENV */
-#endif  /* __ARCH_ARM_SRC_ARMV7_A_ADDRENV_H */
+struct task_group_s; /* Forward reference */
+void shm_group_release(FAR struct task_group_s *group);
+
+#endif /* CONFIG_MM_SHM */
+#endif /* __INCLUDE_NUTTX_SHM_H */
