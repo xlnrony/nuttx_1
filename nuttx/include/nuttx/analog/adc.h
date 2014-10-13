@@ -220,8 +220,6 @@ int adc_receive(FAR struct adc_dev_s *dev, uint8_t ch, int32_t data);
 
 FAR struct adc_dev_s *up_ads1255initialize(FAR struct spi_dev_s *spi, unsigned int devno);
 
-int adc_devinit(void);
-
 #if defined(__cplusplus)
 }
 #endif

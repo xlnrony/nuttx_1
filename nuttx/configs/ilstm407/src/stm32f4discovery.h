@@ -124,14 +124,26 @@
 /* STM32F4 Discovery GPIOs **************************************************/
 /* LEDs */
 
-#define GPIO_LED1       (GPIO_OUTPUT|GPIO_PUSHPULL|GPIO_SPEED_50MHz|\
-                         GPIO_OUTPUT_CLEAR|GPIO_PORTD|GPIO_PIN12)
-#define GPIO_LED2       (GPIO_OUTPUT|GPIO_PUSHPULL|GPIO_SPEED_50MHz|\
-                         GPIO_OUTPUT_CLEAR|GPIO_PORTD|GPIO_PIN13)
-#define GPIO_LED3       (GPIO_OUTPUT|GPIO_PUSHPULL|GPIO_SPEED_50MHz|\
-                         GPIO_OUTPUT_CLEAR|GPIO_PORTD|GPIO_PIN14)
-#define GPIO_LED4       (GPIO_OUTPUT|GPIO_PUSHPULL|GPIO_SPEED_50MHz|\
-                         GPIO_OUTPUT_CLEAR|GPIO_PORTD|GPIO_PIN15)
+#define GPIO_LED1_B       (GPIO_OUTPUT|GPIO_OPENDRAIN|GPIO_SPEED_50MHz|\
+				                            GPIO_OUTPUT_SET|GPIO_PORTE|GPIO_PIN2)
+#define GPIO_LED1_G       (GPIO_OUTPUT|GPIO_OPENDRAIN|GPIO_SPEED_50MHz|\
+				                            GPIO_OUTPUT_SET|GPIO_PORTE|GPIO_PIN3)
+#define GPIO_LED1_R       (GPIO_OUTPUT|GPIO_OPENDRAIN|GPIO_SPEED_50MHz|\
+				                            GPIO_OUTPUT_SET|GPIO_PORTE|GPIO_PIN4)
+				                            
+#define GPIO_LED2_B       (GPIO_OUTPUT|GPIO_OPENDRAIN|GPIO_SPEED_50MHz|\
+				                            GPIO_OUTPUT_SET|GPIO_PORTB|GPIO_PIN5)
+#define GPIO_LED2_G       (GPIO_OUTPUT|GPIO_OPENDRAIN|GPIO_SPEED_50MHz|\
+				                            GPIO_OUTPUT_SET|GPIO_PORTB|GPIO_PIN6)
+#define GPIO_LED2_R       (GPIO_OUTPUT|GPIO_OPENDRAIN|GPIO_SPEED_50MHz|\
+				                            GPIO_OUTPUT_SET|GPIO_PORTB|GPIO_PIN7)
+
+#define GPIO_LED3_B       (GPIO_OUTPUT|GPIO_OPENDRAIN|GPIO_SPEED_50MHz|\
+				                            GPIO_OUTPUT_SET|GPIO_PORTD|GPIO_PIN3)
+#define GPIO_LED3_G       (GPIO_OUTPUT|GPIO_OPENDRAIN|GPIO_SPEED_50MHz|\
+				                            GPIO_OUTPUT_SET|GPIO_PORTD|GPIO_PIN4)
+#define GPIO_LED3_R       (GPIO_OUTPUT|GPIO_OPENDRAIN|GPIO_SPEED_50MHz|\
+				                            GPIO_OUTPUT_SET|GPIO_PORTD|GPIO_PIN7)
 
 /* BUTTONS -- NOTE that all have EXTI interrupts configured */
 
@@ -250,6 +262,13 @@ int stm32_bringup(void);
 
 #if !defined(CONFIG_DISABLE_MOUNTPOINT) && defined(CONFIG_STM32_SDIO)
 int stm32_sdio_initialize(void);
+#endif
+
+#ifdef CONFIG_ADC
+
+int adc_devinit(void);
+int tim_devinit(void);
+
 #endif
 
 #endif /* __ASSEMBLY__ */

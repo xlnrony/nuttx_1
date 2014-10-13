@@ -52,7 +52,7 @@
 #include "stm32.h"
 #include "stm32f4discovery.h"
 
-#ifdef CONFIG_STM32_TIM3
+#ifdef CONFIG_ADC
 
 /************************************************************************************
  * Definitions
@@ -82,38 +82,32 @@
 
 int tim_devinit(void)
 {
-  static bool initialized = false;
   struct adc_dev_s *tim;
   int ret;
 
-  /* Check if we have already initialized */
+#ifdef CONFIG_STM32_TIM3
+  /* Call stm32_cap_init() to get an instance of the CAP interface */
 
-  if (!initialized)
+  tim = stm32_cap_init(3, 1); 
+  if (tim == NULL)
     {
-      /* Call stm32_cap_init() to get an instance of the CAP interface */
-
-      tim = stm32_cap_init(3, 1); 
-      if (tim == NULL)
-        {
-          adbg("ERROR: Failed to get TIM interface\n");
-          return -ENODEV;
-        }
-
-      /* Register the ADC driver at "/dev/tim3in0" */
-
-      ret = adc_register(CONFIG_TIM_DEVNAME, tim);
-      if (ret < 0)
-        {
-          adbg("adc_register failed: %d\n", ret);
-          return ret;
-        }
-
-      /* Now we are initialized */
-
-      initialized = true;
+      adbg("ERROR: Failed to get TIM interface\n");
+      return -ENODEV;
     }
 
-  return OK;
+  /* Register the ADC driver at "/dev/tim3in0" */
+
+  ret = adc_register(CONFIG_TIM_DEVNAME, tim);
+  if (ret < 0)
+    {
+      adbg("adc_register failed: %d\n", ret);
+      return ret;
+    }
+	
+  return OK;	
+#else
+  return -ENOSYS;
+#endif
 }
 
-#endif /* CONFIG_STM32_TIM3 */
+#endif /* CONFIG_ADC */

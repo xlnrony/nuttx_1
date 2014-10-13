@@ -205,5 +205,4 @@
 "up_check_tcbstack","nuttx/arch.h","defined(CONFIG_DEBUG) && defined(CONFIG_DEBUG_STACK)","size_t","FAR struct tcb_s *"
 "syslog_enable","syslog.h","defined(CONFIG_SYSLOG_ENABLE)","void","bool"
 "usbhost_trdump","nuttx/usb/usbhost_trace.h","defined(CONFIG_USBHOST_TRACE)","int"
-"adc_devinit","nuttx/analog/adc.h","defined(CONFIG_ADC)","int"
 "foreach_mountpoint","nuttx/fs/fs.h","!defined(CONFIG_DISABLE_MOUNTPOUNT)","int","foreach_mountpoint_t","FAR void *"

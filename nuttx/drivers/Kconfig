@@ -531,6 +531,16 @@ if WIRELESS
 source drivers/wireless/Kconfig
 endif # WIRELESS
 
+menuconfig GPIO
+	bool "GPIO Device Support"
+	default n
+	---help---
+		Drivers for GPIO devices.
+
+if GPIO
+source drivers/gpio/Kconfig
+endif # GPIO
+
 comment "System Logging Device Options"
 
 source drivers/syslog/Kconfig
