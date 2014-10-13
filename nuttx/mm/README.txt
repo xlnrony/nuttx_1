@@ -40,11 +40,11 @@ This directory contains the NuttX memory management logic.  This include:
 
      This allocator can be used to manage multiple heaps (albeit with some
      non-standard interfaces).  A heap is represented by struct mm_heap_s
-     as defined in the file include/nuttx/mm.h.  To create another heap
+     as defined in the file include/nuttx/mm/mm.h.  To create another heap
      instance, you would allocate a heap structure, most likely statically
      in memory:
 
-       include <nuttx/mm.h>
+       include <nuttx/mm/mm.h>
        static struct mm_heap_s g_myheap;
 
      Then initialize the heap using:
@@ -52,7 +52,7 @@ This directory contains the NuttX memory management logic.  This include:
        mm_initialize(&g_myheap, myheap_start, myheap_size);
 
      Where mm_initialize() and all related interfaces are prototyped in the
-     header file include/nuttx/mm.h.
+     header file include/nuttx/mm/mm.h.
 
      After the new heap instance has been initialized, it can then be used
      with these almost familiar interfaces: mm_malloc(), mm_realloc(), mm_free(),
@@ -80,7 +80,7 @@ This directory contains the NuttX memory management logic.  This include:
      granule allocator allocates memory in units of a fixed sized block ("granule").
      Allocations may be aligned to a user-provided address boundary.
 
-     The granule allocator interfaces are defined in nuttx/include/nuttx/gran.h.
+     The granule allocator interfaces are defined in nuttx/include/nuttx/mm/gran.h.
      The granule allocator consists of these files in this directory:
 
        mm_gran.h, mm_granalloc.c, mm_grancritical.c, mm_granfree.c

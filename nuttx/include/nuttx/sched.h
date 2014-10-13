@@ -52,7 +52,7 @@
 #include <time.h>
 
 #include <nuttx/irq.h>
-#include <nuttx/shm.h>
+#include <nuttx/mm/shm.h>
 #include <nuttx/fs/fs.h>
 #include <nuttx/net/net.h>
 
@@ -116,6 +116,10 @@
 #endif
 
 /* Task Management Definitions **************************************************/
+/* Special task IDS.  Any negative PID is invalid. */
+
+#define NULL_TASK_PROCESS_ID      (pid_t)0
+#define INVALID_PROCESS_ID        (pid_t)-1
 
 /* This is the maximum number of times that a lock can be set */
 
@@ -223,10 +227,6 @@ typedef CODE void (*atexitfunc_t)(void);
 #ifdef CONFIG_SCHED_ONEXIT
 typedef CODE void (*onexitfunc_t)(int exitcode, FAR void *arg);
 #endif
-
-/* POSIX Message queue */
-
-typedef struct msgq_s msgq_t;
 
 /* struct child_status_s *********************************************************/
 /* This structure is used to maintin information about child tasks.
@@ -523,7 +523,7 @@ struct tcb_s
   /* POSIX Named Message Queue Fields *******************************************/
 
 #ifndef CONFIG_DISABLE_MQUEUE
-  FAR msgq_t *msgwaitq;                  /* Waiting for this message queue      */
+  FAR struct mqueue_inode_s *msgwaitq;   /* Waiting for this message queue      */
 #endif
 
   /* Library related fields *****************************************************/

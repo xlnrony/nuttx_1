@@ -37,6 +37,8 @@
  * Included Files
  *******************************************************************************/
 
+#include <nuttx/config.h>
+
 #include <sys/types.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -64,7 +66,7 @@
 
 #include "stm32_usbhost.h"
 
-#if defined(CONFIG_USBHOST) && (defined(CONFIG_STM32_OTGFS) || defined(CONFIG_STM32_OTGFS2))
+#if defined(CONFIG_USBHOST) && defined(CONFIG_STM32_OTGFS)
 
 /*******************************************************************************
  * Pre-processor Definitions
@@ -160,13 +162,6 @@
 
 #ifndef MAX
 #  define  MAX(a, b) (((a) > (b)) ? (a) : (b))
-#endif
-
-/* For OTGFS2 mode (FS mode of HS module), remap the IRQ number *****************/
-
-#ifdef CONFIG_STM32_OTGFS2
-#  undef  STM32_IRQ_OTGFS
-#  define STM32_IRQ_OTGFS   STM32_IRQ_OTGHS
 #endif
 
 /*******************************************************************************
@@ -3808,7 +3803,7 @@ static int stm32_ctrlout(FAR struct usbhost_driver_s *drvr,
               /* Start DATA out transfer (only one DATA packet) */
 
               priv->chan[priv->ep0out].outdata1 = true;
-              ret = stm32_ctrl_senddata(priv, (FAR uint8_t *)buffer, buflen);
+              ret = stm32_ctrl_senddata(priv, NULL, 0);
               if (ret < 0)
                 {
                   usbhost_trace1(OTGFS_TRACE1_SENDDATA, -ret);
@@ -4352,7 +4347,7 @@ static inline int stm32_hw_initialize(FAR struct stm32_usbhost_s *priv)
  *
  *******************************************************************************/
 
-static FAR struct usbhost_connection_s *stm32_otgfshost_initialize(int controller)
+FAR struct usbhost_connection_s *stm32_otgfshost_initialize(int controller)
 {
   /* At present, there is only support for a single OTG FS host. Hence it is
    * pre-allocated as g_usbhost.  However, in most code, the private data
@@ -4397,15 +4392,9 @@ static FAR struct usbhost_connection_s *stm32_otgfshost_initialize(int controlle
    * *Pins may vary from device-to-device.
    */
 
-#ifdef CONFIG_STM32_OTGFS2
-  stm32_configgpio(GPIO_OTGFS2_DM);
-  stm32_configgpio(GPIO_OTGFS2_DP);
-//  stm32_configgpio(GPIO_OTGFS2_ID);   /* Only needed for OTG */
-#else
   stm32_configgpio(GPIO_OTGFS_DM);
   stm32_configgpio(GPIO_OTGFS_DP);
-//  stm32_configgpio(GPIO_OTGFS_ID);    /* Only needed for OTG */
-#endif
+  stm32_configgpio(GPIO_OTGFS_ID);    /* Only needed for OTG */
 
   /* SOF output pin configuration is configurable */
 

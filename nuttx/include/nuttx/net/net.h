@@ -302,16 +302,17 @@ void net_initlist(FAR struct socketlist *list);
 void net_releaselist(FAR struct socketlist *list);
 
 /****************************************************************************
- * Name: sockfd_release
+ * Name: sockfd_socket
  *
  * Description:
- *   Free the socket by its socket descriptor.
+ *   Given a socket descriptor, return the underlying socket structure.
  *
  * Input Parameters:
- *   sockfd - Socket descriptor identifies the socket to be released.
+ *   sockfd - The socket descriptor index o use.
  *
  * Returned Value:
- *   None
+ *   On success, a reference to the socket structure associated with the
+ *   the socket descriptor is returned.  NULL is returned on any failure.
  *
  ****************************************************************************/
 
@@ -871,7 +872,7 @@ int net_poll(int sockfd, struct pollfd *fds, bool setup);
 #endif
 
 /****************************************************************************
- * Function: net_dup
+ * Function: net_dupsd
  *
  * Description:
  *   Clone a socket descriptor to an arbitray descriptor number.  If file
@@ -881,10 +882,10 @@ int net_poll(int sockfd, struct pollfd *fds, bool setup);
  *
  ****************************************************************************/
 
-int net_dup(int sockfd, int minsd);
+int net_dupsd(int sockfd, int minsd);
 
 /****************************************************************************
- * Function: net_dup2
+ * Function: net_dupsd2
  *
  * Description:
  *   Clone a socket descriptor to an arbitray descriptor number.  If file
@@ -894,13 +895,13 @@ int net_dup(int sockfd, int minsd);
  *
  ****************************************************************************/
 
-int net_dup2(int sockfd1, int sockfd2);
+int net_dupsd2(int sockfd1, int sockfd2);
 
 /****************************************************************************
  * Function: net_clone
  *
  * Description:
- *   Performs the low level, common portion of net_dup() and net_dup2()
+ *   Performs the low level, common portion of net_dupsd() and net_dupsd2()
  *
  ****************************************************************************/
 

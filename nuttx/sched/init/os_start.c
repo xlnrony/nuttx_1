@@ -45,11 +45,12 @@
 
 #include  <nuttx/arch.h>
 #include  <nuttx/compiler.h>
+#include <nuttx/sched.h>
 #include  <nuttx/fs/fs.h>
 #include  <nuttx/net/net.h>
 #include  <nuttx/lib.h>
-#include  <nuttx/mm.h>
-#include  <nuttx/shm.h>
+#include  <nuttx/mm/mm.h>
+#include  <nuttx/mm/shm.h>
 #include  <nuttx/kmalloc.h>
 #include  <nuttx/init.h>
 
@@ -346,17 +347,11 @@ void os_start(void)
   up_initial_state(&g_idletcb.cmn);
 
   /* Initialize RTOS facilities *********************************************/
-  /* Initialize the semaphore facility(if in link).  This has to be done
-   * very early because many subsystems depend upon fully functional
-   * semaphores.
+  /* Initialize the semaphore facility.  This has to be done very early
+   * because many subsystems depend upon fully functional semaphores.
    */
 
-#ifdef CONFIG_HAVE_WEAKFUNCTIONS
-  if (sem_initialize != NULL)
-#endif
-    {
-      sem_initialize();
-    }
+  sem_initialize();
 
   /* Initialize the memory manager */
 
@@ -476,12 +471,7 @@ void os_start(void)
 #if CONFIG_NFILE_DESCRIPTORS > 0
   /* Initialize the file system (needed to support device drivers) */
 
-#ifdef CONFIG_HAVE_WEAKFUNCTIONS
-  if (fs_initialize != NULL)
-#endif
-    {
-      fs_initialize();
-    }
+  fs_initialize();
 #endif
 
 #ifdef CONFIG_NET

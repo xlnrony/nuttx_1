@@ -49,7 +49,11 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
- 
+/* See nuttx/clock.h */
+
+#undef clock_systimer
+#undef clock_systimer64
+
 /****************************************************************************
  * Private Data
  ****************************************************************************/
@@ -95,12 +99,13 @@ uint32_t clock_systimer(void)
   /* Return the current system time truncated to 32-bits */
 
   return (uint32_t)(g_system_timer & 0x00000000ffffffff);
+
 #else
   /* Return the current system time */
 
   return g_system_timer;
-#endif
 
+#endif
 #endif
 }
 
@@ -130,7 +135,7 @@ uint64_t clock_systimer64(void)
 
   (void)up_timer_gettime(&ts);
 
-  /* Convert to a 64- then 32-bit value */
+  /* Convert to a 64-bit value */
 
   return MSEC2TICK(1000 * (uint64_t)ts.tv_sec + (uint64_t)ts.tv_nsec / 1000000);
 
@@ -138,6 +143,7 @@ uint64_t clock_systimer64(void)
   /* Return the current system time */
 
   return g_system_timer;
+
 #endif
 }
 #endif

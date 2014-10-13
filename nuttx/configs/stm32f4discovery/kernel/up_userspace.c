@@ -42,7 +42,7 @@
 #include <stdlib.h>
 
 #include <nuttx/arch.h>
-#include <nuttx/mm.h>
+#include <nuttx/mm/mm.h>
 #include <nuttx/wqueue.h>
 #include <nuttx/userspace.h>
 
@@ -115,7 +115,7 @@ const struct userspace_s userspace __attribute__ ((section (".userspace"))) =
   .signal_handler   = up_signal_handler,
 #endif
 
-  /* Memory manager entry points (declared in include/nuttx/mm.h) */
+  /* Memory manager entry points (declared in include/nuttx/mm/mm.h) */
 
   .mm_initialize    = umm_initialize,
   .mm_addregion     = umm_addregion,
@@ -131,7 +131,7 @@ const struct userspace_s userspace __attribute__ ((section (".userspace"))) =
 
   /* User-space work queue support (declared in include/nuttx/wqueue.h) */
 
-#if defined(CONFIG_SCHED_WORKQUEUE) && defined(CONFIG_SCHED_USRWORK)
+#ifdef CONFIG_LIB_USRWORK
   .work_usrstart    = work_usrstart,
 #endif
 };
