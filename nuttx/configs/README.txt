@@ -330,8 +330,11 @@ configs/ntosd-dm320
   STATUS: This port is code complete, verified, and included in the
   NuttX 0.2.1 release.
 
-configs/nucleo-f401re
-  STMicro ST Nucleo F401RE http://mbed.org/platforms/ST-Nucleo-F401RE
+configs/nucleo-f4x1re
+  STMicro ST Nucleo F401RE and F411RE boards.  See
+  http://mbed.org/platforms/ST-Nucleo-F401RE and
+  http://developer.mbed.org/platforms/ST-Nucleo-F411RE for more
+  information about these boards.
 
 configs/nucleus2g
   This port uses the Nucleus 2G board (with Babel CAN board).  This board
@@ -341,6 +344,10 @@ configs/nucleus2g
 configs/nutiny-nuc120
   This is the port of NuttX to the NuvoTon NuTiny-SDK-NUC120 board.  This
   board has the NUC120LE3AN chip with a built-in NuLink debugger.
+
+configs/olimex-efm32g880f128-stk
+  This is the port of NuttX to the Olimex EFM32G880F128-STK development
+  board.
 
 configs/olimex-lpc1766stk
   This port uses the Olimex LPC1766-STK board and a GNU GCC toolchain* under

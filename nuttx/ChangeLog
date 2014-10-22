@@ -8841,3 +8841,31 @@
 	  that will be in advance (2014-10-10).
 	* fs/aio/ and include/aio.h:  Add support for socket-based transfers
 	  (2014-10-11).
+	* arch/arm/include/stm32/chip.h, /src/stm32/Kconfig, and
+	  stm32_allocateheap.c: Support for the STM32 F411RE from Serg Podtynnyi
+	  (2014-10-14).
+	* configs/Kconfig, README.txt, and nucleo-f401re:  Extend this board
+	  configuration to also support the Nucleo-F411RE.  From Serg Podtynnyi
+	  (2014-10-14).
+	* tools/Config.mk: "Add a PRELINK macro to Config.mk.  From Kriegleder
+	  (2014-10-17).
+	* arch/arm/src/efm32 and arch/arm/include/efm32: Add a basic port for
+	  the SiLabs EFM32 family.  Includes many files contributed by Pierre-noel
+	  Bouteville (2104-10-20).
+	* configs/efm32-gxxx-stk:  Add board support for the EFM32 Gecko Starter
+	  Kit (2014-10-20).
+	* configs/olimex-efm32g880f128-stk: Add board support for the Olimex
+	  EFM32G8809128 STK (2014-10-20).
+	* drivers/lcd/Kconfig, ili9341.c, Make.defs, and include/nuttx/lcd/ili9341.h:
+	  Add support for a generic ILI9341 driver.  From Marco Krahl (2014-10-20).
+	* configs/stm32f429i-disco/Kconfig, src/ and lcd/:  Add support for the
+	  STM32F429i Discovery's LCD.  From Marco Krahl (2014-10-20).
+	* arch/arm/src/lpc43xx/lpc43_gpioint.c, .h, lpc43_irq.c, and
+	  chip/lpc43_gpio.h: Fixes to allow compile of lpc43_gpioint.c.  It
+	  likely doesn't work.  From Brandon warhurst_002 (2014-10-21).
+	* arch/arm/src/stm32/chip/stm32f103r_pinmap.h: Add ADC pinmap
+	  definitions for the STM32 F103R from Martin Lederhilger  (2014-10-21).
+	* arch/arm/src/armv7-m/up_itm.c and itm.h: Add CMSIS ITM header file and
+	  library.  From Pierre-noel Bouteville (2104-10-21).
+	* arch/arm/src/armv7-m/dwt.h and tpi.h: Add CMSIS DWT and TPI header files.
+	  From Pierre-noel Bouteville (2104-10-21).
