@@ -122,6 +122,10 @@ static void adc_help(FAR struct adc_state_s *adc)
          CONFIG_EXAMPLES_ADC_DEVPATH, g_adcstate.devpath ? g_adcstate.devpath : "NONE");
   printf("  [-n count] selects the samples to collect.  "
          "Default: 1 Current: %d\n", adc->count);
+  printf("  [-c count] selects the channel to collect.  "
+         "Default: 4 Current: %d\n", adc->channel);	
+  printf("  [-s count] selects whether software trigger or not.  "
+         "Default: 0 Current: %d\n", adc->swtrig);		
   printf("  [-h] shows this message and exits\n");
 }
 #endif
@@ -188,6 +192,18 @@ static void parse_args(FAR struct adc_state_s *adc, int argc, FAR char **argv)
 
       switch (ptr[1])
         {
+          case 'c':
+            nargs = arg_decimal(&argv[index], &value);
+            if (value < 0)
+              {
+                printf("Count must be non-negative: %ld\n", value);
+                exit(1);
+              }
+
+            adc->channel = (uint32_t)value;
+            index += nargs;
+            break;
+        
           case 'n':
             nargs = arg_decimal(&argv[index], &value);
             if (value < 0)
@@ -197,6 +213,18 @@ static void parse_args(FAR struct adc_state_s *adc, int argc, FAR char **argv)
               }
 
             adc->count = (uint32_t)value;
+            index += nargs;
+            break;
+
+          case 's':
+            nargs = arg_decimal(&argv[index], &value);
+            if (value < 0)
+              {
+                printf("Count must be non-negative: %ld\n", value);
+                exit(1);
+              }
+
+            adc->swtrig = (uint32_t)value;
             index += nargs;
             break;
 
@@ -241,34 +269,17 @@ int adc_main(int argc, char *argv[])
   int ret;
   int i;
 
-  /* Check if we have initialized */
+  /* Set the default values */
 
-  if (!g_adcstate.initialized)
-    {
-      /* Initialization of the ADC hardware is performed by logic external to
-       * this test.
-       */
-
-      printf("adc_main: Initializing external ADC device\n");
-      ret = adc_devinit();
-      if (ret != OK)
-        {
-          printf("adc_main: adc_devinit failed: %d\n", ret);
-          errval = 1;
-          goto errout;
-        }
-
-      /* Set the default values */
-
-      adc_devpath(&g_adcstate, CONFIG_EXAMPLES_ADC_DEVPATH);
+  adc_devpath(&g_adcstate, CONFIG_EXAMPLES_ADC_DEVPATH);
 
 #if CONFIG_EXAMPLES_ADC_NSAMPLES > 0
-      g_adcstate.count = CONFIG_EXAMPLES_ADC_NSAMPLES;
+  g_adcstate.count = CONFIG_EXAMPLES_ADC_NSAMPLES;
 #else
-      g_adcstate.count = 1;
+  g_adcstate.count = 1;
 #endif
-      g_adcstate.initialized = true;
-    }
+  g_adcstate.channel = 4;
+  g_adcstate.swtrig = 0;
 
   /* Parse the command line */
 
@@ -317,12 +328,14 @@ int adc_main(int argc, char *argv[])
 
 #ifdef CONFIG_EXAMPLES_ADC_SWTRIG
     /* Issue the software trigger to start ADC conversion */
-
-    ret = ioctl(fd, ANIOC_TRIGGER, 0);
-    if (ret < 0)
+    if (g_adcstate.swtrig == 1)
       {
-        int errcode = errno;
-        printf("adc_main: ANIOC_TRIGGER ioctl failed: %d\n", errcode);
+        ret = ioctl(fd, ANIOC_TRIGGER, g_adcstate.channel);
+        if (ret < 0)
+          {
+            int errcode = errno;
+            printf("adc_main: ANIOC_TRIGGER ioctl failed: %d\n", errcode);
+          }
       }
 #endif
 
