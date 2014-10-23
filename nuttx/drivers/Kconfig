@@ -531,15 +531,11 @@ if WIRELESS
 source drivers/wireless/Kconfig
 endif # WIRELESS
 
-menuconfig GPIO
-	bool "GPIO Device Support"
+config GPIO
+	bool "Gerneral purpose input output"
 	default n
 	---help---
-		Drivers for GPIO devices.
-
-if GPIO
-source drivers/gpio/Kconfig
-endif # GPIO
+		Select to enable support for GPIO device support.
 
 comment "System Logging Device Options"
 

@@ -46,11 +46,8 @@ ifeq ($(CONFIG_HAVE_CXX),y)
 CSRCS += stm32_cxxinitialize.c
 endif
 
-ifeq ($(CONFIG_ARCH_LEDS),y)
-CSRCS += stm32_autoleds.c
-else
-CSRCS += stm32_autoleds.c
-#CSRCS += stm32_userleds.c
+ifeq ($(CONFIG_GPIO),y)
+CSRCS += stm32_gpio.c
 endif
 
 ifeq ($(CONFIG_ARCH_BUTTONS),y)

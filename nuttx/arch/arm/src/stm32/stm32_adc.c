@@ -1263,7 +1263,6 @@ static int adc_ioctl(FAR struct adc_dev_s *dev, int cmd, unsigned long arg)
 {
   struct stm32_dev_s *priv = (struct stm32_dev_s *)dev->ad_priv;
   int ret = OK;
-  uint8_t  chanlist[ADC_MAX_SAMPLES];
   uint8_t  *p;
   int i;
   

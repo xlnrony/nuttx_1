@@ -941,9 +941,6 @@ int usbhost_wlaninit(void);
 int usbhost_enumerate(FAR struct usbhost_driver_s *drvr, uint8_t funcaddr,
                       FAR struct usbhost_class_s **class);
 
-
-FAR struct usbhost_connection_s *usbhost_initialize(int controller);
-
 int usbhost_connection_wait(FAR struct usbhost_connection_s *conn, FAR const bool *connected);
 int usbhost_connection_enumerate(FAR struct usbhost_connection_s *conn, int rhpndx);
 	

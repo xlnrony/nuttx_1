@@ -615,6 +615,18 @@
 #  define audvdbgdumpbuffer(m,b,n)
 #endif
 
+#ifdef CONFIG_DEBUG_GPIO
+#  define gpiodbg     dbg
+#  define gpiovdbg   vdbg
+#  define gpiolldbg   lldbg
+#  define gpiollvdbg llvdbg
+#else
+#  define gpiodbg(x...)
+#  define gpiovdbg(x...)
+#  define gpiolldbg(x...)
+#  define gpiollvdbg(x...)
+#endif
+
 /****************************************************************************
  * Public Type Declarations
  ****************************************************************************/
