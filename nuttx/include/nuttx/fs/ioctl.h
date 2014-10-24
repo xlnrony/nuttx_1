@@ -71,6 +71,7 @@
 #define _WLIOCBASE      (0x1200) /* Wireless modules ioctl commands */
 #define _CFGDIOCBASE    (0x1300) /* Config Data device (app config) ioctl commands */
 #define _TCIOCBASE      (0x1400) /* Timer ioctl commands */
+#define _GPIOCBASE      (0xa000) /* Gpio ioctl commands */
 
 /* Macros used to manage ioctl commands */
 
@@ -292,6 +293,9 @@
 
 #define _CFGDIOCVALID(c)   (_IOC_TYPE(c)==_CFGDIOCBASE)
 #define _CFGDIOC(nr)         _IOC(_CFGDIOCBASE,nr)
+
+#define _GPIOCVALID(c)   (_IOC_TYPE(c)==_GPIOCBASE)
+#define _GPIOC(nr)         _IOC(_GPIOCBASE,nr)
 
 /****************************************************************************
  * Public Type Definitions

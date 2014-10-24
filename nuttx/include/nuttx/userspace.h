@@ -154,7 +154,7 @@ struct userspace_s
   int (*work_usrstart)(void);
 #endif
 
-void (*sklog)(int (*fp)(FAR const char *fmt, ...));
+void (*sklog)(int (*fp)(int priority, FAR const char *format, ...));
 };
 
 /****************************************************************************
@@ -170,7 +170,7 @@ extern "C"
 #endif
 
 #if defined(CONFIG_BUILD_PROTECTED) && !defined(__KERNEL__)
-EXTERN int (*klog)(FAR const char *fmt, ...);
+EXTERN int (*klog)(int priority, FAR const char *format, ...);
 #endif
 
 /****************************************************************************

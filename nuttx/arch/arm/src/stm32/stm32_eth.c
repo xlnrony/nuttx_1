@@ -3203,7 +3203,7 @@ static inline void stm32_ethgpioconfig(FAR struct stm32_ethmac_s *priv)
 
   /* Enable pulse-per-second (PPS) output signal */
 
-  stm32_configgpio(GPIO_ETH_PPS_OUT);
+//  stm32_configgpio(GPIO_ETH_PPS_OUT); //xln comment
 }
 
 /****************************************************************************

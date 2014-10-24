@@ -54,7 +54,7 @@
 #include "up_arch.h"
 #include "stm32.h"
 #include "stm32_otgfs.h"
-#include "stm32f4discovery.h"
+#include "stm32f407.h"
 
 #ifdef CONFIG_STM32_OTGFS
 
@@ -159,7 +159,7 @@ void stm32_usbinitialize(void)
  ***********************************************************************************/
 
 #ifdef CONFIG_USBHOST
-int stm32_usbhost_initialize(void)
+void stm32_usbhost_initialize(void)
 {
   int pid;
   int ret;
@@ -211,10 +211,11 @@ int stm32_usbhost_initialize(void)
       pid = kernel_thread("usbhost", CONFIG_USBHOST_DEFPRIO,
                         CONFIG_USBHOST_STACKSIZE,
                         (main_t)usbhost_waiter, (FAR char * const *)NULL);
-      return pid < 0 ? -ENOEXEC : OK;
+	  if (pid < 0)
+	  	{
+	      udbg("Failed to create usbhost kernel thread\n");	
+	  	}
     }
-
-  return -ENODEV;
 }
 #endif
 

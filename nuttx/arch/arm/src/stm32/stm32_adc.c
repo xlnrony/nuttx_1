@@ -1557,7 +1557,7 @@ static int adc123_interrupt(int irq, void *context)
 struct adc_dev_s *stm32_adcinitialize(int intf)
 {
   FAR struct adc_dev_s   *dev;
-  FAR struct stm32_dev_s *priv;
+//  FAR struct stm32_dev_s *priv;
 
   avdbg("intf: %d nchannels: %d\n", intf, nchannels);
 
@@ -1592,7 +1592,7 @@ struct adc_dev_s *stm32_adcinitialize(int intf)
 
   /* Configure the selected ADC */
 
-  priv = dev->ad_priv;
+//  priv = dev->ad_priv;
 
   return dev;
 }

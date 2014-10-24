@@ -48,9 +48,8 @@
 
 #include "chip.h"
 #include "up_arch.h"
-
-//#include "stm32_pwm.h"
-//#include "stm3240g-internal.h"
+#include "stm32.h"
+#include "stm32f407.h"
 
 #ifdef CONFIG_ADC
 
@@ -91,17 +90,15 @@
  ************************************************************************************/
 
 /************************************************************************************
- * Name: adc_devinit
+ * Name: stm32_adc_initialize
  *
  * Description:
- *   All STM32 architectures must provide the following interface to work with
- *   examples/adc.
+ *   Called at application startup time to initialize the ADC functionality.
  *
  ************************************************************************************/
 
-int adc_devinit(void)
+void stm32_adc_initialize(void)
 {
-#ifdef CONFIG_STM32_ADC1
   struct adc_dev_s *adc;
   int ret;
 
@@ -115,17 +112,18 @@ int adc_devinit(void)
   if (adc == NULL)
     {
       adbg("ERROR: Failed to get ADC interface\n");
-      return -ENODEV;
     }
+  else
+  	{
+	  /* Register the ADC driver at "/dev/adc1" */
 
-  /* Register the ADC driver at "/dev/adc1" */
+	  ret = adc_register(CONFIG_ADC1_DEVNAME, adc);
+	  if (ret < 0)
+	    {
+	      adbg("adc_register failed: %d\n", ret);
+	    }			
+  	}
 
-  ret = adc_register(CONFIG_ADC1_DEVNAME, adc);
-  if (ret < 0)
-    {
-      adbg("adc_register failed: %d\n", ret);
-      return ret;
-    }			
 #endif			
 //////////////////////////////////////////////////////////////////////////////////////////////////
 #ifdef CONFIG_STM32_ADC2
@@ -135,17 +133,17 @@ int adc_devinit(void)
   if (adc == NULL)
     {
       adbg("ERROR: Failed to get ADC interface\n");
-      return -ENODEV;
     }
+  else
+  	{
+	  /* Register the ADC driver at "/dev/adc2" */
 
-  /* Register the ADC driver at "/dev/adc2" */
-
-  ret = adc_register(CONFIG_ADC2_DEVNAME, adc);
-  if (ret < 0)
-    {
-      adbg("adc_register failed: %d\n", ret);
-      return ret;
-    }			
+	  ret = adc_register(CONFIG_ADC2_DEVNAME, adc);
+	  if (ret < 0)
+	    {
+	      adbg("adc_register failed: %d\n", ret);
+	    }		
+  	}
 #endif			
 //////////////////////////////////////////////////////////////////////////////////////////////////
 #ifdef CONFIG_STM32_ADC3
@@ -155,24 +153,19 @@ int adc_devinit(void)
   if (adc == NULL)
     {
       adbg("ERROR: Failed to get ADC interface\n");
-      return -ENODEV;
     }
+  else
+  	{
+	  /* Register the ADC driver at "/dev/adc0" */
 
-  /* Register the ADC driver at "/dev/adc0" */
-
-  ret = adc_register(CONFIG_ADC3_DEVNAME, adc);
-  if (ret < 0)
-    {
-      adbg("adc_register failed: %d\n", ret);
-      return ret;
-    }
+	  ret = adc_register(CONFIG_ADC3_DEVNAME, adc);
+	  if (ret < 0)
+	    {
+	      adbg("adc_register failed: %d\n", ret);
+	    }
+  	}
 #endif			
 //////////////////////////////////////////////////////////////////////////////////////////////////
-
-  return OK;	
-#else
-  return -ENOSYS;
-#endif
 }
 
 #endif /* CONFIG_STM32_ADC1 || CONFIG_STM32_ADC2 || CONFIG_STM32_ADC3 */

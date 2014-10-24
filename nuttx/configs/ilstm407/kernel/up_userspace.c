@@ -65,9 +65,9 @@
  * Public Data
  ****************************************************************************/
 
-int (*klog)(FAR const char *fmt, ...);
+int (*klog)(int priority, FAR const char *format, ...);
 
-void sklog(int (*fp)(FAR const char *fmt, ...))
+void sklog(int (*fp)(int priority, FAR const char *format, ...))
 {
   klog = fp;
 }

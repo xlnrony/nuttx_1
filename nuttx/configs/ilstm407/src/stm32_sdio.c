@@ -49,7 +49,7 @@
 #include <sys/mount.h>
 
 #include "stm32.h"
-#include "stm32f4discovery.h"
+#include "stm32f407.h"
 
 #ifdef HAVE_SDIO
 
@@ -79,7 +79,7 @@ static FAR struct sdio_dev_s *g_sdio_dev;
  *
  ****************************************************************************/
 
-int stm32_sdio_initialize(void)
+void stm32_sdio_initialize(void)
 {
   int ret;
   char devname[16];
@@ -93,7 +93,7 @@ int stm32_sdio_initialize(void)
   if (!g_sdio_dev)
     {
       fdbg("Failed to initialize SDIO slot %d\n", SDIO_SLOTNO);
-      return -ENODEV;
+      return;
     }
 
   /* Now bind the SDIO interface to the MMC/SD driver */
@@ -104,7 +104,7 @@ int stm32_sdio_initialize(void)
   if (ret != OK)
     {
       fdbg("Failed to bind SDIO to the MMC/SD driver: %d\n", ret);
-      return ret;
+      return;
     }
 
   fvdbg("Successfully bound SDIO to the MMC/SD driver\n");
@@ -118,10 +118,8 @@ int stm32_sdio_initialize(void)
   if (ret != OK)
   	{
       fdbg("Failed to mount sdcard: %d\n", ret);
-      return ret;
+      return;
   	}	
-	
-  return OK;
 }
 
 #endif /* HAVE_SDIO */

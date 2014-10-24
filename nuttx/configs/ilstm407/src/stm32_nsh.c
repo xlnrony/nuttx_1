@@ -39,7 +39,7 @@
 
 #include <nuttx/config.h>
 
-#include "stm32f4discovery.h"
+#include "stm32f407.h"
 
 /****************************************************************************
  * Pre-Processor Definitions

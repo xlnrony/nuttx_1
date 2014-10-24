@@ -205,53 +205,6 @@
 #  endif
 #endif
 
-/* LED definitions ******************************************************************/
-/* If CONFIG_ARCH_LEDS is not defined, then the user can control the LEDs in any
- * way.  The following definitions are used to access individual LEDs.
- */
-
-/* LED index values for use with stm32_setled() */
-
-#define BOARD_LED1        0
-#define BOARD_LED2        1
-#define BOARD_LED3        2
-#define BOARD_LED4        3
-#define BOARD_NLEDS       4
-
-#define BOARD_LED_GREEN   BOARD_LED1
-#define BOARD_LED_ORANGE  BOARD_LED2
-#define BOARD_LED_RED     BOARD_LED3
-#define BOARD_LED_BLUE    BOARD_LED4
-
-/* LED bits for use with stm32_setleds() */
-
-#define BOARD_LED1_BIT    (1 << BOARD_LED1)
-#define BOARD_LED2_BIT    (1 << BOARD_LED2)
-#define BOARD_LED3_BIT    (1 << BOARD_LED3)
-#define BOARD_LED4_BIT    (1 << BOARD_LED4)
-
-/* If CONFIG_ARCH_LEDs is defined, then NuttX will control the 4 LEDs on board the
- * ilstm407.  The following definitions describe how NuttX controls the LEDs:
- */
-
-#define LED_STARTED       0  /* LED1 */
-#define LED_HEAPALLOCATE  1  /* LED2 */
-#define LED_IRQSENABLED   2  /* LED1 + LED2 */
-#define LED_STACKCREATED  3  /* LED3 */
-#define LED_INIRQ         4  /* LED1 + LED3 */
-#define LED_SIGNAL        5  /* LED2 + LED3 */
-#define LED_ASSERTION     6  /* LED1 + LED2 + LED3 */
-#define LED_PANIC         7  /* N/C  + N/C  + N/C + LED4 */
-
-/* Button definitions ***************************************************************/
-/* The ilstm407 supports one button: */
-
-#define BUTTON_USER        0
-
-#define NUM_BUTTONS        1
-
-#define BUTTON_USER_BIT    (1 << BUTTON_USER)
-
 /* Alternate function pin selections ************************************************/
 
 /* UART2:
@@ -296,7 +249,7 @@
  * - PB13 is ETH_MII_TXD1/ETH_RMII_TXD1	
  */
 
-#define GPIO_ETH_PPS_OUT    GPIO_ETH_PPS_OUT_1
+//#define GPIO_ETH_PPS_OUT    GPIO_ETH_PPS_OUT_1
 #define GPIO_ETH_MII_CRS    GPIO_ETH_MII_CRS_1
 #define GPIO_ETH_MII_COL    GPIO_ETH_MII_COL_1
 #define GPIO_ETH_MII_RX_ER  GPIO_ETH_MII_RX_ER_1

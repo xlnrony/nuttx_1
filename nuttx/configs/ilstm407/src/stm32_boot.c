@@ -44,7 +44,7 @@
 #include <arch/board/board.h>
 
 #include "up_arch.h"
-#include "stm32f4discovery.h"
+#include "stm32f407.h"
 
 /************************************************************************************
  * Definitions

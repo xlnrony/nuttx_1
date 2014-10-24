@@ -50,7 +50,7 @@
 #include "up_arch.h"
 
 #include "stm32.h"
-#include "stm32f4discovery.h"
+#include "stm32f407.h"
 
 #ifdef CONFIG_ADC
 
@@ -80,7 +80,7 @@
  *
  ************************************************************************************/
 
-int tim_devinit(void)
+void stm32_tim_initialize(void)
 {
   struct adc_dev_s *tim;
   int ret;
@@ -92,21 +92,17 @@ int tim_devinit(void)
   if (tim == NULL)
     {
       adbg("ERROR: Failed to get TIM interface\n");
-      return -ENODEV;
     }
+  else
+  	{
+	  /* Register the ADC driver at "/dev/tim3in0" */
 
-  /* Register the ADC driver at "/dev/tim3in0" */
-
-  ret = adc_register(CONFIG_TIM_DEVNAME, tim);
-  if (ret < 0)
-    {
-      adbg("adc_register failed: %d\n", ret);
-      return ret;
-    }
-	
-  return OK;	
-#else
-  return -ENOSYS;
+	  ret = adc_register(CONFIG_TIM_DEVNAME, tim);
+	  if (ret < 0)
+	    {
+	      adbg("adc_register failed: %d\n", ret);
+	    }
+  	}
 #endif
 }
 

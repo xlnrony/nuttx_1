@@ -41,17 +41,19 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <errno.h>
 #include <debug.h>
 
 #include <arch/board/board.h>
+#include <nuttx/gpio/gpio.h>
 
 #include "chip.h"
 #include "up_arch.h"
 #include "up_internal.h"
 #include "stm32.h"
-#include "stm32f4discovery.h"
+#include "stm32f407.h"
 
-#ifdef CONFIG_SGPIO
+#ifdef CONFIG_GPIO
 
 /****************************************************************************
  * Definitions
@@ -95,13 +97,18 @@ static int stm32_gpio_ioctl(FAR struct gpio_dev_s *dev, int cmd, unsigned long a
 {
   struct stm32_dev_s *priv = (struct stm32_dev_s *)dev->priv;
   int ret = OK;
+  bool *b;
   
   gpiodbg("cmd=%d arg=%ld\n", cmd, arg);
 
   switch (cmd)
     {
       case GPIOC_WRITE:
-		 stm32_gpiowrite(priv->pinset,bool(arg)); 		
+		 stm32_gpiowrite(priv->pinset,(bool)arg); 		
+        break;
+      case GPIOC_READ:
+		 b = (bool *) arg;
+		 *b = stm32_gpioread(priv->pinset);
         break;
 
       /* Unsupported or invalid command */
@@ -121,105 +128,217 @@ static const struct gpio_ops_s stm32_gpio_ops =
   .ioctl    = stm32_gpio_ioctl
 };
 ///////////////////////////////////////////////////////////////////////////////////////////
-static const struct stm32_dev_s stm32_gpio_priv_led1_b =
+static struct stm32_dev_s stm32_gpio_priv_led1_b =
 {
-  .cfgset         = GPIO_LED1_B,
+  .pinset         = GPIO_LED1_B,
 };
 
-static const struct gpio_dev_s stm32_gpio_dev_led1_b =
+static struct gpio_dev_s stm32_gpio_dev_led1_b =
 {
   .ops = &stm32_gpio_ops,
-  .priv= &stm32_gpio_priv_led1_b,
+  .priv = &stm32_gpio_priv_led1_b,
 };
 
-static const struct stm32_dev_s stm32_gpio_priv_led1_g =
+static struct stm32_dev_s stm32_gpio_priv_led1_g =
 {
-  .cfgset         = GPIO_LED1_G,
+  .pinset         = GPIO_LED1_G,
 };
 
-static const struct gpio_dev_s stm32_gpio_dev_led1_g =
-{
-  .ops = &stm32_gpio_ops,
-  .priv= &stm32_gpio_priv_led1_g,
-};
-
-static const struct stm32_dev_s stm32_gpio_priv_led1_r =
-{
-  .cfgset         = GPIO_LED1_R,
-};
-
-static const struct gpio_dev_s stm32_gpio_dev_led1_r =
+static struct gpio_dev_s stm32_gpio_dev_led1_g =
 {
   .ops = &stm32_gpio_ops,
-  .priv= &stm32_gpio_priv_led1_r,
+  .priv = &stm32_gpio_priv_led1_g,
+};
+
+static struct stm32_dev_s stm32_gpio_priv_led1_r =
+{
+  .pinset         = GPIO_LED1_R,
+};
+
+static struct gpio_dev_s stm32_gpio_dev_led1_r =
+{
+  .ops = &stm32_gpio_ops,
+  .priv = &stm32_gpio_priv_led1_r,
 };
 ///////////////////////////////////////////////////////////////////////////////////////////
-static const struct stm32_dev_s stm32_gpio_priv_led2_b =
+static struct stm32_dev_s stm32_gpio_priv_led2_b =
 {
-  .cfgset         = GPIO_LED2_B,
+  .pinset         = GPIO_LED2_B,
 };
 
-static const struct gpio_dev_s stm32_gpio_dev_led2_b =
+static struct gpio_dev_s stm32_gpio_dev_led2_b =
 {
   .ops = &stm32_gpio_ops,
-  .priv= &stm32_gpio_priv_led2_b,
+  .priv = &stm32_gpio_priv_led2_b,
 };
 
-static const struct stm32_dev_s stm32_gpio_priv_led2_g =
+static struct stm32_dev_s stm32_gpio_priv_led2_g =
 {
-  .cfgset         = GPIO_LED2_G,
+  .pinset         = GPIO_LED2_G,
 };
 
-static const struct gpio_dev_s stm32_gpio_dev_led2_g =
-{
-  .ops = &stm32_gpio_ops,
-  .priv= &stm32_gpio_priv_led2_g,
-};
-
-static const struct stm32_dev_s stm32_gpio_priv_led2_r =
-{
-  .cfgset         = GPIO_LED2_R,
-};
-
-static const struct gpio_dev_s stm32_gpio_dev_led2_r =
+static struct gpio_dev_s stm32_gpio_dev_led2_g =
 {
   .ops = &stm32_gpio_ops,
-  .priv= &stm32_gpio_priv_led2_r,
+  .priv = &stm32_gpio_priv_led2_g,
+};
+
+static struct stm32_dev_s stm32_gpio_priv_led2_r =
+{
+  .pinset         = GPIO_LED2_R,
+};
+
+static struct gpio_dev_s stm32_gpio_dev_led2_r =
+{
+  .ops = &stm32_gpio_ops,
+  .priv = &stm32_gpio_priv_led2_r,
 };
 ///////////////////////////////////////////////////////////////////////////////////////////
-static const struct stm32_dev_s stm32_gpio_priv_led3_b =
+static struct stm32_dev_s stm32_gpio_priv_led3_b =
 {
-  .cfgset         = GPIO_LED3_B,
+  .pinset         = GPIO_LED3_B,
 };
 
-static const struct gpio_dev_s stm32_gpio_dev_led3_b =
-{
-  .ops = &stm32_gpio_ops,
-  .priv= &stm32_gpio_priv_led3_b,
-};
-
-static const struct stm32_dev_s stm32_gpio_priv_led3_g =
-{
-  .cfgset         = GPIO_LED3_G,
-};
-
-static const struct gpio_dev_s stm32_gpio_dev_led3_g =
+static struct gpio_dev_s stm32_gpio_dev_led3_b =
 {
   .ops = &stm32_gpio_ops,
-  .priv= &stm32_gpio_priv_led3_g,
+  .priv = &stm32_gpio_priv_led3_b,
 };
 
-static const struct stm32_dev_s stm32_gpio_priv_led3_r =
+static struct stm32_dev_s stm32_gpio_priv_led3_g =
 {
-  .cfgset         = GPIO_LED3_R,
+  .pinset         = GPIO_LED3_G,
 };
 
-static const struct gpio_dev_s stm32_gpio_dev_led3_r =
+static struct gpio_dev_s stm32_gpio_dev_led3_g =
+{
+  .ops = &stm32_gpio_ops,
+  .priv = &stm32_gpio_priv_led3_g,
+};
+
+static struct stm32_dev_s stm32_gpio_priv_led3_r =
+{
+  .pinset         = GPIO_LED3_R,
+};
+
+static struct gpio_dev_s stm32_gpio_dev_led3_r =
 {
   .ops = &stm32_gpio_ops,
   .priv= &stm32_gpio_priv_led3_r,
 };
 ///////////////////////////////////////////////////////////////////////////////////////////
+static struct stm32_dev_s stm32_gpio_priv_magnet_vcc =
+{
+  .pinset         = GPIO_MAGNET_VCC,
+};
+
+static struct gpio_dev_s stm32_gpio_dev_magnet_vcc =
+{
+  .ops = &stm32_gpio_ops,
+  .priv= &stm32_gpio_priv_magnet_vcc,
+};
+
+static struct stm32_dev_s stm32_gpio_priv_magnet_gnd =
+{
+  .pinset         = GPIO_MAGNET_GND,
+};
+
+static struct gpio_dev_s stm32_gpio_dev_magnet_gnd =
+{
+  .ops = &stm32_gpio_ops,
+  .priv= &stm32_gpio_priv_magnet_gnd,
+};
+///////////////////////////////////////////////////////////////////////////////////////////
 
 
-#endif /* CONFIG_SGPIO */
+void stm32_gpio_initialize(void)
+{
+  int ret;
+//////////////////////////////////////////////////////////////////////////////////////////////////
+  /* Register the GPIO driver at "/dev/led1b" */
+//  stm32_configgpio(stm32_gpio_priv_led1_b.pinset);	
+  ret = gpio_register(CONFIG_LED1_BLUE_DEVNAME, &stm32_gpio_dev_led1_b);
+  if (ret < 0)
+    {
+      gpiodbg("gpio_register failed: %d\n", ret);
+    }			
+/////////////////////////////////////////////////////////////////////////////////////////////////
+  /* Register the GPIO driver at "/dev/led1g" */
+//  stm32_configgpio(stm32_gpio_priv_led1_g.pinset);	
+  ret = gpio_register(CONFIG_LED1_GREEN_DEVNAME, &stm32_gpio_dev_led1_g);
+  if (ret < 0)
+    {
+      gpiodbg("gpio_register failed: %d\n", ret);
+    }			
+//////////////////////////////////////////////////////////////////////////////////////////////////
+  /* Register the GPIO driver at "/dev/led1r" */
+//  stm32_configgpio(stm32_gpio_priv_led1_r.pinset);	
+  ret = gpio_register(CONFIG_LED1_RED_DEVNAME, &stm32_gpio_dev_led1_r);
+  if (ret < 0)
+    {
+      gpiodbg("gpio_register failed: %d\n", ret);
+    }			
+//////////////////////////////////////////////////////////////////////////////////////////////////
+  /* Register the GPIO driver at "/dev/led2b" */
+//  stm32_configgpio(stm32_gpio_priv_led2_b.pinset);	
+  ret = gpio_register(CONFIG_LED2_BLUE_DEVNAME, &stm32_gpio_dev_led2_b);
+  if (ret < 0)
+    {
+      gpiodbg("gpio_register failed: %d\n", ret);
+    }			
+//////////////////////////////////////////////////////////////////////////////////////////////////
+  /* Register the GPIO driver at "/dev/led2g" */
+//  stm32_configgpio(stm32_gpio_priv_led2_g.pinset);	
+  ret = gpio_register(CONFIG_LED2_GREEN_DEVNAME, &stm32_gpio_dev_led2_g);
+  if (ret < 0)
+    {
+      gpiodbg("gpio_register failed: %d\n", ret);
+    }			
+//////////////////////////////////////////////////////////////////////////////////////////////////
+  /* Register the GPIO driver at "/dev/led2r" */
+//  stm32_configgpio(stm32_gpio_priv_led2_r.pinset);	
+  ret = gpio_register(CONFIG_LED2_RED_DEVNAME, &stm32_gpio_dev_led2_r);
+  if (ret < 0)
+    {
+      gpiodbg("gpio_register failed: %d\n", ret);
+    }			
+/////////////////////////////////////////////////////////////////////////////////////////////////
+  /* Register the GPIO driver at "/dev/led3b" */
+//  stm32_configgpio(stm32_gpio_priv_led3_b.pinset);	
+  ret = gpio_register(CONFIG_LED3_BLUE_DEVNAME, &stm32_gpio_dev_led3_b);
+  if (ret < 0)
+    {
+      gpiodbg("gpio_register failed: %d\n", ret);
+    }			
+/////////////////////////////////////////////////////////////////////////////////////////////////
+  /* Register the GPIO driver at "/dev/led3g" */
+//  stm32_configgpio(stm32_gpio_priv_led3_g.pinset);	
+  ret = gpio_register(CONFIG_LED3_GREEN_DEVNAME, &stm32_gpio_dev_led3_g);
+  if (ret < 0)
+    {
+      gpiodbg("gpio_register failed: %d\n", ret);
+    }			
+/////////////////////////////////////////////////////////////////////////////////////////////////
+  /* Register the GPIO driver at "/dev/led3r" */
+//  stm32_configgpio(stm32_gpio_priv_led3_r.pinset);	
+  ret = gpio_register(CONFIG_LED3_RED_DEVNAME, &stm32_gpio_dev_led3_r);
+  if (ret < 0)
+    {
+      gpiodbg("gpio_register failed: %d\n", ret);
+    }		
+////////////////////////////////////////////////////////////////////////////////////////////////
+  ret = gpio_register(CONFIG_MAGNET_VCC_DEVNAME, &stm32_gpio_dev_magnet_vcc);
+  if (ret < 0)
+    {
+      gpiodbg("gpio_register failed: %d\n", ret);
+    }		
+////////////////////////////////////////////////////////////////////////////////////////////////
+  ret = gpio_register(CONFIG_MAGNET_GND_DEVNAME, &stm32_gpio_dev_magnet_gnd);
+  if (ret < 0)
+    {
+      gpiodbg("gpio_register failed: %d\n", ret);
+    }		
+	
+}
+
+#endif /* CONFIG_GPIO */

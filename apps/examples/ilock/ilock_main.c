@@ -41,6 +41,7 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/ioctl.h>
 
 #include <stdio.h>
 #include <unistd.h>
@@ -51,6 +52,7 @@
 #include <assert.h>
 #include <errno.h>
 
+#include <nuttx/gpio/gpio.h>
 #include <nuttx/usb/usbhost.h>
 
 #include "epass3003_lib.h"
@@ -225,6 +227,54 @@ errout:
 
 int ilock_main(int argc, char *argv[])
 {
+  int fd;
+  int errval = 0;
+  int ret;
 
+  if (argc != 3)
+  	{
+	   printf("gpio:main: Need two extra parameters\n");
+      errval = 3;
+      goto errout;
+  	}
+	
+  printf("gpio_main: Hardware initialized. Opening the gpio device: %s\n",
+          argv[1]);
+
+  fd = open(argv[1], O_RDWR);
+  if (fd < 0)
+    {
+      printf("adc_main: open %s failed: %d\n", argv[1], errno);
+      errval = 1;
+      goto errout;
+    }
+
+  fflush(stdout);
+
+  ret = ioctl(fd, GPIOC_WRITE, *argv[2] - '0');
+  if (ret < 0)
+    {
+      int errcode = errno;
+      printf("gpio_main: GPIOC_WRITE ioctl failed: %d\n", errcode);
+      errval = 2;
+      goto errout_with_dev;
+    }
+	
+  getchar();
+	
+  close(fd);
+  fflush(stdout);
+	
+  return OK;
+	
+  /* Error exits */
+
+errout_with_dev:
+  close(fd);
+
+errout:
+  printf("Terminating!\n");
+  fflush(stdout);
+  return errval;
 }
 

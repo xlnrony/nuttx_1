@@ -112,7 +112,7 @@ void mm_addregion(FAR struct mm_heap_s *heap, FAR void *heapstart,
 #if defined(CONFIG_BUILD_PROTECTED) && !defined(__KERNEL__)
   if (klog!=NULL)
   {
-    klog("Region %d: base=%p size=%u\n", IDX+1, heapstart, heapsize);
+    klog(LOG_ERR, "Region %d: base=%p size=%u\n", IDX+1, heapstart, heapsize);
   }	
 #else
   mlldbg("Region %d: base=%p size=%u\n", IDX+1, heapstart, heapsize);
@@ -180,7 +180,7 @@ void mm_initialize(FAR struct mm_heap_s *heap, FAR void *heapstart,
 #if defined(CONFIG_BUILD_PROTECTED) && !defined(__KERNEL__)
   if (klog!=NULL)
   {
-    klog("Heap: start=%p size=%u\n", heapstart, heapsize);
+    klog(LOG_ERR, "Heap: start=%p size=%u\n", heapstart, heapsize);
   }
 #else
   mlldbg("Heap: start=%p size=%u\n", heapstart, heapsize);

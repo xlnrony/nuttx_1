@@ -55,7 +55,7 @@
 #endif
 
 #include "stm32.h"
-#include "stm32f4discovery.h"
+#include "stm32f407.h"
 
 /****************************************************************************
  * Pre-Processor Definitions
@@ -83,22 +83,16 @@ int stm32_bringup(void)
 {
   int ret = OK;
 
+#ifdef CONFIG_GPIO
+  stm32_gpio_initialize();
+#endif	
+
 #ifdef CONFIG_ADC
-  ret = adc_devinit();
-  if (ret != OK)
-    {
-      adbg("Failed to initialize ADC driver: %d\n", ret);
-      return ret;
-    }
+  stm32_adc_initialize();
 #endif	
 
 #if defined(CONFIG_ADC) && defined(CONFIG_STM32_TIM3)
-  ret = tim_devinit();
-  if (ret != OK)
-    {
-      adbg("Failed to initialize TIM driver: %d\n", ret);
-      return ret;
-    }
+  stm32_tim_initialize();
 #endif	
 
 #ifdef HAVE_USBHOST
@@ -106,12 +100,7 @@ int stm32_bringup(void)
    * will monitor for USB connection and disconnection events.
    */
 
-  ret = stm32_usbhost_initialize();
-  if (ret != OK)
-    {
-      udbg("Failed to initialize USB host: %d\n", ret);
-      return ret;
-    }
+  stm32_usbhost_initialize();
 #endif
 
 #ifdef HAVE_USBMONITOR
@@ -127,13 +116,7 @@ int stm32_bringup(void)
 #ifdef HAVE_SDIO
   /* Initialize the SDIO block driver */
 
-  ret = stm32_sdio_initialize();
-  if (ret != OK)
-    {
-      fdbg("Failed to initialize MMC/SD driver: %d\n", ret);
-      return ret;
-    }
-
+  stm32_sdio_initialize();
 #endif
 
   return ret;

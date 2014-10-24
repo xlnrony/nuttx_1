@@ -227,7 +227,7 @@ errout:
 }
 
 /************************************************************************************
- * Name: pwm_read
+ * Name: gpio_read
  *
  * Description:
  *   A dummy read method.  This is provided only to satisfy the VFS layer.
@@ -242,7 +242,7 @@ static ssize_t gpio_read(FAR struct file *filep, FAR char *buffer, size_t buflen
 }
 
 /************************************************************************************
- * Name: pwm_write
+ * Name: gpio_write
  *
  * Description:
  *   A dummy write method.  This is provided only to satisfy the VFS layer.
@@ -255,7 +255,7 @@ static ssize_t gpio_write(FAR struct file *filep, FAR const char *buffer, size_t
 }
 
 /************************************************************************************
- * Name: pwm_ioctl
+ * Name: gpio_ioctl
  *
  * Description:
  *   The standard ioctl method.  This is where ALL of the PWM work is done.
