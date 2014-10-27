@@ -106,5 +106,18 @@ config MAGNET_GND_DEVNAME
 	default "/dev/magnetgnd"
 	---help---
 		Name of gpio device to be used. Default: "/dev/magnetgnd"		
+		
+config BUZZER_DEVNAME
+	string "BUZZER PIN Device Name"
+	default "/dev/buzzer"
+	---help---
+		Name of gpio device to be used. Default: "/dev/buzzer"		
+
+config CLOSE_SW_DEVNAME
+	string "CLOSE_SW PIN Device Name"
+	default "/dev/closesw"
+	---help---
+		Name of gpio device to be used. Default: "/dev/closesw"		
+		
 				
 endif

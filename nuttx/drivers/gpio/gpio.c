@@ -236,9 +236,23 @@ errout:
 
 static ssize_t gpio_read(FAR struct file *filep, FAR char *buffer, size_t buflen)
 {
-  /* Return zero -- usually meaning end-of-file */
+  FAR struct inode           *inode = filep->f_inode;
+  FAR struct gpio_dev_s *dev = inode->i_private;
+  int                         ret;
 
-  return 0;
+  /* Get exclusive access to the device structures */
+
+  ret = sem_wait(&dev->exclsem);
+  if (ret < 0)
+    {
+      return ret;
+    }
+
+  DEBUGASSERT(dev->ops->read != NULL);
+  ret = dev->ops->read(dev, buffer, buflen);
+
+  sem_post(&dev->exclsem);
+  return ret;
 }
 
 /************************************************************************************
@@ -251,7 +265,23 @@ static ssize_t gpio_read(FAR struct file *filep, FAR char *buffer, size_t buflen
 
 static ssize_t gpio_write(FAR struct file *filep, FAR const char *buffer, size_t buflen)
 {
-  return 0;
+  FAR struct inode           *inode = filep->f_inode;
+  FAR struct gpio_dev_s *dev = inode->i_private;
+  int                         ret;
+
+  /* Get exclusive access to the device structures */
+
+  ret = sem_wait(&dev->exclsem);
+  if (ret < 0)
+    {
+      return ret;
+    }
+
+  DEBUGASSERT(dev->ops->write != NULL);
+  ret = dev->ops->write(dev, buffer, buflen);
+
+  sem_post(&dev->exclsem);
+  return ret;
 }
 
 /************************************************************************************
