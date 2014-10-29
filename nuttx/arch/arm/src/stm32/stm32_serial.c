@@ -2535,7 +2535,7 @@ static int up_pm_prepare(struct pm_callback_s *cb, enum pm_state_e pmstate)
  * Public Functions
  ****************************************************************************/
 
-#ifdef USE_EARLYSERIALINIT
+#ifdef USE_SERIALDRIVER
 
 /****************************************************************************
  * Name: up_earlyserialinit
@@ -2571,10 +2571,6 @@ void up_earlyserialinit(void)
 #endif /* HAVE UART */
 }
 #endif
-
-#endif
-
-#ifdef USE_SERIALDRIVER
 
 /****************************************************************************
  * Name: up_serialinit
