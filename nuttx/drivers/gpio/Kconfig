@@ -1,0 +1,19 @@
+#
+# For a description of the syntax of this configuration file,
+# see misc/tools/kconfig-language.txt.
+#
+
+config KEYPAD_BUFSIZE
+	int "Keypad Buffer Size"
+	default 16
+	---help---
+		Buffer Size of keypad device to be used. Default: 16
+		
+config KEYPAD_NPOLLWAITERS
+	int "Max Number of Waiters for Poll Event"
+	default 2
+	depends on !DISABLE_POLL
+	---help---
+		If the poll() method is enabled, this defines the maximum number
+		of threads that can be waiting for keypad events.  Default: 2.
+		
