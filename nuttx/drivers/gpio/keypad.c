@@ -520,7 +520,7 @@ void keypad_notify(FAR struct keypad_dev_s *dev)
 {
   bool                        newstate;
 
-  usbhost_takesem(&dev->exclsem);
+  keypad_takesem(&dev->exclsem);
 
   newstate = (dev->headndx == dev->tailndx);
   if (!newstate)
@@ -531,7 +531,7 @@ void keypad_notify(FAR struct keypad_dev_s *dev)
         {
           /* Yes.. wake it up */
 
-          usbhost_givesem(&dev->waitsem);
+          keypad_givesem(&dev->waitsem);
           dev->waiting = false;
         }
 

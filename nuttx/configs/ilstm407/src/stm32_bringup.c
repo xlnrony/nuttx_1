@@ -87,6 +87,10 @@ int stm32_bringup(void)
   stm32_gpio_initialize();
 #endif	
 
+#ifdef CONFIG_KEYPAD
+  stm32_keypad_initialize();
+#endif
+
 #ifdef CONFIG_ADC
   stm32_adc_initialize();
 #endif	

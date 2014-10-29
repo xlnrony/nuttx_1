@@ -290,37 +290,37 @@ int hidkbd_main(int argc, char *argv[])
 
   /* First, register all of the USB host HID keyboard class driver */
 
-  printf("hidkbd_main: Register class drivers\n");
+/*  printf("hidkbd_main: Register class drivers\n");
   ret = usbhost_kbdinit();
   if (ret != OK)
     {
       printf("hidkbd_main: Failed to register the KBD class\n");
-    }
+    }*/
 
   /* Then get an instance of the USB host interface.  The platform-specific
    * code must provide a wrapper called arch_usbhost_initialize() that will
    * perform the actual USB host initialization.
    */
 
-  printf("hidkbd_main: Initialize USB host keyboard driver\n");
+/*  printf("hidkbd_main: Initialize USB host keyboard driver\n");
   g_usbconn = usbhost_initialize(0);
   if (g_usbconn)
-    {
+    {*/
       /* Start a thread to handle device connection. */
 
-      printf("hidkbd_main: Start hidkbd_waiter\n");
+      /*printf("hidkbd_main: Start hidkbd_waiter\n");
 
       pid = task_create("usbhost", CONFIG_EXAMPLES_HIDKBD_DEFPRIO,
                         CONFIG_EXAMPLES_HIDKBD_STACKSIZE,
                         (main_t)hidkbd_waiter, (FAR char * const *)NULL);
-      UNUSED(pid);
+      UNUSED(pid);*/
 
       /* Now just sleep.  Eventually logic here will open the kbd device and
        * perform the HID keyboard test.
        */
 
-      for (;;)
-        {
+      //for (;;)
+       // {
           /* Open the keyboard device.  Loop until the device is successfully
            * opened.
            */
@@ -364,8 +364,8 @@ int hidkbd_main(int argc, char *argv[])
           printf("Closing device %s: %d\n", CONFIG_EXAMPLES_HIDKBD_DEVNAME, (int)nbytes);
           fflush(stdout);
           close(fd);
-        }
-    }
+        //}
+    //}
 
   return 0;
 }
