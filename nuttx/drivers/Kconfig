@@ -536,6 +536,16 @@ config GPIO
 	default n
 	---help---
 		Select to enable support for GPIO device support.
+		
+menuconfig KEYPAD
+	bool "Keypad Device Support"
+	default n
+	---help---
+		Drivers for keypad devices.
+
+if KEYPAD
+source drivers/gpio/Kconfig
+endif # KEYPAD
 
 comment "System Logging Device Options"
 

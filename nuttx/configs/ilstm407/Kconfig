@@ -118,6 +118,11 @@ config CLOSE_SW_DEVNAME
 	default "/dev/closesw"
 	---help---
 		Name of gpio device to be used. Default: "/dev/closesw"		
-		
+
+config KEYPAD_DEVNAME
+	string "Keypad Device Name"
+	default "/dev/keypad"
+	---help---
+		Name of keypad device to be used. Default: "/dev/keypad"		
 				
 endif

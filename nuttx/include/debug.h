@@ -308,6 +308,30 @@
 # define audllvdbg(x...)
 #endif
 
+#ifdef CONFIG_DEBUG_GPIO
+#  define gpiodbg(format, ...)    dbg(format, ##__VA_ARGS__)
+#  define gpiovdbg(format, ...)  lldbg(format, ##__VA_ARGS__)
+#  define gpiolldbg(format, ...)   vdbg(format, ##__VA_ARGS__)
+#  define gpiollvdbg(format, ...) llvdbg(format, ##__VA_ARGS__)
+#else
+#  define gpiodbg(x...)
+#  define gpiovdbg(x...)
+#  define gpiolldbg(x...)
+#  define gpiollvdbg(x...)
+#endif
+
+#ifdef CONFIG_DEBUG_KEYPAD
+#  define keypaddbg(format, ...)    dbg(format, ##__VA_ARGS__)
+#  define keypadvdbg(format, ...)  lldbg(format, ##__VA_ARGS__)
+#  define keypadlldbg(format, ...)   vdbg(format, ##__VA_ARGS__)
+#  define keypadllvdbg(format, ...) llvdbg(format, ##__VA_ARGS__)
+#else
+#  define keypaddbg(x...)
+#  define keypadvdbg(x...)
+#  define keypadlldbg(x...)
+#  define keypadllvdbg(x...)
+#endif
+
 #else /* CONFIG_CPP_HAVE_VARARGS */
 
 /* Variadic macros NOT supported */
@@ -501,6 +525,30 @@
 # define audllvdbg   (void)
 #endif
 
+#ifdef CONFIG_DEBUG_GPIO
+#  define gpiodbg     dbg
+#  define gpiovdbg   vdbg
+#  define gpiolldbg   lldbg
+#  define gpiollvdbg llvdbg
+#else
+#  define gpiodbg 		(void)
+#  define gpiovdbg		(void)
+#  define gpiolldbg		(void)
+#  define gpiollvdbg		(void)
+#endif
+
+#ifdef CONFIG_DEBUG_KEYPAD
+#  define keypaddbg     dbg
+#  define keypadvdbg   vdbg
+#  define keypadlldbg   lldbg
+#  define keypadllvdbg llvdbg
+#else
+#  define keypaddbg 		(void)
+#  define keypadvdbg		(void)
+#  define keypadlldbg		(void)
+#  define keypadllvdbg		(void)
+#endif
+
 #endif /* CONFIG_CPP_HAVE_VARARGS */
 
 /* Buffer dumping macros do not depend on varargs */
@@ -613,18 +661,6 @@
 #else
 #  define auddbgdumpbuffer(m,b,n)
 #  define audvdbgdumpbuffer(m,b,n)
-#endif
-
-#ifdef CONFIG_DEBUG_GPIO
-#  define gpiodbg     dbg
-#  define gpiovdbg   vdbg
-#  define gpiolldbg   lldbg
-#  define gpiollvdbg llvdbg
-#else
-#  define gpiodbg(x...)
-#  define gpiovdbg(x...)
-#  define gpiolldbg(x...)
-#  define gpiollvdbg(x...)
 #endif
 
 /****************************************************************************

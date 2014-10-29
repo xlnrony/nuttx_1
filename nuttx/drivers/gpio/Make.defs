@@ -41,9 +41,25 @@ ifeq ($(CONFIG_GPIO),y)
 
 CSRCS += gpio.c
 
+endif
+
+ifeq ($(CONFIG_KEYPAD),y)
+
+# Include the common GPIO character driver
+
+CSRCS += keypad.c
+
+endif
+
+ifeq ($(CONFIG_GPIO),y)
 DEPPATH += --dep-path gpio
 VPATH += :gpio
 CFLAGS += ${shell $(INCDIR) $(INCDIROPT) "$(CC)" $(TOPDIR)$(DELIM)drivers$(DELIM)gpio}
-
+else
+ifeq ($(CONFIG_KEYPAD),y)
+DEPPATH += --dep-path gpio
+VPATH += :gpio
+CFLAGS += ${shell $(INCDIR) $(INCDIROPT) "$(CC)" $(TOPDIR)$(DELIM)drivers$(DELIM)gpio}
+endif
 endif
 

@@ -50,8 +50,12 @@ ifeq ($(CONFIG_GPIO),y)
 CSRCS += stm32_gpio.c
 endif
 
+ifeq ($(CONFIG_KEYPAD),y)
+CSRCS += stm32_keypad.c
+endif
+
 ifeq ($(CONFIG_ARCH_BUTTONS),y)
-CSRCS +=  stm32_buttons.c
+CSRCS += stm32_buttons.c
 endif
 
 ifeq ($(CONFIG_STM32_OTGFS),y)
