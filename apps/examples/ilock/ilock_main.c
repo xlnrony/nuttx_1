@@ -241,7 +241,7 @@ int ilock_main(int argc, char *argv[])
   printf("gpio_main: Hardware initialized. Opening the gpio device: %s\n",
           argv[1]);
 
-  fd = open(argv[1], O_RDWR);
+  fd = open(argv[1], 0);
   if (fd < 0)
     {
       printf("adc_main: open %s failed: %d\n", argv[1], errno);
