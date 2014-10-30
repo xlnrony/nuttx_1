@@ -288,5 +288,9 @@ void stm32_tim_initialize(void);
 void stm32_gpio_initialize(void);
 #endif
 
+#ifdef CONFIG_KEYPAD
+void stm32_keypad_initialize(void);
+#endif
+
 #endif /* __ASSEMBLY__ */
 #endif /* __CONFIGS_STM32F407_H */

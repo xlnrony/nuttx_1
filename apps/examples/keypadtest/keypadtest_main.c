@@ -210,14 +210,14 @@ int keypadtest_main(int argc, char *argv[])
 
   /* First, register the keyboard device(s) */
 
-  printf("keypadtest_main: Register keyboard device\n");
+  /*printf("keypadtest_main: Register keyboard device\n");
   ret = keypad_kbdinit();
   if (ret != OK)
     {
       printf("keypadtest_main: Failed to register the KBD class\n");
       fflush(stdout);
       return 1;
-    }
+    }*/
 
   /* Open the configured keyboard device. */
 
