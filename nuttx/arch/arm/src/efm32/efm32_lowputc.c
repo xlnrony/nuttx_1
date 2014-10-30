@@ -161,7 +161,7 @@ static void efm32_uart_setbaud(uintptr_t base,  uint32_t baud)
    *   baud          = 2400.0
    */
 
-  maxover = ((BOARD_HFPERCLK_FREQUENCY << 8) / 280) / baud;
+  maxover = (((uint64_t)BOARD_HFPERCLK_FREQUENCY << 8) / 280) / baud;
   if (maxover >= 16)
     {
       DEBUGASSERT(baud <= (BOARD_HFPERCLK_FREQUENCY / 16));
@@ -323,9 +323,15 @@ void efm32_lowsetup(void)
 #endif /* HAVE_UART_DEVICE */
 
 #ifdef HAVE_LEUART_DEVICE
+  /* Enable the LE interface clock must be enabled in CMU_HFCORECLKEN0 */
+
+  regval  = getreg32(EFM32_CMU_HFCORECLKEN0);
+  regval |= CMU_HFCORECLKEN0_LE;
+  putreg32(regval, EFM32_CMU_HFCORECLKEN0);
+
   /* Enable clocking to configured LEUART interfaces */
 
-  regval = getreg32(EFM32_CMU_LFBCLKEN0);
+  regval  = getreg32(EFM32_CMU_LFBCLKEN0);
   regval &= ~(CMU_LFBCLKEN0_LEUART0
 #ifdef CONFIG_EFM32_LEUART1
              | CMU_LFBCLKEN0_LEUART1
@@ -612,7 +618,6 @@ void efm32_uartconfigure(uintptr_t base, uint32_t baud, unsigned int parity,
     case 2:
       regval |= USART_FRAME_PARITY_EVEN;
       break;
-
     }
 
   /* Configure stop bits */
