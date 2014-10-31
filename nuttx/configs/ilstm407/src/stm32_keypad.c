@@ -65,7 +65,8 @@
 struct stm32_dev_s
 {
 uint8_t 					keycode;
-struct work_s       work;         /* For cornercase error handling by the worker thread */
+struct work_s       keydown_work;        
+struct work_s       keyup_work;        
 };
 
 static int stm32_keypad_setup(FAR struct keypad_dev_s *dev);
@@ -146,14 +147,15 @@ static void stm32_keypad_test_key_up_without_interrupt(void)
   stm32_configgpio(GPIO_KEY_3_OUT);
 }
 
-
-static void stm32_keypad_delay_test_key(FAR void *arg)
+static void stm32_keypad_keydown_work(FAR void *arg)
 {
-  struct stm32_dev_s *priv = (struct stm32_dev_s *)arg;
+  irqstate_t flags;
+	
   bool keya_in, keyb_in, keyc_in, keyd_in;
   bool key1_in, key2_in, key3_in;
   uint8_t scan1, scan2;
-	
+
+  flags = irqsave();
   key1_in = stm32_gpioread(GPIO_KEY_1_IN);
   key2_in = stm32_gpioread(GPIO_KEY_2_IN);
   key3_in = stm32_gpioread(GPIO_KEY_3_IN);
@@ -161,10 +163,9 @@ static void stm32_keypad_delay_test_key(FAR void *arg)
   if (key1_in && key2_in && key3_in)
     {
       stm32_keypad_test_key_down_with_interrupt();
+	   irqrestore(flags);
 	   return;
 	 }
-
-  scan1 = 0xf0 & ~((!key1_in ? 1 << 4 : 0) | (!key2_in ? 1 << 5 : 0) | (!key3_in ? 1 << 6 : 0));
 
   stm32_keypad_test_key_up_without_interrupt();
 
@@ -172,47 +173,72 @@ static void stm32_keypad_delay_test_key(FAR void *arg)
   keyb_in = stm32_gpioread(GPIO_KEY_B_IN);
   keyc_in = stm32_gpioread(GPIO_KEY_C_IN);
   keyd_in = stm32_gpioread(GPIO_KEY_D_IN);
+  irqrestore(flags);
 	
+  scan1 = 0xf0 & ~((!key1_in ? 1 << 4 : 0) | (!key2_in ? 1 << 5 : 0) | (!key3_in ? 1 << 6 : 0));
   scan2 = 0x0f & ~((!keya_in ? 1 << 0 : 0) | (!keyb_in ? 1 << 1 : 0) | (!keyc_in ? 1 << 2 : 0) | (!keyd_in ? 1 << 3 : 0));
 
-  priv->keycode = scan1 | scan2;
-	 
+  flags = irqsave();
+  stm32_keypad_priv.keycode = scan1 | scan2;
   stm32_keypad_test_key_up_with_interrupt();
+  irqrestore(flags);
 }
 
-
-static int stm32_keypad_abcd_handler(int irq, FAR void *context)
+static void stm32_keypad_keyup_work(FAR void *arg)
 {
-  struct keypad_dev_s *dev = &stm32_keypad_dev;
-  struct stm32_dev_s *priv = (struct stm32_dev_s *)dev->priv;
+  irqstate_t flags;
   uint8_t i;
-	
+  uint8_t keycode = stm32_keypad_priv.keycode;
+
   for (i = 0; i <= 11; i++) 
     {
-      if (priv->keycode == encoding[i])
+      if (keycode == encoding[i])
 	    {
-	       keypad_putbuffer(dev, 0x30 + i);
+	       keypad_putchar(&stm32_keypad_dev, 0x30 + i);
 			break;
         }
     }
 
-  keypad_notify(dev);
+  if (i > 11)
+  	{
+	  keypaddbg("illegal keycode: %x\n", keycode);
+  	}
 	
+  flags = irqsave();
   stm32_keypad_test_key_down_with_interrupt();
+  irqrestore(flags);
+}
 
+static int stm32_keypad_abcd_handler(int irq, FAR void *context)
+{
+  irqstate_t flags;
+
+  flags = irqsave();
+  stm32_keypad_test_key_up_without_interrupt();
+  work_queue(HPWORK, &stm32_keypad_priv.keyup_work, stm32_keypad_keyup_work, 0, 0);
+  irqrestore(flags);
   return OK;
 }
 
 static int stm32_keypad_123_handler(int irq, FAR void *context)
 {
+  irqstate_t flags;
+	
+  flags = irqsave();
   stm32_keypad_test_key_down_without_interrupt();
-  work_queue(HPWORK, &stm32_keypad_priv.work, stm32_keypad_delay_test_key, &stm32_keypad_priv, KEYPAD_TEST_KEY_TICKS);
+  work_queue(HPWORK, &stm32_keypad_priv.keydown_work, stm32_keypad_keydown_work, 0, KEYPAD_TEST_KEY_TICKS);
+  irqrestore(flags);
+	
   return OK;
 }
 
 static int stm32_keypad_setup(FAR struct keypad_dev_s *dev)
 {
+  irqstate_t flags;
+	
+  flags = irqsave();
   stm32_keypad_test_key_down_with_interrupt();
+  irqrestore(flags);
 
   return OK;
 }

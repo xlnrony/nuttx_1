@@ -309,26 +309,26 @@
 #endif
 
 #ifdef CONFIG_DEBUG_GPIO
-#  define gpiodbg(format, ...)    dbg(format, ##__VA_ARGS__)
-#  define gpiovdbg(format, ...)  lldbg(format, ##__VA_ARGS__)
-#  define gpiolldbg(format, ...)   vdbg(format, ##__VA_ARGS__)
-#  define gpiollvdbg(format, ...) llvdbg(format, ##__VA_ARGS__)
+# define gpiodbg(format, ...)    dbg(format, ##__VA_ARGS__)
+# define gpiolldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
+# define gpiovdbg(format, ...)   vdbg(format, ##__VA_ARGS__)
+# define gpiollvdbg(format, ...) llvdbg(format, ##__VA_ARGS__)
 #else
-#  define gpiodbg(x...)
-#  define gpiovdbg(x...)
-#  define gpiolldbg(x...)
-#  define gpiollvdbg(x...)
+# define gpiodbg(x...)
+# define gpiolldbg(x...)
+# define gpiovdbg(x...)
+# define gpiollvdbg(x...)
 #endif
 
 #ifdef CONFIG_DEBUG_KEYPAD
 #  define keypaddbg(format, ...)    dbg(format, ##__VA_ARGS__)
-#  define keypadvdbg(format, ...)  lldbg(format, ##__VA_ARGS__)
-#  define keypadlldbg(format, ...)   vdbg(format, ##__VA_ARGS__)
+#  define keypadlldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
+#  define keypadvdbg(format, ...)   vdbg(format, ##__VA_ARGS__)
 #  define keypadllvdbg(format, ...) llvdbg(format, ##__VA_ARGS__)
 #else
 #  define keypaddbg(x...)
-#  define keypadvdbg(x...)
 #  define keypadlldbg(x...)
+#  define keypadvdbg(x...)
 #  define keypadllvdbg(x...)
 #endif
 

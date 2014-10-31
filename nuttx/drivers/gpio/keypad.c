@@ -107,32 +107,6 @@ static const struct file_operations keypad_fops =
  * Private Functions
  ****************************************************************************/
 
-#define keypad_givesem(s) sem_post(s)
-
-/****************************************************************************
- * Name: keypad_takesem
- *
- * Description:
- *   This is just a wrapper to handle the annoying behavior of semaphore
- *   waits that return due to the receipt of a signal.
- *
- ****************************************************************************/
-
-static void keypad_takesem(sem_t *sem)
-{
-  /* Take the semaphore (perhaps waiting) */
-
-  while (sem_wait(sem) != 0)
-    {
-      /* The only case that an error should occur here is if the wait was
-       * awakened by a signal.
-       */
-
-      ASSERT(errno == EINTR);
-    }
-}
-
-
 /************************************************************************************
  * Name: keypad_open
  *
@@ -290,7 +264,12 @@ static ssize_t keypad_read(FAR struct file *filep, FAR char *buffer, size_t bufl
   /* Make sure that we have exclusive access to the private data structure */
 
   DEBUGASSERT(dev);
-  keypad_takesem(&dev->exclsem);
+  ret = sem_wait(&dev->exclsem);
+  if (ret < 0)
+    {
+      ret = -get_errno();
+      goto errout;
+    }
 
   /* Check if the keyboard is still connected.  We need to disable interrupts
    * momentarily to assure that there are no asynchronous disconnect events.
@@ -318,7 +297,7 @@ static ssize_t keypad_read(FAR struct file *filep, FAR char *buffer, size_t bufl
               /* Yes.. then return a failure */
 
               ret = -EAGAIN;
-              goto errout;
+              goto errout_with_sem;
             }
 
           /* Wait for data to be available */
@@ -326,16 +305,26 @@ static ssize_t keypad_read(FAR struct file *filep, FAR char *buffer, size_t bufl
           keypadvdbg("Waiting...\n");
 
           dev->waiting = true;
-          keypad_givesem(&dev->exclsem);
-          keypad_takesem(&dev->waitsem);
-          keypad_takesem(&dev->exclsem);
+          sem_post(&dev->exclsem);
+ 		   ret = sem_wait(&dev->waitsem);
+ 		   if (ret < 0)
+ 		     {
+ 		       ret = -get_errno();
+		       goto errout;
+ 		     }
+		   ret = sem_wait(&dev->exclsem);
+		   if (ret < 0)
+		     {
+		       ret = -get_errno();
+		       goto errout;
+		     }
 
           /* Did the keyboard become disconnected while we were waiting */
 
           if (dev->crefs == 0)
             {
               ret = -ENODEV;
-              goto errout;
+              goto errout_with_sem;
             }
         }
 
@@ -351,7 +340,7 @@ static ssize_t keypad_read(FAR struct file *filep, FAR char *buffer, size_t bufl
 
            /* Handle wrap-around of the tail index */
 
-           if (++tail >= CONFIG_HIDKBD_BUFSIZE)
+           if (++tail >= CONFIG_KEYPAD_BUFSIZE)
              {
                tail = 0;
              }
@@ -364,8 +353,9 @@ static ssize_t keypad_read(FAR struct file *filep, FAR char *buffer, size_t bufl
       dev->tailndx = tail;
     }
 
+errout_with_sem:
+  sem_post(&dev->exclsem);
 errout:
-  keypad_givesem(&dev->exclsem);
   return ret;
 }
 
@@ -407,7 +397,12 @@ static int keypad_poll(FAR struct file *filep, FAR struct pollfd *fds,
   /* Make sure that we have exclusive access to the private data structure */
 
   DEBUGASSERT(dev);
-  keypad_takesem(&dev->exclsem);
+  ret = sem_wait(&dev->exclsem);
+  if (ret < 0)
+    {
+      ret = -get_errno();
+      goto errout;
+    }
 
   /* Check if the keyboard is still connected.  We need to disable interrupts
    * momentarily to assure that there are no asynchronous disconnect events.
@@ -441,7 +436,7 @@ static int keypad_poll(FAR struct file *filep, FAR struct pollfd *fds,
         {
           fds->priv    = NULL;
           ret          = -EBUSY;
-          goto errout;
+          goto errout_with_sem;
         }
 
       /* Should we immediately notify on any of the requested events? Notify
@@ -466,8 +461,9 @@ static int keypad_poll(FAR struct file *filep, FAR struct pollfd *fds,
       fds->priv            = NULL;
     }
 
-errout:
+errout_with_sem:
   sem_post(&dev->exclsem);
+errout:
   return ret;
 }
 #endif
@@ -477,10 +473,21 @@ errout:
  * Public Functions
  ****************************************************************************/
 
-void keypad_putbuffer(FAR struct keypad_dev_s *dev, uint8_t keycode)
+void keypad_putchar(FAR struct keypad_dev_s *dev, uint8_t keycode)
 {
   register unsigned int head;
   register unsigned int tail;
+  bool        newstate;
+  int                        	ret;
+	
+  DEBUGASSERT(!up_interrupt_context());
+  DEBUGASSERT(dev);
+
+  ret = sem_wait(&dev->exclsem);
+  if (ret < 0)
+    {
+      goto errout;
+    }
 
   /* Copy the next keyboard character into the user buffer. */
 
@@ -514,44 +521,39 @@ void keypad_putbuffer(FAR struct keypad_dev_s *dev, uint8_t keycode)
   /* Save the updated head index */
 
   dev->headndx = head;
-}
 
-void keypad_notify(FAR struct keypad_dev_s *dev)
-{
-  bool                        newstate;
-
-  keypad_takesem(&dev->exclsem);
-
+//////////////////////////////////////////////////////////////////////
   newstate = (dev->headndx == dev->tailndx);
   if (!newstate)
     {
-      /* Yes.. Is there a thread waiting for keyboard data now? */
+	  if (dev->waiting)
+	    {
+	      /* Yes.. wake it up */
 
-      if (dev->waiting)
-        {
-          /* Yes.. wake it up */
+	      sem_post(&dev->waitsem);
+	      dev->waiting = false;
+	    }
 
-          keypad_givesem(&dev->waitsem);
-          dev->waiting = false;
-        }
-
-      /* Did we just transition from no data available to data
-       * available?  If so, wake up any threads waiting for the
-       * POLLIN event.
-       */
+	  /* Did we just transition from no data available to data
+	   * available?  If so, wake up any threads waiting for the
+	   * POLLIN event.
+	   */
 #ifndef CONFIG_DISABLE_POLL
-      if (dev->empty)
-        {
-          keypad_pollnotify(dev);
-        }
+	  if (dev->empty)
+	    {
+	      keypad_pollnotify(dev);
+	    }
 #endif			
-    }
-
+  	}
+	
 #ifndef CONFIG_DISABLE_POLL
   dev->empty = newstate;
 #endif
+	
+  sem_post(&dev->exclsem);
 
-  keypad_givesem(&dev->exclsem);
+errout:
+  return;
 }
 
 int keypad_register(FAR const char *path, FAR struct keypad_dev_s *dev)
