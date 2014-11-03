@@ -142,7 +142,7 @@ struct usbhost_state_s
 
   char                    devchar;      /* Character identifying the /dev/kbd[n] device */
   volatile bool           disconnected; /* TRUE: Device has been disconnected */
-  volatile bool           open;         /* TRUE: The epass3003 device is open */
+//  volatile bool           open;         /* TRUE: The epass3003 device is open */
   uint8_t                 ifno;         /* Interface number */
   int16_t                 crefs;        /* Reference count on the driver instance */
   sem_t                   exclsem;      /* Used to maintain mutual exclusive access */
@@ -1301,7 +1301,7 @@ static int usbhost_open(FAR struct file *filep)
       /* Otherwise, just increment the reference count on the driver */
 
       priv->crefs++;
-      priv->open = true;
+//      priv->open = true;
       ret        = OK;
     }
   irqrestore(flags);
@@ -1344,7 +1344,7 @@ static int usbhost_close(FAR struct file *filep)
 
       /* Yes.. then the driver is no longer open */
 
-      priv->open    = false;
+//      priv->open    = false;
 
       /* We need to disable interrupts momentarily to assure that there are
        * no asynchronous disconnect events.
