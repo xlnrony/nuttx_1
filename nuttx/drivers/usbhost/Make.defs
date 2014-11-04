@@ -54,6 +54,10 @@ ifeq ($(CONFIG_USBHOST_EPASS3003),y)
 CSRCS += usbhost_epass3003.c
 endif
 
+ifeq ($(CONFIG_USBHOST_JKSAFEKEY),y)
+CSRCS += usbhost_jksafekey.c
+endif
+
 # HCD debug/trace logic
 
 ifeq ($(CONFIG_USBHOST_TRACE),y)

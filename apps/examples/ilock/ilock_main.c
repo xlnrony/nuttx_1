@@ -56,6 +56,7 @@
 #include <nuttx/usb/usbhost.h>
 
 #include "epass3003_lib.h"
+#include "jksafekey_lib.h"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -88,6 +89,10 @@
 
 #ifndef CONFIG_EXAMPLES_EPASS3003_DEVNAME
 #  define CONFIG_EXAMPLES_EPASS3003_DEVNAME "/dev/epass3003a"
+#endif
+
+#ifndef CONFIG_EXAMPLES_JKSAFEKEY_DEVNAME
+#  define CONFIG_EXAMPLES_JKSAFEKEY_DEVNAME "/dev/jksafekeya"
 #endif
 
 /****************************************************************************
@@ -225,6 +230,7 @@ errout:
 
 #endif
 
+#if 0
 int ilock_main(int argc, char *argv[])
 {
   int fd;
@@ -277,4 +283,52 @@ errout:
   fflush(stdout);
   return errval;
 }
+#endif
+
+int ilock_main(int argc, char *argv[])
+{
+  int fd;
+  int ret;
+  
+  printf("Opening device %s\n", CONFIG_EXAMPLES_JKSAFEKEY_DEVNAME);
+  fd = open(CONFIG_EXAMPLES_JKSAFEKEY_DEVNAME, O_RDWR);
+  if (fd < 0)
+    {
+      printf("Failed: %d\n", errno);
+      fflush(stdout);
+    return 0;
+    }
+
+  printf("Device %s opened\n", CONFIG_EXAMPLES_JKSAFEKEY_DEVNAME);
+  fflush(stdout);
+
+  uint8_t pubkey[128];	
+
+  ret = jksafekey_get_pubkey(fd, AT_SIGNATURE, pubkey);
+  if (ret < 0)
+  	 {
+      printf("jksafekey_get_pubkey failed: %d\n", ret);
+      fflush(stdout);
+      goto errout;
+  	 }
+
+  int i;	
+  char onebyte[4]={0};
+  char rxfmtbuf[384]={0};
+	
+  for(i=0;i<128;i++)
+    {
+      sprintf(onebyte, "%02x ", pubkey[i]);
+      strcat(rxfmtbuf, onebyte);
+  	 }
+  printf("jksafekey_get_pubkey result:%s\n", rxfmtbuf);  
+
+errout:
+  printf("Closing device %s\n", CONFIG_EXAMPLES_JKSAFEKEY_DEVNAME);
+  fflush(stdout);
+  close(fd);
+
+  return 0;
+}
+
 

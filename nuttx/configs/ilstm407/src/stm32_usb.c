@@ -198,6 +198,26 @@ void stm32_usbhost_initialize(void)
     }
 #endif
 
+#ifdef CONFIG_USBHOST_EPASS3003
+  uvdbg("Register epass3003 usb class drivers\n");
+
+  ret = usbhost_epass3003init();
+  if (ret != OK)
+    {
+      udbg("Failed to register the epass3003 class\n");
+    }
+#endif
+
+#ifdef CONFIG_USBHOST_JKSAFEKEY
+  uvdbg("Register jksafekey usb class drivers\n");
+
+  ret = usbhost_jksafekeyinit();
+  if (ret != OK)
+    {
+      udbg("Failed to register the jksafekey class\n");
+    }
+#endif
+
   /* Then get an instance of the USB host interface */
 
   uvdbg("Initialize USB host\n");

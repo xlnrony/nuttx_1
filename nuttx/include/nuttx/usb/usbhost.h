@@ -882,6 +882,28 @@ int usbhost_mouse_init(void);
 int usbhost_epass3003init(void);
 #endif
 
+#ifdef CONFIG_USBHOST_JKSAFEKEY
+/****************************************************************************
+ * Name: usbhost_jksafekeyinit
+ *
+ * Description:
+ *   Initialize the Jksafekey USB Token class driver.  This function
+ *   should be called be platform-specific code in order to initialize and
+ *   register support for the Jksafekey USB Token class device.
+ *
+ * Input Parameters:
+ *   None
+ *
+ * Returned Values:
+ *   On success this function will return zero (OK);  A negated errno value
+ *   will be returned on failure.
+ *
+ ****************************************************************************/
+
+int usbhost_jksafekeyinit(void);
+#endif
+
+
 /****************************************************************************
  * Name: usbhost_wlaninit
  *
