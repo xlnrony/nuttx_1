@@ -120,7 +120,6 @@ static int usbhost_waiter(int argc, char *argv[])
       if (connected)
         {
           /* Yes.. enumerate the newly connected device */
-
           (void)CONN_ENUMERATE(g_usbconn, 0);
         }
     }

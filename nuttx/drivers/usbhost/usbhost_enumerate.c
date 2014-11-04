@@ -445,7 +445,7 @@ int usbhost_enumerate(FAR struct usbhost_driver_s *drvr, uint8_t funcaddr,
       goto errout;
     }
 
-  usleep(2*1000);
+  usleep(20*1000);
 
   /* Modify control pipe with the provided USB device address */
 

@@ -302,7 +302,16 @@ int ilock_main(int argc, char *argv[])
   printf("Device %s opened\n", CONFIG_EXAMPLES_JKSAFEKEY_DEVNAME);
   fflush(stdout);
 
-  uint8_t pubkey[128];	
+  ret = jksafekey_verify_pin(fd, "123466");
+  if (ret < 0)
+  	 {
+      printf("jksafekey_verify_pin failed: %d\n", ret);
+      fflush(stdout);
+      goto errout;
+  	 }
+
+#if 0
+  uint8_t pubkey[128] = {0};	
 
   ret = jksafekey_get_pubkey(fd, AT_SIGNATURE, pubkey);
   if (ret < 0)
@@ -322,6 +331,7 @@ int ilock_main(int argc, char *argv[])
       strcat(rxfmtbuf, onebyte);
   	 }
   printf("jksafekey_get_pubkey result:%s\n", rxfmtbuf);  
+#endif	
 
 errout:
   printf("Closing device %s\n", CONFIG_EXAMPLES_JKSAFEKEY_DEVNAME);

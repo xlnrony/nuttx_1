@@ -1522,9 +1522,11 @@ static ssize_t usbhost_read(FAR struct file *filep, FAR char *buffer, size_t len
               if (result == OK)
                 {
                   /* Receive the user data */
-
-                  result = DRVR_TRANSFER(priv->drvr, priv->bulkin,
-                                         (uint8_t*)buffer + USBMSC_MAXCDBLEN, len);
+					if (len > 0)
+					  {
+	                  result = DRVR_TRANSFER(priv->drvr, priv->bulkin,
+	                                         (uint8_t*)buffer + USBMSC_MAXCDBLEN, len);
+					  }
                   if (result == OK)
                     {
                       /* Receive the CSW */
@@ -1622,8 +1624,11 @@ static ssize_t usbhost_write(FAR struct file *filep, FAR const char *buffer, siz
             {
               /* Send the user data */
 
-              result = DRVR_TRANSFER(priv->drvr, priv->bulkout,
-                                     (uint8_t*)buffer + USBMSC_MAXCDBLEN, len);
+				if (len > 0)
+				  {
+	              result = DRVR_TRANSFER(priv->drvr, priv->bulkout,
+	                                     (uint8_t*)buffer + USBMSC_MAXCDBLEN, len);
+				  }
               if (result == OK)
                 {
                   /* Receive the CSW */

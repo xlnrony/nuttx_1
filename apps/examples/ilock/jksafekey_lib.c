@@ -395,9 +395,9 @@ typedef struct tagUSLock_STAT {
 static int jksafekey_write_bulk(int fd, uint8_t cdb[USBMSC_MAXCDBLEN], size_t len, FAR void * buff)
 {
   ssize_t ret;
-  char * p = malloc(USBMSC_MAXCDBLEN + len);
+  uint8_t* p = malloc(USBMSC_MAXCDBLEN + len);
   memcpy(p, cdb, USBMSC_MAXCDBLEN);
-  memcpy(p, buff, len);
+  memcpy(p + USBMSC_MAXCDBLEN, buff, len);
   ret = write(fd, p, USBMSC_MAXCDBLEN + len);
   if (ret == USBMSC_MAXCDBLEN + len)
   	{
@@ -410,9 +410,9 @@ static int jksafekey_write_bulk(int fd, uint8_t cdb[USBMSC_MAXCDBLEN], size_t le
 static int jksafekey_read_bulk(int fd, uint8_t cdb[USBMSC_MAXCDBLEN], size_t len, FAR void * buff)
 {
   ssize_t ret;
-  char * p = malloc(USBMSC_MAXCDBLEN + len);
+  uint8_t *p = malloc(USBMSC_MAXCDBLEN + len);
   memcpy(p, cdb, USBMSC_MAXCDBLEN);
-  memcpy(p, buff, len);
+  memcpy(p + USBMSC_MAXCDBLEN, buff, len);
   ret = read(fd, p, USBMSC_MAXCDBLEN + len);
   if (ret == USBMSC_MAXCDBLEN + len)
   	{
@@ -422,6 +422,9 @@ static int jksafekey_read_bulk(int fd, uint8_t cdb[USBMSC_MAXCDBLEN], size_t len
   free(p);
   return ret;
 }
+
+#define SWAP(x)   ((((x) & 0xFF) << 8) | (((x) >> 8) & 0xFF))
+#define SWAP32(x)   ((SWAP((x) & 0xFFFF) << 16) | SWAP(((x) >> 16) & 0xFFFF))
 
 static PLUG_RV jksafekey_transfer(
 		 int fd,	
@@ -438,7 +441,7 @@ static PLUG_RV jksafekey_transfer(
   InputBuffer = (uint8_t *)malloc(sizeof(KEUSLock_CMD) + slock_cmd->cmd_OutLength);
   OutputBuffer = (uint8_t *)malloc(sizeof(KEUSLock_STAT) + slock_cmd->cmd_InLength);
 
-  memcpy(InputBuffer, slock_cmd, sizeof(KEUSLock_CMD) );
+  memcpy(InputBuffer, slock_cmd, sizeof(KEUSLock_CMD));
   memcpy(InputBuffer + sizeof(KEUSLock_CMD) , InBuffer, slock_cmd->cmd_OutLength);
   //判断是否为忙
   do {
@@ -448,21 +451,22 @@ static PLUG_RV jksafekey_transfer(
       }
   } while (device_busy == 1);
   //
-  if (jksafekey_write_bulk(fd, GET_PARA, USBMSC_MAXCDBLEN + slock_cmd->cmd_OutLength, slock_cmd) < 0) {
+  if (jksafekey_write_bulk(fd, GET_PARA, sizeof(KEUSLock_CMD) + slock_cmd->cmd_OutLength, InputBuffer) < 0) {
       slock_stat->bSTATStatus = RV_FAIL;
       return RV_FAIL;
   }
-  if (jksafekey_read_bulk(fd, GET_PARA, USBMSC_MAXCDBLEN + slock_cmd->cmd_InLength, OutputBuffer) < 0) {
+  if (jksafekey_read_bulk(fd, GET_PARA, sizeof(KEUSLock_STAT) + slock_cmd->cmd_InLength, OutputBuffer) < 0) {
       slock_stat->bSTATStatus = RV_FAIL;
       return RV_FAIL;
   }
   //设为不忙
   device_busy = 0;
-  if (jksafekey_write_bulk(fd, GET_BUSY, 1, &device_busy) < 0) {
+  if (jksafekey_write_bulk(fd, GET_BUSY, 0, &device_busy) < 0) {
       slock_stat->bSTATStatus = RV_FAIL;
       return RV_FAIL;
   }
   memcpy(slock_stat, OutputBuffer, sizeof(KEUSLock_STAT));
+  slock_stat->bSTATStatus = SWAP(slock_stat->bSTATStatus);	
   if ((slock_cmd->cmd_InLength != 0) && (slock_stat->bSTATStatus == RV_OK))
       memcpy(OutBuffer, OutputBuffer + sizeof(KEUSLock_STAT), slock_cmd->cmd_InLength);
 
@@ -513,7 +517,6 @@ static PLUG_RV jksafekey_read_binary(int fd, uint16_t fileid, uint8_t* data, uin
 
   if ((fileid > 0x2D21) || (fileid < 0x2D01)) return RV_NOT_SUPPORT;
   //打开文件
-  memset(&slock_cmd, 0, 16);
   slock_cmd.cmd_type = Open_File1;
   slock_cmd.cmd_OutLength = 2;
     *((uint16_t *) (temp)) = fileid & 0xff;
