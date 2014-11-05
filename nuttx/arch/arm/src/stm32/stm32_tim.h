@@ -125,8 +125,6 @@ typedef enum
 
 typedef enum
 {
-  STM32_TIM_CH_UNUSED       = -1,
-
   STM32_TIM_CH_DISABLED       = 0x00,
 
   /* Common configuration */
@@ -136,16 +134,16 @@ typedef enum
 
   /* MODES: */
 
-  STM32_TIM_CH_MODE_MASK      = 0xFE,
+  STM32_TIM_CH_MODE_MASK      = 0x06,
 
   /* Output Compare Modes */
 
   STM32_TIM_CH_OUTPWM         = 0x04,     /** Enable standard PWM mode, active high when counter < compare */
-//  STM32_TIM_CH_OUTCOMPARE     = 0x06,
+//STM32_TIM_CH_OUTCOMPARE     = 0x06,
 
   // TODO other modes ... as PWM capture, ENCODER and Hall Sensor
-  STM32_TIM_CH_INCAPTURE      = 0x10,
-//  STM32_TIM_CH_INPWM          = 0x20
+//STM32_TIM_CH_INCAPTURE      = 0x10,
+//STM32_TIM_CH_INPWM          = 0x20
 //STM32_TIM_CH_DRIVE_OC   -- open collector mode
 
 } stm32_tim_channel_t;
@@ -181,9 +179,6 @@ struct stm32_tim_ops_s
 /* Power-up timer and get its structure */
 
 FAR struct stm32_tim_dev_s *stm32_tim_init(int timer);
-
-FAR struct adc_dev_s *stm32_cap_init(int timer, uint8_t channel);
-
 
 /* Power-down timer, mark it as unused */
 

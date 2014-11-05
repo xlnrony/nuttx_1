@@ -217,16 +217,6 @@
 #define GPIO_USART1_RX GPIO_USART1_RX_1
 #define GPIO_USART1_TX GPIO_USART1_TX_1
 
-/* SPI - There is a MEMS device on SPI1 using these pins: */
-
-#define GPIO_SPI1_MISO GPIO_SPI1_MISO_1
-#define GPIO_SPI1_MOSI GPIO_SPI1_MOSI_1
-#define GPIO_SPI1_SCK  GPIO_SPI1_SCK_1
-
-/* Timer Inputs/Outputs (see the README.txt file for options) */
-
-#define GPIO_TIM3_CH1IN  GPIO_TIM3_CH1IN_3
-
 /* Ethernet:
  *
  * - PA2  is ETH_MDIO

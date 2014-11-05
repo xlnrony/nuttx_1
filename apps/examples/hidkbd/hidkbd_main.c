@@ -112,7 +112,7 @@ struct hidbkd_instream_s
  * Private Data
  ****************************************************************************/
 
-static FAR struct usbhost_connection_s *g_usbconn;
+//static FAR struct usbhost_connection_s *g_usbconn;
 
 /****************************************************************************
  * Public Function Prototypes
@@ -230,7 +230,7 @@ static void hidkbd_decode(FAR char *buffer, ssize_t nbytes)
  *   Wait for USB devices to be connected.
  *
  ****************************************************************************/
-
+#if 0
 static int hidkbd_waiter(int argc, char *argv[])
 {
   bool connected = false;
@@ -267,6 +267,7 @@ static int hidkbd_waiter(int argc, char *argv[])
 
   return 0;
 }
+#endif
 
 /****************************************************************************
  * Public Functions
@@ -283,10 +284,10 @@ int hidkbd_main(int argc, char *argv[])
 #endif
 {
   char buffer[256];
-  pid_t pid;
+//  pid_t pid;
   ssize_t nbytes;
   int fd;
-  int ret;
+//  int ret;
 
   /* First, register all of the USB host HID keyboard class driver */
 

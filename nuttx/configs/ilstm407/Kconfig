@@ -17,11 +17,11 @@ config SDCARD_MAPPED_PATH
 	---help---
 		Mapped path of sdcard to be used. Default: "/mnt/sd"
 		
-config TIM_DEVNAME
-	string "MAGNET LX TIM3IN1 Device Name"
-	default "/dev/tim3in1"
+config MAGNET_LX_DEVNAME
+	string "MAGNET LX Device Name"
+	default "/dev/magnetlx"
 	---help---
-		Name of tim device to be used. Default: "/dev/tim0"		
+		Name of tim device to be used. Default: "/dev/magnetlx"		
 
 config ADC1_DEVNAME
 	string "SHOCK RESISTOR SENSOR ADC Device Name"

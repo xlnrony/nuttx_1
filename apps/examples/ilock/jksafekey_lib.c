@@ -490,7 +490,6 @@ PLUG_RV jksafekey_verify_pin(int fd, char *pin) {
 	    return RV_PIN_INCORRECT;
 	  }
 
-	memset(&slock_cmd, 0, 16);
 	slock_cmd.cmd_type = Verify_PIN;
 	slock_cmd.cmd_mingxi = 0;
 	slock_cmd.cmd_OutLength = 16;

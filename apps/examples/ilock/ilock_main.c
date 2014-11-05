@@ -52,6 +52,7 @@
 #include <assert.h>
 #include <errno.h>
 
+#include <nuttx/analog/adc.h>
 #include <nuttx/gpio/gpio.h>
 #include <nuttx/usb/usbhost.h>
 
@@ -285,10 +286,11 @@ errout:
 }
 #endif
 
+#if 0
 int ilock_main(int argc, char *argv[])
 {
   int fd;
-  int ret;
+  PLUG_RV ret;
   
   printf("Opening device %s\n", CONFIG_EXAMPLES_JKSAFEKEY_DEVNAME);
   fd = open(CONFIG_EXAMPLES_JKSAFEKEY_DEVNAME, O_RDWR);
@@ -302,6 +304,7 @@ int ilock_main(int argc, char *argv[])
   printf("Device %s opened\n", CONFIG_EXAMPLES_JKSAFEKEY_DEVNAME);
   fflush(stdout);
 
+#if 0
   ret = jksafekey_verify_pin(fd, "123466");
   if (ret < 0)
   	 {
@@ -309,12 +312,12 @@ int ilock_main(int argc, char *argv[])
       fflush(stdout);
       goto errout;
   	 }
+#endif	
 
-#if 0
   uint8_t pubkey[128] = {0};	
 
   ret = jksafekey_get_pubkey(fd, AT_SIGNATURE, pubkey);
-  if (ret < 0)
+  if (ret != RV_OK)
   	 {
       printf("jksafekey_get_pubkey failed: %d\n", ret);
       fflush(stdout);
@@ -331,7 +334,6 @@ int ilock_main(int argc, char *argv[])
       strcat(rxfmtbuf, onebyte);
   	 }
   printf("jksafekey_get_pubkey result:%s\n", rxfmtbuf);  
-#endif	
 
 errout:
   printf("Closing device %s\n", CONFIG_EXAMPLES_JKSAFEKEY_DEVNAME);
@@ -340,5 +342,110 @@ errout:
 
   return 0;
 }
+#endif
 
+int ilock_main(int argc, char *argv[])
+{
+  struct adc_msg_s sample;
+  size_t readsize;
+  ssize_t nbytes;
+
+  int mvfd;
+  int mgfd;
+  int timfd;
+	
+  int errval = 0;
+  int ret;
+
+  printf("Opening the gpio device: %s\n", CONFIG_MAGNET_VCC_DEVNAME);
+  mvfd = open(CONFIG_MAGNET_VCC_DEVNAME, 0);
+  if (mvfd < 0)
+    {
+      printf("open %s failed: %d\n", CONFIG_MAGNET_VCC_DEVNAME, errno);
+      errval = 1;
+      goto errout;
+    }
+
+  printf("Opening the gpio device: %s\n", CONFIG_MAGNET_GND_DEVNAME);
+  mgfd = open(CONFIG_MAGNET_GND_DEVNAME, 0);
+  if (mgfd < 0)
+    {
+      printf("open %s failed: %d\n", CONFIG_MAGNET_GND_DEVNAME, errno);
+      errval = 1;
+      goto errout_with_mvfd;
+    }
+
+  fflush(stdout);
+
+  ret = ioctl(mvfd, GPIOC_WRITE, 1);
+  if (ret < 0)
+    {
+      printf("GPIOC_WRITE ioctl failed: %d\n", errno);
+      errval = 2;
+      goto errout_with_mgfd;
+    }
+
+  getchar();
+
+  ret = ioctl(mgfd, GPIOC_WRITE, 0);
+  if (ret < 0)
+    {
+      printf("GPIOC_WRITE ioctl failed: %d\n", errno);
+      errval = 2;
+      goto errout_with_mgfd;
+    }
+
+  getchar();
+
+  printf("Opening the TIM device: %s\n", CONFIG_TIM_DEVNAME);
+  timfd = open(CONFIG_TIM_DEVNAME, O_RDONLY);
+  if (timfd < 0)
+    {
+      printf("open %s failed: %d\n", CONFIG_TIM_DEVNAME, errno);
+      errval = 2;
+      goto errout_with_mgfd;
+    }
+	
+  readsize = sizeof(struct adc_msg_s);
+  nbytes = read(timfd, &sample, readsize);
+  if (nbytes < 0)
+    {
+      errval = errno;
+      if (errval != EINTR)
+        {
+          printf("read %s failed: %d\n", CONFIG_TIM_DEVNAME, errval);
+          errval = 3;
+          goto errout_with_timfd;
+        }
+
+      printf("Interrupted read...\n");
+    }
+  else if (nbytes == 0)
+    {
+      printf("No data read, Ignoring\n");
+    }
+  else
+    {
+      printf("channel: %d value: %d\n", sample.am_channel, sample.am_data);
+    }
+  fflush(stdout);
+	
+  getchar();
+
+  errval = OK;
+	
+  /* Error exits */
+
+errout_with_timfd:
+  close(timfd);
+errout_with_mgfd:
+  close(mgfd);	
+errout_with_mvfd:
+  close(mvfd);
+
+errout:
+  printf("Terminating!\n");
+  fflush(stdout);
+  return errval;
+}
 

@@ -47,7 +47,7 @@ CSRCS += stm32_cxxinitialize.c
 endif
 
 ifeq ($(CONFIG_GPIO),y)
-CSRCS += stm32_gpio.c
+CSRCS += stm32_gpio.c stm32_counter.c
 endif
 
 ifeq ($(CONFIG_KEYPAD),y)
@@ -72,10 +72,6 @@ endif
 
 ifeq ($(CONFIG_NSH_LIBRARY),y)
 CSRCS += stm32_nsh.c
-endif
-
-ifeq ($(CONFIG_STM32_TIM3),y)
-CSRCS += stm32_tim.c
 endif
 
 ifeq ($(CONFIG_ADC),y)
