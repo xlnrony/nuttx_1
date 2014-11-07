@@ -65,9 +65,9 @@
  *
  ****************************************************************************/
 
-int mktemp(FAR char *template)
+int mktemp(FAR char *temp)
 {
-  int fd = mkstemp(template);
+  int fd = mkstemp(temp);
   if (fd < 0)
     {
       return ERROR;

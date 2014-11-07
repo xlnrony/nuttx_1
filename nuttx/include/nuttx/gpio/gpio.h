@@ -55,7 +55,8 @@
 
 #define GPIOC_WRITE _GPIOC(1)
 #define GPIOC_READ _GPIOC(2)
-
+#define GPIOC_START _GPIOC(3)
+#define GPIOC_STOP _GPIOC(4)
 /****************************************************************************
  * Public Types
  ****************************************************************************/

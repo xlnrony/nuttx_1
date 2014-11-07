@@ -217,7 +217,7 @@ static void copy_base62(FAR char *dest, int len)
  *
  ****************************************************************************/
 
-int mkstemp(FAR char *template)
+int mkstemp(FAR char *temp)
 {
   uint8_t base62[MAX_XS];
   uint32_t retries;
@@ -229,12 +229,12 @@ int mkstemp(FAR char *template)
 
   /* Count the number of X's at the end of the template */
 
-  xptr = strchr(template, 'X');
+  xptr = strchr(temp, 'X');
   if (!xptr)
     {
       /* No Xs?  There should always really be 6 */
 
-      return open(template, O_RDWR | O_CREAT | O_EXCL, 0666);
+      return open(temp, O_RDWR | O_CREAT | O_EXCL, 0666);
     }
 
   /* There is at least one.. count all of them */
@@ -279,7 +279,7 @@ int mkstemp(FAR char *template)
        * directories
        */
 
-      fd = open(template, O_RDWR | O_CREAT | O_EXCL, 0666);
+      fd = open(temp, O_RDWR | O_CREAT | O_EXCL, 0666);
       if (fd >= 0)
         {
           /* We have it... return the file descriptor */
