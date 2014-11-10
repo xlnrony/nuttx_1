@@ -447,7 +447,7 @@ static int stm32_tim_setmode(FAR struct stm32_tim_dev_s *dev, stm32_tim_mode_t m
 	  	{
 		  val |= ATIM_CR1_URS;
 	  	}
-	  if (mode & STM32_TIM_MODE_MASK == STM32_TIM_MODE_PULSE)
+	  if ((mode & STM32_TIM_MODE_MASK) == STM32_TIM_MODE_PULSE)
 	  	{
 	     val |= ATIM_CR1_OPM;
 	  	}
