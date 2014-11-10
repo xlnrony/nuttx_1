@@ -102,6 +102,8 @@ typedef enum
   STM32_TIM_MODE_UPDOWN       = 0x0200,
   STM32_TIM_MODE_PULSE        = 0x0300,
 
+  STM32_TIM_ONLYFLOW 				=	0x1000,
+
   /* One of the following */
 
   STM32_TIM_MODE_CK_INT       = 0x0000,

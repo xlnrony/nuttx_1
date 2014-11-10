@@ -83,13 +83,13 @@ const uint8_t encoding[] = {0xd7, 0xee, 0xde, 0xbe, 0xed, 0xdd, 0xbd, 0xeb, 0xdb
 static const struct keypad_ops_s stm32_keypad_ops =
 {
   .setup    = stm32_keypad_setup,
-  .shutdown = stm32_keypad_shutdown,
+  .shutdown = stm32_keypad_shutdown
 };
 
 static struct keypad_dev_s stm32_keypad_dev =
 {
   .ops = &stm32_keypad_ops,
-  .priv = &stm32_keypad_priv,
+  .priv = &stm32_keypad_priv
 };
 
 /****************************************************************************

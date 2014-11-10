@@ -425,7 +425,7 @@ static void stm32_tim_ackint(FAR struct stm32_tim_dev_s *dev, int source)
 
 static int stm32_tim_setmode(FAR struct stm32_tim_dev_s *dev, stm32_tim_mode_t mode)
 {
-  uint16_t val = ATIM_CR1_CEN | ATIM_CR1_ARPE;
+  uint16_t val;
 
   ASSERT(dev);
 
@@ -442,9 +442,21 @@ static int stm32_tim_setmode(FAR struct stm32_tim_dev_s *dev, stm32_tim_mode_t m
 #if STM32_NBTIM > 0
   )
     {
-      return ERROR;
+	  val = stm32_getreg16(dev, STM32_BTIM_CR1_OFFSET);
+	  if (mode & STM32_TIM_ONLYFLOW)
+	  	{
+		  val |= ATIM_CR1_URS;
+	  	}
+	  if (mode & STM32_TIM_MODE_MASK == STM32_TIM_MODE_PULSE)
+	  	{
+	     val |= ATIM_CR1_OPM;
+	  	}
+	  stm32_putreg16(dev, STM32_BTIM_CR1_OFFSET, val);
+	  return OK;
     }
 #endif
+
+val = ATIM_CR1_CEN | ATIM_CR1_ARPE;
 
   /* Decode operational modes */
 

@@ -281,6 +281,7 @@ void stm32_sdio_initialize(void);
 
 #ifdef CONFIG_ADC
 void stm32_adc_initialize(void);
+void stm32_counter_initialize(void);
 #endif
 
 #ifdef CONFIG_GPIO

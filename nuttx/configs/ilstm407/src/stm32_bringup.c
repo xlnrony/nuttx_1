@@ -93,10 +93,7 @@ int stm32_bringup(void)
 
 #ifdef CONFIG_ADC
   stm32_adc_initialize();
-#endif	
-
-#if defined(CONFIG_ADC) && defined(CONFIG_STM32_TIM3)
-  stm32_tim_initialize();
+  stm32_counter_initialize();
 #endif	
 
 #ifdef HAVE_USBHOST

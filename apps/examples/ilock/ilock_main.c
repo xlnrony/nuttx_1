@@ -397,11 +397,11 @@ int ilock_main(int argc, char *argv[])
 
   getchar();
 
-  printf("Opening the TIM device: %s\n", CONFIG_TIM_DEVNAME);
-  timfd = open(CONFIG_TIM_DEVNAME, O_RDONLY);
+  printf("Opening the TIM device: %s\n", CONFIG_MAGNET_LX_DEVNAME);
+  timfd = open(CONFIG_MAGNET_LX_DEVNAME, O_RDONLY);
   if (timfd < 0)
     {
-      printf("open %s failed: %d\n", CONFIG_TIM_DEVNAME, errno);
+      printf("open %s failed: %d\n", CONFIG_MAGNET_LX_DEVNAME, errno);
       errval = 2;
       goto errout_with_mgfd;
     }
@@ -413,7 +413,7 @@ int ilock_main(int argc, char *argv[])
       errval = errno;
       if (errval != EINTR)
         {
-          printf("read %s failed: %d\n", CONFIG_TIM_DEVNAME, errval);
+          printf("read %s failed: %d\n", CONFIG_MAGNET_LX_DEVNAME, errval);
           errval = 3;
           goto errout_with_timfd;
         }
