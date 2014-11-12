@@ -211,3 +211,4 @@
 "usbhost_trdump","nuttx/usb/usbhost_trace.h","defined(CONFIG_USBHOST_TRACE)","int"
 "foreach_mountpoint","nuttx/fs/fs.h","!defined(CONFIG_DISABLE_MOUNTPOUNT)","int","foreach_mountpoint_t","FAR void *"
 "syslog_putc","nuttx/syslog/syslog.h","defined(CONFIG_SYSLOG)","int","int"
+"clock_systimespec","nuttx/clock.h","","int","FAR struct timespec *"

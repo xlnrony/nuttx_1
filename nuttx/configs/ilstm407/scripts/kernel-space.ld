@@ -74,7 +74,13 @@ SECTIONS
 
     __exidx_end = ABSOLUTE(.);
 
-    _eronly = ABSOLUTE(.);
+		/* The RAM vector table (if present) should lie at the beginning of SRAM */
+	
+		.ram_vectors : {
+			*(.ram_vectors)
+		} > ksram AT > kflash
+		
+		_eramv = LOADADDR(.ram_vectors);		
 
     .data : {
         _sdata = ABSOLUTE(.);
@@ -83,6 +89,8 @@ SECTIONS
         CONSTRUCTORS
         _edata = ABSOLUTE(.);
     } > ksram AT > kflash
+    
+		_eronly = LOADADDR(.data);
 
     .bss : {
         _sbss = ABSOLUTE(.);
