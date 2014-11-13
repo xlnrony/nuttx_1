@@ -385,7 +385,7 @@ int ilock_main(int argc, char *argv[])
       goto errout_with_mgfd;
     }
 
-  getchar();
+  sleep(1);
 
   ret = ioctl(mgfd, GPIOC_WRITE, 0);
   if (ret < 0)
@@ -395,7 +395,7 @@ int ilock_main(int argc, char *argv[])
       goto errout_with_mgfd;
     }
 
-  getchar();
+  sleep(1);
 
   printf("Opening the TIM device: %s\n", CONFIG_MAGNET_LX_DEVNAME);
   timfd = open(CONFIG_MAGNET_LX_DEVNAME, O_RDONLY);
@@ -430,8 +430,6 @@ int ilock_main(int argc, char *argv[])
     }
   fflush(stdout);
 	
-  getchar();
-
   errval = OK;
 	
   /* Error exits */

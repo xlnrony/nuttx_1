@@ -48,7 +48,6 @@
 #include <arch/irq.h>
 #include <nuttx/irq.h>
 #include <nuttx/arch.h>
-#include <nuttx/wqueue.h>
 #include <nuttx/analog/adc.h>
 
 #include "chip.h"
@@ -66,8 +65,16 @@
 #  error CONFIG_ARCH_RAMVECTORS is required
 #endif
 
+#ifndef CONFIG_STM32_TIM3
+#  error CONFIG_STM32_TIM3 is required
+#endif
+
 #ifndef CONFIG_STM32_TIM6
 #  error CONFIG_STM32_TIM6 is required
+#endif
+
+#ifndef CONFIG_STM32_TIM7
+#  error CONFIG_STM32_TIM7 is required
 #endif
 
 #ifndef CONFIG_TIM6_FREQUENCY
@@ -87,11 +94,9 @@
 /****************************************************************************
  * Definitions
  ****************************************************************************/
-struct stm32_dev_s
+/*struct stm32_dev_s
 {
-  struct stm32_tim_dev_s * 	timdev;
-  up_vector_t 							timhandler;	
-};
+};*/
 
 static void stm32_counter_tim6_handler(void);
 
@@ -114,15 +119,14 @@ static const struct adc_ops_s stm32_counter_ops =
   .ao_ioctl			=	stm32_counter_ioctl
 };
 
-static struct stm32_dev_s stm32_counter_priv_magnetlx =
+/*static struct stm32_dev_s stm32_counter_priv_magnetlx =
 {
-  .timhandler			= stm32_counter_tim6_handler
-};
+};*/
 
 static struct adc_dev_s stm32_counter_dev_magnetlx =
 {
   .ad_ops = &stm32_counter_ops,
-  .ad_priv = &stm32_counter_priv_magnetlx
+//  .ad_priv = &stm32_counter_priv_magnetlx
 };
 
 /****************************************************************************
@@ -132,17 +136,32 @@ static struct adc_dev_s stm32_counter_dev_magnetlx =
 /*
 static void stm32_counter_tim6_work(FAR void *arg)
 {
-  adc_receive(&stm32_counter_dev_magnetlx, stm32_counter_priv_magnetlx.tim, stm32_counter_priv_magnetlx.count);
+  uint16_t count;
+
+  count = getreg16(STM32_TIM3_BASE + STM32_GTIM_CNT_OFFSET);
+  adc_receive(&stm32_counter_dev_magnetlx, 6, count);	
 }*/
+
+static int stm32_counter_tim7_handler(int irq, FAR void *context)
+{
+  uint16_t count;
+  putreg16(~BTIM_SR_UIF, STM32_TIM7_BASE + STM32_BTIM_SR_OFFSET);	
+
+  count = getreg16(STM32_TIM3_BASE + STM32_GTIM_CNT_OFFSET);
+  adc_receive(&stm32_counter_dev_magnetlx, 0, count);	
+
+  return OK;
+}
 
 static void stm32_counter_tim6_handler(void)
 {
-  uint16_t count;
-
   modifyreg16(STM32_TIM3_BASE + STM32_GTIM_CR1_OFFSET, GTIM_CR1_CEN, 0);	
-  STM32_TIM_ACKINT(stm32_counter_priv_magnetlx.timdev, 0);
-  count = getreg16(STM32_TIM3_BASE + STM32_GTIM_CNT_OFFSET);
-  adc_receive(&stm32_counter_dev_magnetlx, 6, count);	
+  putreg16(~BTIM_SR_UIF, STM32_TIM6_BASE + STM32_BTIM_SR_OFFSET);	
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  modifyreg16(STM32_TIM7_BASE + STM32_BTIM_EGR_OFFSET, 0, BTIM_EGR_UG);	
+  modifyreg16(STM32_TIM7_BASE + STM32_BTIM_CR1_OFFSET, 0, BTIM_CR1_CEN);	
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////	
 }
 
 static void stm32_counter_reset(FAR struct adc_dev_s *dev)
@@ -152,47 +171,26 @@ static void stm32_counter_reset(FAR struct adc_dev_s *dev)
 
 static void stm32_counter_rxint(FAR struct adc_dev_s *dev, bool enable)
 {
-  struct stm32_dev_s *priv = (struct stm32_dev_s *)dev->ad_priv;
   irqstate_t 	flags;
-  int  			prescaler;	
-
-  flags = irqsave();
 
   if (enable)
     {
-	  up_enable_irq(STM32_IRQ_TIM6);
-	  STM32_TIM_ENABLEINT(priv->timdev, 0);
-
-	  STM32_TIM_SETMODE(priv->timdev, STM32_TIM_MODE_PULSE | STM32_TIM_ONLYFLOW);
-		
-	  STM32_TIM_SETPERIOD(priv->timdev, CONFIG_TIM6_PERIOD);
-	  adbg("TIM6 period=%d cyles; interrupt rate=%d Hz\n",
-	         CONFIG_TIM6_PERIOD, CONFIG_TIM6_FREQUENCY/CONFIG_TIM6_PERIOD);
-	
-	  prescaler = STM32_TIM_SETCLOCK(priv->timdev, CONFIG_TIM6_FREQUENCY);
-	  adbg("TIM6 CLKIN=%d Hz, Frequency=%d Hz, prescaler=%d\n",
-	         STM32_APB1_TIM6_CLKIN, CONFIG_TIM6_FREQUENCY, prescaler);
-
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	  modifyreg16(STM32_TIM6_BASE + STM32_BTIM_EGR_OFFSET, 0, BTIM_EGR_UG);	
 	  modifyreg16(STM32_TIM3_BASE + STM32_GTIM_EGR_OFFSET, 0, GTIM_EGR_UG);
-	  modifyreg16(STM32_TIM3_BASE + STM32_GTIM_CR1_OFFSET, 0, GTIM_CR1_CEN);
-  }
-  else
-  {
-	  modifyreg16(STM32_TIM3_BASE + STM32_GTIM_CR1_OFFSET, GTIM_CR1_CEN, 0);
-		
-	  up_disable_irq(STM32_IRQ_TIM6);
-	  STM32_TIM_DISABLEINT(priv->timdev, 0);
-  }
-	
-  irqrestore(flags);	
-}
 
+	  flags = irqsave();
+	  modifyreg16(STM32_TIM6_BASE + STM32_BTIM_CR1_OFFSET, 0, BTIM_CR1_CEN);	
+	  modifyreg16(STM32_TIM3_BASE + STM32_GTIM_CR1_OFFSET, 0, GTIM_CR1_CEN);
+	  irqrestore(flags);	
+  }	
+}
 
 static int stm32_counter_setup(FAR struct adc_dev_s *dev)
 {
-  struct stm32_dev_s *priv = (struct stm32_dev_s *)dev->ad_priv;
   int                         	ret;
 
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   modifyreg32(STM32_RCC_APB1ENR, 0, RCC_APB1ENR_TIM3EN);
 
   modifyreg16(STM32_TIM3_BASE + STM32_GTIM_CR1_OFFSET, 0, GTIM_CR1_URS);
@@ -206,13 +204,14 @@ static int stm32_counter_setup(FAR struct adc_dev_s *dev)
   modifyreg16(STM32_TIM3_BASE + STM32_GTIM_SMCR_OFFSET, GTIM_SMCR_TS_MASK, GTIM_SMCR_TI1FP1);
 
   stm32_configgpio(GPIO_TIM3_CH1IN);
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  modifyreg32(STM32_RCC_APB1ENR, 0, RCC_APB1ENR_TIM6EN);
+  modifyreg16(STM32_TIM6_BASE + STM32_BTIM_CR1_OFFSET, BTIM_CR1_CEN, BTIM_CR1_URS | BTIM_CR1_OPM);		
+ 
+  putreg32(CONFIG_TIM6_PERIOD, STM32_TIM6_BASE + STM32_BTIM_ARR_OFFSET);		
 
-  priv->timdev = stm32_tim_init(6);
-  if (!priv->timdev)
-    {
-      adbg("stm32_tim_init(6) failed\n");
-      return -ENODEV;
-    }
+  putreg16((STM32_TIM27_FREQUENCY / CONFIG_TIM6_FREQUENCY) - 1, STM32_TIM6_BASE + STM32_BTIM_PSC_OFFSET);
+	
 
   ret = up_ramvec_attach(STM32_IRQ_TIM6, stm32_counter_tim6_handler);
   if (ret < 0)
@@ -230,15 +229,38 @@ static int stm32_counter_setup(FAR struct adc_dev_s *dev)
       return ret;
     }
 
+  up_enable_irq(STM32_IRQ_TIM6);
+  modifyreg16(STM32_TIM6_BASE + STM32_BTIM_DIER_OFFSET, 0, BTIM_DIER_UIE);	
+	
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  modifyreg32(STM32_RCC_APB1ENR, 0, RCC_APB1ENR_TIM7EN);
+  modifyreg16(STM32_TIM7_BASE + STM32_BTIM_CR1_OFFSET, BTIM_CR1_CEN, BTIM_CR1_URS | BTIM_CR1_OPM);		
+ 
+  putreg32(1, STM32_TIM7_BASE + STM32_BTIM_ARR_OFFSET);		
+
+  putreg16(0, STM32_TIM7_BASE + STM32_BTIM_PSC_OFFSET);
+
+  ret = irq_attach(STM32_IRQ_TIM7, stm32_counter_tim7_handler);
+  if (ret < 0)
+    {
+      adbg("up_ramvec_attach failed: %d\n", ret);
+      return ret;
+    }
+
+  up_enable_irq(STM32_IRQ_TIM7);
+  modifyreg16(STM32_TIM7_BASE + STM32_BTIM_DIER_OFFSET, 0, BTIM_DIER_UIE);		
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
   return ret;
 }
 
 static void stm32_counter_shutdown(FAR struct adc_dev_s *dev)
 {
-  struct stm32_dev_s *priv = (struct stm32_dev_s *)dev->ad_priv;
-
   irq_detach(STM32_IRQ_TIM6);
-  stm32_tim_deinit(priv->timdev);
+  modifyreg32(STM32_RCC_APB1ENR, RCC_APB1ENR_TIM6EN, 0);
+	
+  irq_detach(STM32_IRQ_TIM7);
+  modifyreg32(STM32_RCC_APB1ENR, RCC_APB1ENR_TIM7EN, 0);
 
   modifyreg16(STM32_TIM3_BASE + STM32_GTIM_CR1_OFFSET, GTIM_CR1_CEN, 0);	
   modifyreg32(STM32_RCC_APB1ENR, RCC_APB1ENR_TIM3EN, 0);	
