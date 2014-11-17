@@ -22,5 +22,11 @@ config EXAMPLES_ILOCK_STACKSIZE
 	default 2048
 	---help---
 		Stacksize of "waiter" thread. Default 1024
+		
+config DEBUG_ILOCK
+	bool "iLock Debug Output"
+	default y
+	---help---
+		Enable iLock debug SYSLOG output (disabled by default)		
 
 endif

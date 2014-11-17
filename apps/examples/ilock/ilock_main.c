@@ -96,6 +96,41 @@
 #  define CONFIG_EXAMPLES_JKSAFEKEY_DEVNAME "/dev/jksafekeya"
 #endif
 
+#ifdef CONFIG_CPP_HAVE_VARARGS
+
+/* C-99 style variadic macros are supported */
+
+#ifdef CONFIG_DEBUG_ILOCK
+#  define ilockdbg(format, ...)    dbg(format, ##__VA_ARGS__)
+#  define ilocklldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
+#  define ilockvdbg(format, ...)   vdbg(format, ##__VA_ARGS__)
+#  define ilockllvdbg(format, ...) llvdbg(format, ##__VA_ARGS__)
+#else
+#  define ilockdbg(x...)
+#  define ilocklldbg(x...)
+#  define ilockvdbg(x...)
+#  define ilockllvdbg(x...)
+#endif
+
+#else /* CONFIG_CPP_HAVE_VARARGS */
+
+/* Variadic macros NOT supported */
+
+#ifdef CONFIG_DEBUG_ILOCK
+#  define ilockdbg     dbg
+#  define ilockvdbg   vdbg
+#  define ilocklldbg   lldbg
+#  define ilockllvdbg llvdbg
+#else
+#  define ilockdbg 		(void)
+#  define ilockvdbg		(void)
+#  define ilocklldbg		(void)
+#  define ilockllvdbg	(void)
+#endif
+
+#endif /* CONFIG_CPP_HAVE_VARARGS */
+
+
 /****************************************************************************
  * Private Types
  ****************************************************************************/
@@ -344,6 +379,7 @@ errout:
 }
 #endif
 
+#if 0
 int ilock_main(int argc, char *argv[])
 {
   struct adc_msg_s sample;
@@ -446,4 +482,54 @@ errout:
   fflush(stdout);
   return errval;
 }
+#endif
 
+ int unlock_task(int argc, char *argv[])
+{
+  char buffer[256];
+  ssize_t nbytes;
+  int fd;
+  int ret;
+
+  ilockdbg("unlock_task: Opening device %s\n", CONFIG_EXAMPLES_KEYPAD_DEVNAME);
+  fd = open(CONFIG_EXAMPLES_KEYPAD_DEVNAME, O_RDONLY);
+  if (fd < 0)
+    {
+      ret = errno;
+      ilockdbg("unlock_task: open() failed: %d\n", ret);
+      return ret;
+    }
+
+  ilockdbg("unlock_task: Device %s opened\n", CONFIG_EXAMPLES_KEYPAD_DEVNAME);
+  fflush(stdout);
+
+  /* Loop until there is a read failure */
+
+  do
+    {
+      /* Read a buffer of data */
+
+      nbytes = read(fd, buffer, 256);
+      if (nbytes > 0)
+        {
+          /* On success, echo the buffer to stdout */
+#ifdef CONFIG_EXAMPLES_KEYPADTEST_ENCODED
+          keypad_decode(buffer, nbytes);
+#else
+          (void)write(1, buffer, nbytes);
+#endif
+        }
+    }
+  while (nbytes >= 0);
+
+  printf("keypadtest_main: Closing device %s: %d\n", CONFIG_EXAMPLES_KEYPAD_DEVNAME, (int)nbytes);
+  fflush(stdout);
+  close(fd);
+
+
+}
+
+int ilock_main(int argc, char *argv[])
+{
+	return OK;
+}

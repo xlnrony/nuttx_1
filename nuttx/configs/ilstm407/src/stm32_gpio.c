@@ -60,7 +60,9 @@
  ****************************************************************************/
 struct stm32_dev_s
 {
-  uint32_t pinset;
+  uint32_t 				pinset;
+  	
+  struct work_s     work;        
 };
 
 /****************************************************************************
@@ -71,6 +73,10 @@ struct stm32_dev_s
  * Private Functions
  ****************************************************************************/
 
+static void stm32_keypad_keydown_work(FAR void *arg)
+{
+
+}
 
 static int stm32_gpio_setup(FAR struct gpio_dev_s *dev)
 {
@@ -81,7 +87,6 @@ static int stm32_gpio_setup(FAR struct gpio_dev_s *dev)
 	
   return ret;
 }
-
 
 static int stm32_gpio_shutdown(FAR struct gpio_dev_s *dev)
 {
@@ -104,6 +109,26 @@ static int stm32_gpio_ioctl(FAR struct gpio_dev_s *dev, int cmd, unsigned long a
   switch (cmd)
     {
       case GPIOC_WRITE:
+		 if ((priv->pinset & GPIO_MODE_MASK) == GPIO_OUTPUT)
+		   {
+		 	  stm32_gpiowrite(priv->pinset,(bool)arg); 		
+		 	}
+		 else
+		 	{
+	         ret = -EACCES;
+		 	}
+        break;
+      case GPIOC_DELAY:
+		 if ((priv->pinset & GPIO_MODE_MASK) == GPIO_OUTPUT)
+		   {
+		 	  stm32_gpiowrite(priv->pinset,(bool)arg); 		
+		 	}
+		 else
+		 	{
+	         ret = -EACCES;
+		 	}
+        break;
+      case GPIOC_TWINKLE:
 		 if ((priv->pinset & GPIO_MODE_MASK) == GPIO_OUTPUT)
 		   {
 		 	  stm32_gpiowrite(priv->pinset,(bool)arg); 		

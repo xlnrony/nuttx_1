@@ -256,7 +256,7 @@ static ssize_t keypad_read(FAR struct file *filep, FAR char *buffer, size_t bufl
   unsigned int                tail;
   int                         ret;
 
-  uvdbg("Entry\n");
+  keypaddbg("Entry\n");
   DEBUGASSERT(filep && filep->f_inode && buffer);
   inode = filep->f_inode;
   dev  = inode->i_private;
@@ -389,7 +389,7 @@ static int keypad_poll(FAR struct file *filep, FAR struct pollfd *fds,
   int                         ret = OK;
   int                         i;
 
-  uvdbg("Entry\n");
+  keypaddbg("Entry\n");
   DEBUGASSERT(filep && filep->f_inode && fds);
   inode = filep->f_inode;
   dev  = inode->i_private;

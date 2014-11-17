@@ -332,6 +332,18 @@
 #  define keypadllvdbg(x...)
 #endif
 
+#ifdef CONFIG_DEBUG_LED
+#  define leddbg(format, ...)    dbg(format, ##__VA_ARGS__)
+#  define ledlldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
+#  define ledvdbg(format, ...)   vdbg(format, ##__VA_ARGS__)
+#  define ledllvdbg(format, ...) llvdbg(format, ##__VA_ARGS__)
+#else
+#  define leddbg(x...)
+#  define ledlldbg(x...)
+#  define ledvdbg(x...)
+#  define ledllvdbg(x...)
+#endif
+
 #else /* CONFIG_CPP_HAVE_VARARGS */
 
 /* Variadic macros NOT supported */
@@ -547,6 +559,18 @@
 #  define keypadvdbg		(void)
 #  define keypadlldbg		(void)
 #  define keypadllvdbg		(void)
+#endif
+
+#ifdef CONFIG_DEBUG_LED
+#  define leddbg     dbg
+#  define ledvdbg   vdbg
+#  define ledlldbg   lldbg
+#  define ledllvdbg llvdbg
+#else
+#  define leddbg 		(void)
+#  define ledvdbg		(void)
+#  define ledlldbg		(void)
+#  define ledllvdbg		(void)
 #endif
 
 #endif /* CONFIG_CPP_HAVE_VARARGS */
