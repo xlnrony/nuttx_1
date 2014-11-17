@@ -8968,3 +8968,34 @@
 	* drivers/lcd/st7565.c/.h and include/nuttx/lcd/st7565.h: Add driver for
 	  ST7565 that works with NHD‐C12864KGZ display.  From Pierre-noel
 	  Bouteville (2014-11-13).
+	* net/route/net_router.c:  I don't think that the net_route function has
+	  ever worked correctly.  The source ip was updated in the match struct
+	  instead of the route ip.  From Brennan Ashton (2014-11-14).
+	* net/Kconfig arp/Make.defs, arp_send.c, and drivers/net/slip.c: ARP:
+	  Add support for the case where there are multiple networks:  One being
+	  Ethernet and the other not.  Suggested by Brennan Ashton (2014-11-14).
+	* net/Kconfig, netdev/netdev_register.c, arp/arp_send.c,
+	  include/nuttx/net/net.h, netdev.h and several network drivers in arch/
+	  and drivers/: Add a parameter to netdev_register() to indicate the
+	  link protocol supported by the driver.  Use this value to replace some
+	  logic commited yesterday (2014-11-15).
+	* configs/stm32f4discovery/netnsh/defconfig:  Needs to set MAC address
+	  (2014-11-15).
+	* arch/ and drivers/: Remove use of NET_LL_HDRLEN from Ethernet drivers.
+	  Use ETH_HDRLEN instead (2014-11-15).
+	* net/arp/: Remove use of NET_LL_HDRLEN from net/arp logic.  Use
+	  ETH_HDRLEN instead (2014-11-15).
+	* net/ and include/nuttx/net:  All network logic will now handle
+	  variable length link layer protocol headers within incoming packets.
+	  This permits use of multiple network interfaces with differing data
+	  links.  For example, ETHERNET + SLIP (2014-11-15).
+	* arch/arm/src/sam34/sam4s_periphclks.h: Add missing SPI0 clock
+	  configuration macro for the SAM4S" sam4s_periphclks.h.  From
+	  spasbyspas (2014-11-16).
+	* arch/arm/src/efm32/efm32_lowputc.c: EFM32 USART setup: Computation of
+	  BAUD includes shift; Eliminate additional shift.  From  Pierre-noel
+	  Bouteville (2014-11-16).
+	* net/, include/, drivers/, arch/, various files:  Rename
+	  CONFIG_NET_BUFSIZE to CONFIG_NET_ETH_MTU; Add CONFIG_NET_SLIP_MTU.
+	  Add data structures and logic to handle different MTUs when both
+	  Ethernet and SLIP are enabled (2014-11-16).

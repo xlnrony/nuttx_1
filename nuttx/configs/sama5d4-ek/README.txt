@@ -1335,8 +1335,8 @@ Networking
   Networking Support
     CONFIG_NET=y                         : Enable Neworking
     CONFIG_NET_SOCKOPTS=y                : Enable socket operations
-    CONFIG_NET_BUFSIZE=562               : Maximum packet size (MTD) 1518 is more standard
-    CONFIG_NET_RECEIVE_WINDOW=562        : Should be the same as CONFIG_NET_BUFSIZE
+    CONFIG_NET_ETH_MTU=562               : Maximum packet size (MTU) 1518 is more standard
+    CONFIG_NET_ETH_TCP_RECVWNDO=562      : Should be the same as CONFIG_NET_ETH_MTU
     CONFIG_NET_ARP=y                     : ARP support should be enabled
     CONFIG_NET_ARP_IPIN=y                : IP address harvesting (optional)
     CONFIG_NET_TCP=y                     : Enable TCP/IP networking
@@ -3770,7 +3770,11 @@ Configurations
         CONFIG_GRAN=n                          : Disable the granule allocator
         CONFIG_MM_PGALLOC=n                    : Disable the page allocator
 
-    4. A system call interface is enabled and the ELF test programs interface with the base RTOS code system calls.  This eliminates the need for symbol tables to link with the base RTOS (symbol tables are still used, however, to interface with the common C library instaniation).  Relevant configuration settings:
+    4. A system call interface is enabled and the ELF test programs interface
+       with the base RTOS code system calls.  This eliminates the need for symbol
+       tables to link with the base RTOS (symbol tables are still used, however,
+       to interface with the common C library instaniation).  Relevant
+       configuration settings:
 
       RTOS Features -> System call support
         CONFIG_LIB_SYSCALL=y                   : Enable system call support
@@ -3796,7 +3800,6 @@ Configurations
 
   knsh:
     An NSH configuration used to test the SAMA5D kenel build configuration.
-    More to come... this is still a work in progress as of this writing.
 
     NOTES:
 
@@ -3853,7 +3856,8 @@ Configurations
        build out-of-the-box.  You have to take special steps in the build
        process as described below.
 
-       Assuming that you will want to reconfigure to use the ROMFS (rather than debugging HSCMI), you will need to disable all of these settings:
+       Assuming that you will want to reconfigure to use the ROMFS (rather
+       than debugging HSCMI), you will need to disable all of these settings:
 
        System Type->ATSAMA5 Peripheral Support
          CONFIG_SAMA5_HSMCI0=n           : Disable HSMCI0 support
