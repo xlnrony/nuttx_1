@@ -8999,3 +8999,17 @@
 	  CONFIG_NET_BUFSIZE to CONFIG_NET_ETH_MTU; Add CONFIG_NET_SLIP_MTU.
 	  Add data structures and logic to handle different MTUs when both
 	  Ethernet and SLIP are enabled (2014-11-16).
+	* net/, include/, various files:  Rename CONFIG_NET_RECEIVE_WINDOW to
+	  CONFIG_NET_ETH_TCP_RECVWNDO and CONFIG_NET_SLIP_TCP_RECVWNDO.  Add
+	  data structures and logic to handler different TCP receive windows
+	  when both Ethernet and SLIP are enabled (2014-11-16).
+	* configs/sama5d4-ek/bridge: Add a simple test for the dual EMACs on
+	  the SAMA5D4 (2014-11-17).
+	* arch/arm/src/sama5/sam_emacb.c:  Fix several typos that will prevent
+	  EMAC1 from initializing properly (2014-11-17).
+	* include/nuttx/net/ip.h and tcp.h, net/icmp/icmp_send.c and
+	  igmp/igmp_send.c: Move IP header flags from tcp.h to ip.h and rename
+	  IP_FLAGS vs TCPFLAGS.  The problem fixed here is that there IP flags
+	  were not available when TCP was disabled.  The IP flags are used in
+	  ICMP and IGMP (2014-11-17).
+
