@@ -52,12 +52,14 @@
 #include <assert.h>
 #include <errno.h>
 
+#include <nuttx/clock.h>
 #include <nuttx/analog/adc.h>
 #include <nuttx/gpio/gpio.h>
 #include <nuttx/usb/usbhost.h>
 
 #include "epass3003_lib.h"
 #include "jksafekey_lib.h"
+#include "led_lib.h"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -484,6 +486,7 @@ errout:
 }
 #endif
 
+#if 0
  int unlock_task(int argc, char *argv[])
 {
   char buffer[256];
@@ -528,8 +531,15 @@ errout:
 
 
 }
+#endif
 
 int ilock_main(int argc, char *argv[])
 {
+	led_init();
+	led1_op(LEDC_TWINKLE, LED_RED, SEC2TICK(3), MSEC2TICK(500));
+	led2_op(LEDC_TWINKLE, LED_GREEN, SEC2TICK(3), MSEC2TICK(500));
+//	led3_op(LEDC_TWINKLE, LED_BLUE, SEC2TICK(3), MSEC2TICK(500));
+	getchar();
+	led_deinit();
 	return OK;
 }

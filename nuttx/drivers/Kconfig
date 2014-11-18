@@ -531,21 +531,9 @@ if WIRELESS
 source drivers/wireless/Kconfig
 endif # WIRELESS
 
-config GPIO
-	bool "Gerneral purpose input output"
-	default n
-	---help---
-		Select to enable support for GPIO device support.
-		
-menuconfig KEYPAD
-	bool "Keypad Device Support"
-	default n
-	---help---
-		Drivers for keypad devices.
+comment "GPIO Device Options"
 
-if KEYPAD
 source drivers/gpio/Kconfig
-endif # KEYPAD
 
 comment "System Logging Device Options"
 

@@ -3,6 +3,20 @@
 # see misc/tools/kconfig-language.txt.
 #
 
+config GPIO
+	bool "Gerneral purpose input output"
+	default n
+	---help---
+		Select to enable support for GPIO device support.
+		
+menuconfig KEYPAD
+	bool "Keypad Device Support"
+	default n
+	---help---
+		Drivers for keypad devices.
+
+if KEYPAD
+
 config KEYPAD_BUFSIZE
 	int "Keypad Buffer Size"
 	default 16
@@ -16,4 +30,11 @@ config KEYPAD_NPOLLWAITERS
 	---help---
 		If the poll() method is enabled, this defines the maximum number
 		of threads that can be waiting for keypad events.  Default: 2.
-		
+
+endif # KEYPAD
+
+config LED
+	bool "Led Device Support"
+	default n
+	---help---
+		Drivers for led devices.

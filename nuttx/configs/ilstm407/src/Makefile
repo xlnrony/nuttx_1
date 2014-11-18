@@ -54,8 +54,8 @@ ifeq ($(CONFIG_KEYPAD),y)
 CSRCS += stm32_keypad.c
 endif
 
-ifeq ($(CONFIG_ARCH_BUTTONS),y)
-CSRCS += stm32_buttons.c
+ifeq ($(CONFIG_LED),y)
+CSRCS += stm32_led.c
 endif
 
 ifeq ($(CONFIG_STM32_OTGFS),y)

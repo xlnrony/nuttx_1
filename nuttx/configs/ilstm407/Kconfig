@@ -35,59 +35,23 @@ config ADC3_DEVNAME
 	---help---
 		Name of adc device to be used. Default: "/dev/adc2"		
 		
-config LED1_BLUE_DEVNAME
-	string "LED1 BLUE PIN Device Name"
-	default "/dev/led1b"
+config LED1_DEVNAME
+	string "LED1 Device Name"
+	default "/dev/led1"
 	---help---
-		Name of gpio device to be used. Default: "/dev/led1b"		
+		Name of led device to be used. Default: "/dev/led1"		
 
-config LED1_GREEN_DEVNAME
-	string "LED1 GREEN PIN Device Name"
-	default "/dev/led1g"
+config LED2_DEVNAME
+	string "LED2 Device Name"
+	default "/dev/led2"
 	---help---
-		Name of gpio device to be used. Default: "/dev/led1g"		
+		Name of led device to be used. Default: "/dev/led2"		
 
-config LED1_RED_DEVNAME
-	string "LED1 RED PIN Device Name"
-	default "/dev/led1r"
+config LED3_DEVNAME
+	string "LED3 Device Name"
+	default "/dev/led3"
 	---help---
-		Name of gpio device to be used. Default: "/dev/led1r"		
-
-config LED2_BLUE_DEVNAME
-	string "LED2 BLUE PIN Device Name"
-	default "/dev/led2b"
-	---help---
-		Name of gpio device to be used. Default: "/dev/led2b"		
-
-config LED2_GREEN_DEVNAME
-	string "LED2 GREEN PIN Device Name"
-	default "/dev/led2g"
-	---help---
-		Name of gpio device to be used. Default: "/dev/led2g"		
-
-config LED2_RED_DEVNAME
-	string "LED2 RED PIN Device Name"
-	default "/dev/led2r"
-	---help---
-		Name of gpio device to be used. Default: "/dev/led2r"		
-
-config LED3_BLUE_DEVNAME
-	string "LED3 BLUE PIN Device Name"
-	default "/dev/led3b"
-	---help---
-		Name of gpio device to be used. Default: "/dev/led3b"		
-
-config LED3_GREEN_DEVNAME
-	string "LED3 GREEN PIN Device Name"
-	default "/dev/led3g"
-	---help---
-		Name of gpio device to be used. Default: "/dev/led3g"		
-
-config LED3_RED_DEVNAME
-	string "LED3 RED PIN Device Name"
-	default "/dev/led3r"
-	---help---
-		Name of gpio device to be used. Default: "/dev/led3r"		
+		Name of led device to be used. Default: "/dev/led3"		
 
 config MAGNET_VCC_DEVNAME
 	string "MAGNET VCC PIN Device Name"

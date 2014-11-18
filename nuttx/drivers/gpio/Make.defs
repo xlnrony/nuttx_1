@@ -51,6 +51,14 @@ CSRCS += keypad.c
 
 endif
 
+ifeq ($(CONFIG_LED),y)
+
+# Include the common GPIO character driver
+
+CSRCS += led.c
+
+endif
+
 ifeq ($(CONFIG_GPIO),y)
 DEPPATH += --dep-path gpio
 VPATH += :gpio
@@ -60,6 +68,11 @@ ifeq ($(CONFIG_KEYPAD),y)
 DEPPATH += --dep-path gpio
 VPATH += :gpio
 CFLAGS += ${shell $(INCDIR) $(INCDIROPT) "$(CC)" $(TOPDIR)$(DELIM)drivers$(DELIM)gpio}
+else
+ifeq ($(CONFIG_LED),y)
+DEPPATH += --dep-path gpio
+VPATH += :gpio
+CFLAGS += ${shell $(INCDIR) $(INCDIROPT) "$(CC)" $(TOPDIR)$(DELIM)drivers$(DELIM)gpio}
+endif 
 endif
 endif
-

@@ -1,8 +1,8 @@
 /****************************************************************************
- * config/stm32f4discovery/src/stm32_bringup.c
+ * examples/ilock/led_lib.h
  *
- *   Copyright (C) 2012, 2014 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ *   Copyright (C) 2011, 2013-2014 xlnrony. All rights reserved.
+ *   Author: xlnrony <xlnrony@gmail.com>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -14,7 +14,7 @@
  *    notice, this list of conditions and the following disclaimer in
  *    the documentation and/or other materials provided with the
  *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
+ * 3. Neither the name Gregory Nutt nor the names of its contributors may be
  *    used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -33,95 +33,54 @@
  *
  ****************************************************************************/
 
+#ifndef __APPS_INCLUDE_LED_LIB_H
+#define __APPS_INCLUDE_LED_LIB_H
+
 /****************************************************************************
  * Included Files
  ****************************************************************************/
 
 #include <nuttx/config.h>
+#include <stdint.h>
+#include <nuttx/gpio/led.h>
 
-#include <stdbool.h>
-#include <stdio.h>
-#include <debug.h>
-#include <errno.h>
-
-#include <nuttx/analog/adc.h>
-
-#ifdef CONFIG_SYSTEM_USBMONITOR
-#  include <apps/usbmonitor.h>
-#endif
-
-#ifdef CONFIG_STM32_OTGFS
-#  include "stm32_usbhost.h"
-#endif
-
-#include "stm32.h"
-#include "stm32f407.h"
+#if defined(CONFIG_LED)
 
 /****************************************************************************
- * Pre-Processor Definitions
+ * Pre-processor Definitions
+ ****************************************************************************/
+ 
+/****************************************************************************
+ * Public Types
  ****************************************************************************/
 
 /****************************************************************************
- * Public Functions
+ * Public Data
  ****************************************************************************/
 
-/****************************************************************************
- * Name: stm32_bringup
- *
- * Description:
- *   Perform architecture-specific initialization
- *
- *   CONFIG_BOARD_INITIALIZE=y :
- *     Called from board_initialize().
- *
- *   CONFIG_BOARD_INITIALIZE=n && CONFIG_NSH_ARCHINIT=y :
- *     Called from the NSH library
- *
- ****************************************************************************/
-
-int stm32_bringup(void)
+#ifdef __cplusplus
+#define EXTERN extern "C"
+extern "C"
 {
-  int ret = OK;
-
-#ifdef CONFIG_LED
-  stm32_led_initialize();
+#else
+#define EXTERN extern
 #endif
 
-#ifdef CONFIG_GPIO
-  stm32_gpio_initialize();
-#endif	
+/****************************************************************************
+ * Public Function Prototypes
+ ****************************************************************************/
 
-#ifdef CONFIG_KEYPAD
-  stm32_keypad_initialize();
-#endif
+inline void led1_op(int cmd, uint8_t color, uint32_t delay, uint32_t interval);
+inline void led2_op(int cmd, uint8_t color, uint32_t delay, uint32_t interval);
+inline void led3_op(int cmd, uint8_t color, uint32_t delay, uint32_t interval);
+void led_init(void);
+void led_deinit(void);
 
-#ifdef CONFIG_ADC
-  stm32_adc_initialize();
-#endif	
-
-#ifdef HAVE_USBHOST
-  /* Initialize USB host operation.  stm32_usbhost_initialize() starts a thread
-   * will monitor for USB connection and disconnection events.
-   */
-
-  stm32_usbhost_initialize();
-#endif
-
-#ifdef HAVE_USBMONITOR
-  /* Start the USB Monitor */
-
-  ret = usbmonitor_start(0, NULL);
-  if (ret != OK)
-    {
-      udbg("Start USB monitor: %d\n", ret);
-    }
-#endif
-
-#ifdef HAVE_SDIO
-  /* Initialize the SDIO block driver */
-
-  stm32_sdio_initialize();
-#endif
-
-  return ret;
+#undef EXTERN
+#ifdef __cplusplus
 }
+#endif
+
+#endif /* CONFIG_LED */
+#endif /* __APPS_INCLUDE_LED_LIB_H */
+

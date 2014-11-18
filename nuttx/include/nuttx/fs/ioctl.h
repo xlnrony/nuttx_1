@@ -72,6 +72,7 @@
 #define _CFGDIOCBASE    (0x1300) /* Config Data device (app config) ioctl commands */
 #define _TCIOCBASE      (0x1400) /* Timer ioctl commands */
 #define _GPIOCBASE      (0xa000) /* Gpio ioctl commands */
+#define _LEDCBASE      (0xb000) /* Led ioctl commands */
 
 /* Macros used to manage ioctl commands */
 
@@ -296,6 +297,9 @@
 
 #define _GPIOCVALID(c)   (_IOC_TYPE(c)==_GPIOCBASE)
 #define _GPIOC(nr)         _IOC(_GPIOCBASE,nr)
+
+#define _LEDCVALID(c)   (_IOC_TYPE(c)==_LEDCBASE)
+#define _LEDC(nr)         _IOC(_LEDCBASE,nr)
 
 /****************************************************************************
  * Public Type Definitions
