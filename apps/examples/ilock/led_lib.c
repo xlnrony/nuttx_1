@@ -53,8 +53,6 @@
 #include <assert.h>
 #include <errno.h>
 
-#include <nuttx/usb/storage.h>
-#include <nuttx/usb/usbhost.h>
 #include "led_lib.h"
 
 /****************************************************************************
@@ -80,10 +78,6 @@ static int led3_fd;
  * Private Functions
  ****************************************************************************/
 
-/****************************************************************************
- * Public Functions
- ****************************************************************************/
-
 static void led_op(int fd, int cmd, uint8_t color, uint32_t delay, uint32_t interval)
 {
   int ret;
@@ -96,9 +90,13 @@ static void led_op(int fd, int cmd, uint8_t color, uint32_t delay, uint32_t inte
   ret = ioctl(fd, cmd, (unsigned long)&ledctl);
   if (ret < 0)
     {
-      leddbg("led1_op: ioctl failed: %d\n", errno);
+      leddbg("led_op: ioctl failed: %d\n", errno);
     }
 }
+
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
 
 inline void led1_op(int cmd, uint8_t color, uint32_t delay, uint32_t interval)
 {

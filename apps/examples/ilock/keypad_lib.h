@@ -1,5 +1,5 @@
 /****************************************************************************
- * examples/ilock/led_lib.h
+ * examples/ilock/keypad_lib.h
  *
  *   Copyright (C) 2011, 2013-2014 xlnrony. All rights reserved.
  *   Author: xlnrony <xlnrony@gmail.com>
@@ -33,8 +33,8 @@
  *
  ****************************************************************************/
 
-#ifndef __APPS_INCLUDE_LED_LIB_H
-#define __APPS_INCLUDE_LED_LIB_H
+#ifndef __APPS_INCLUDE_KEYPAD_LIB_H
+#define __APPS_INCLUDE_KEYPAD_LIB_H
 
 /****************************************************************************
  * Included Files
@@ -42,9 +42,8 @@
 
 #include <nuttx/config.h>
 #include <stdint.h>
-#include <nuttx/gpio/led.h>
 
-#if defined(CONFIG_LED)
+#if defined(CONFIG_KEYPAD)
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -70,17 +69,13 @@ extern "C"
  * Public Function Prototypes
  ****************************************************************************/
 
-EXTERN inline void led1_op(int cmd, uint8_t color, uint32_t delay, uint32_t interval);
-EXTERN inline void led2_op(int cmd, uint8_t color, uint32_t delay, uint32_t interval);
-EXTERN inline void led3_op(int cmd, uint8_t color, uint32_t delay, uint32_t interval);
-EXTERN void led_init(void);
-EXTERN void led_deinit(void);
+EXTERN int keypad_readln(uint8_t *buf, uint8_t buflen, bool postip);
 
 #undef EXTERN
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* CONFIG_LED */
-#endif /* __APPS_INCLUDE_LED_LIB_H */
+#endif /* CONFIG_KEYPAD */
+#endif /* __APPS_INCLUDE_KEYPAD_LIB_H */
 

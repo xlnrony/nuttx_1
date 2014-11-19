@@ -57,6 +57,8 @@
 #include <nuttx/gpio/gpio.h>
 #include <nuttx/usb/usbhost.h>
 
+#include <apps/netutils/netlib.h>
+
 #include "epass3003_lib.h"
 #include "jksafekey_lib.h"
 #include "led_lib.h"
@@ -486,59 +488,473 @@ errout:
 }
 #endif
 
-#if 0
+void netlib_genmacaddr(uint8_t *macaddr) {
+    srand(clock_systimer());
+    macaddr[0] = 0xfc;
+    macaddr[1] = 0xfc;
+    macaddr[2] = 0xfc;
+    macaddr[3] = rand();
+    macaddr[4] = rand();
+    macaddr[5] = rand();
+}
+
  int unlock_task(int argc, char *argv[])
 {
-  char buffer[256];
-  ssize_t nbytes;
-  int fd;
+  uint8_t keybuf[16];
   int ret;
-
-  ilockdbg("unlock_task: Opening device %s\n", CONFIG_EXAMPLES_KEYPAD_DEVNAME);
-  fd = open(CONFIG_EXAMPLES_KEYPAD_DEVNAME, O_RDONLY);
-  if (fd < 0)
+  while(true)
     {
-      ret = errno;
-      ilockdbg("unlock_task: open() failed: %d\n", ret);
-      return ret;
+    	ret = keypad_readln(keybuf, 16, false);
+		if (ret < 0)
+		{
+			return ret;
+		}
+		if (keybuf[0]  == ':')
+		  {
+	        ret = keypad_readln(keybuf, 16, false);
+		    if (ret < 0)
+		      {
+		        return ret;
+		      }
+		    switch(keybuf[0])
+		      {
+               case '0': //随机mac地址
+					uint8_t macaddr[IFHWADDRLEN];
+
+					netlib_genmacaddr(macaddr);
+					netlib_setmacaddr("eth0", macaddr)
+									
+                  assign_macaddr(macaddr[0], macaddr[1], macaddr[2], macaddr[3], macaddr[4], macaddr[5]);
+                  app_eprom_flush();
+
+			        ret = keypad_readln(keybuf, 16, true);
+				    if (ret < 0)
+				      {
+				        return ret;
+				      }
+                  break;
+               case '1': //出厂复位网络参数
+                  lcd_set_tip("恢复出厂网络设置");
+                  act_PB3(0, 0xffffffff, GREEN);
+                  act_PB1(0, 0xffffffff, GREEN);
+                  act_PB2(0, 0xffffffff, GREEN);
+                  disable_act = 1;
+                  key_board_with_copy_to_buffer(1, 0);
+                  if (check_config_password()) {
+                      assign_hostip(0xff, 0xff, 0xff, 0xff);
+                      assign_netmask(0xff, 0xff, 0xff, 0xff);
+                      assign_gateway(0xff, 0xff, 0xff, 0xff);
+                      assign_serverip(0xff, 0xff, 0xff, 0xff);
+                      app_eprom_flush();
+
+                      key_board_with_copy_to_buffer(0, 1);
+                  }
+                  disable_act = 0;
+                  act_PB3(0, 0, GREEN);
+                  act_PB1(0, 0, GREEN);
+                  act_PB2(0, 0, GREEN);
+                  break;
+              case '2': //震动阀值
+                  lcd_set_tip("设置震动监测阀值");
+                  act_PB3(0, 0xffffffff, GREEN);
+                  act_PB1(0, 0xffffffff, GREEN);
+                  act_PB2(0, 0xffffffff, GREEN);
+                  disable_act = 1;
+                  key_board_with_copy_to_buffer(1, 0);
+                  if (check_config_password()) {
+                      shock_alert_sampled = 1;
+
+                      key_board_with_copy_to_buffer(0, 1);
+
+                      shock_alert_sampled = 0;
+
+                      app_eprom_write(CONFIG_START_ADDR + 26, P15_voltage >> 8);
+                      app_eprom_write(CONFIG_START_ADDR + 27, P15_voltage & 0x00ff);
+                      app_eprom_flush();
+                  }
+                  disable_act = 0;
+                  act_PB3(0, 0, GREEN);
+                  act_PB1(0, 0, GREEN);
+                  act_PB2(0, 0, GREEN);
+                  break;
+              case '3': //上锁检测
+                  lcd_set_tip("设置上锁监测阀值");
+                  act_PB3(0, 0xffffffff, GREEN);
+                  act_PB1(0, 0xffffffff, GREEN);
+                  act_PB2(0, 0xffffffff, GREEN);
+                  disable_act = 1;
+                  key_board_with_copy_to_buffer(1, 0);
+                  if (check_config_password()) {
+                      P10_min_voltage = 0xff;
+                      P10_max_voltage = 0x00;
+
+                      lock_check_sampled = 1;
+
+                      key_board_with_copy_to_buffer(0, 1);
+
+                      lock_check_sampled = 0;
+
+                      P10_voltage = ((unsigned short) P10_min_voltage + (unsigned short) P10_max_voltage) / 2;
+                      app_eprom_write(CONFIG_START_ADDR + 28, P10_voltage >> 8);
+                      app_eprom_write(CONFIG_START_ADDR + 29, P10_voltage & 0x00ff);
+                      app_eprom_flush();
+                  }
+                  disable_act = 0;
+                  act_PB3(0, 0, GREEN);
+                  act_PB1(0, 0, GREEN);
+                  act_PB2(0, 0, GREEN);
+                  break;
+              case '4': //光感阀值
+                  lcd_set_tip("设置光感监测阀值");
+                  act_PB3(0, 0xffffffff, GREEN);
+                  act_PB1(0, 0xffffffff, GREEN);
+                  act_PB2(0, 0xffffffff, GREEN);
+                  disable_act = 1;
+                  key_board_with_copy_to_buffer(1, 0);
+                  if (check_config_password()) {
+                      key_board_with_copy_to_buffer(0, 1);
+
+                      P11_voltage = atoi(pwd);
+                      app_eprom_write(CONFIG_START_ADDR + 30, P11_voltage >> 8);
+                      app_eprom_write(CONFIG_START_ADDR + 31, P11_voltage & 0x00ff);
+                      app_eprom_flush();
+                  }
+                  disable_act = 0;
+                  act_PB3(0, 0, GREEN);
+                  act_PB1(0, 0, GREEN);
+                  act_PB2(0, 0, GREEN);
+                  break;
+              case '5': //主机IP设置
+                  lcd_set_tip("设置主机网络地址");
+                  act_PB3(0, 0xffffffff, GREEN);
+                  act_PB1(0, 0xffffffff, GREEN);
+                  act_PB2(0, 0xffffffff, GREEN);
+                  disable_act = 1;
+                  key_board_with_copy_to_buffer(1, 0);
+                  if (check_config_password()) {
+                      key_board_with_copy_to_buffer(0, 1);
+
+                      format_ip();
+
+                      assign_hostip(ip_address0, ip_address1, ip_address2, ip_address3);
+                      app_eprom_flush();
+                  }
+                  disable_act = 0;
+                  act_PB3(0, 0, GREEN);
+                  act_PB1(0, 0, GREEN);
+                  act_PB2(0, 0, GREEN);
+                  break;
+              case '6': //网络掩码
+                  lcd_set_tip("设置主机掩码地址");
+                  act_PB3(0, 0xffffffff, GREEN);
+                  act_PB1(0, 0xffffffff, GREEN);
+                  act_PB2(0, 0xffffffff, GREEN);
+                  disable_act = 1;
+                  key_board_with_copy_to_buffer(1, 0);
+                  if (check_config_password()) {
+                      key_board_with_copy_to_buffer(0, 1);
+                      format_ip();
+
+                      assign_netmask(ip_address0, ip_address1, ip_address2, ip_address3);
+                      app_eprom_flush();
+                  }
+                  disable_act = 0;
+                  act_PB3(0, 0, GREEN);
+                  act_PB1(0, 0, GREEN);
+                  act_PB2(0, 0, GREEN);
+                  break;
+              case '7': //网关
+                  lcd_set_tip("设置主机网关地址");
+                  act_PB3(0, 0xffffffff, GREEN);
+                  act_PB1(0, 0xffffffff, GREEN);
+                  act_PB2(0, 0xffffffff, GREEN);
+                  disable_act = 1;
+                  key_board_with_copy_to_buffer(1, 0);
+                  if (check_config_password()) {
+                      key_board_with_copy_to_buffer(0, 1);
+
+                      format_ip();
+
+                      assign_gateway(ip_address0, ip_address1, ip_address2, ip_address3);
+                      app_eprom_flush();
+                  }
+                  disable_act = 0;
+                  act_PB3(0, 0, GREEN);
+                  act_PB1(0, 0, GREEN);
+                  act_PB2(0, 0, GREEN);
+                  break;
+              case '8': //服务器ip
+                  lcd_set_tip("设置服务主机地址");
+                  act_PB3(0, 0xffffffff, GREEN);
+                  act_PB1(0, 0xffffffff, GREEN);
+                  act_PB2(0, 0xffffffff, GREEN);
+                  disable_act = 1;
+                  key_board_with_copy_to_buffer(1, 0);
+                  if (check_config_password()) {
+                      key_board_with_copy_to_buffer(0, 1);
+
+                      format_ip();
+
+                      assign_serverip(ip_address0, ip_address1, ip_address2, ip_address3);
+                      app_eprom_flush();
+                  }
+                  disable_act = 0;
+                  act_PB3(0, 0, GREEN);
+                  act_PB1(0, 0, GREEN);
+                  act_PB2(0, 0, GREEN);
+                  break;
+              case 0x3A:
+                  soft_reset();
+                  break;
+              default: //显示ip信息
+                  sprintf(lcd_temp[0], "H%bu.%bu.%bu.%bu", hostaddr[0], hostaddr[1], hostaddr[2], hostaddr[3]);
+                  sprintf(lcd_temp[1], "N%bu.%bu.%bu.%bu", netmask[0], netmask[1], netmask[2], netmask[3]);
+                  sprintf(lcd_temp[2], "G%bu.%bu.%bu.%bu", gateway[0], gateway[1], gateway[2], gateway[3]);
+                  sprintf(lcd_temp[3], "S%bu.%bu.%bu.%bu", server_ip[0], server_ip[1], server_ip[2], server_ip[3]);
+                  lcd_save_all(lcd_temp);
+                  key_board_with_copy_to_buffer(0, 0);
+                  lcd_load_all();
+                  sprintf(lcd_temp[0], "震动阀值:[%bu]", P15_voltage);
+                  sprintf(lcd_temp[1], "上锁阀值:[%bu]", P10_voltage);
+                  sprintf(lcd_temp[2], "光感阀值:[%bu]", P11_voltage);
+                  sprintf(lcd_temp[3], "MAC:%.2bX%.2bX%.2bX%.2bX%.2bX%.2bX", macaddr[0], macaddr[1], macaddr[2], macaddr[3], macaddr[4], macaddr[5]);
+                  lcd_save_all(lcd_temp);
+                  key_board_with_copy_to_buffer(0, 0);
+                  lcd_load_all();
+                  break;
+
+		      }
+		  }
+		
     }
+	
 
-  ilockdbg("unlock_task: Device %s opened\n", CONFIG_EXAMPLES_KEYPAD_DEVNAME);
-  fflush(stdout);
+/*    while (1) {
+        sprintf(serial_no_tip, "序列号%.10lu", serial_no);
+        lcd_set_tip(serial_no_tip);
+        key_board_with_copy_to_buffer(1, 0);
+        if (pwd[0] == 0x3A) {
+            key_board_with_copy_to_buffer(0, 0);
+            switch (pwd[0]) {
+                case '0': //随机mac地址
+                    lcd_set_tip("设置随机硬件位址");
+                    disable_act = 1;
 
-  /* Loop until there is a read failure */
+                    gen_macaddr(macaddr);
+                    assign_macaddr(macaddr[0], macaddr[1], macaddr[2], macaddr[3], macaddr[4], macaddr[5]);
+                    app_eprom_flush();
 
-  do
-    {
-      /* Read a buffer of data */
+                    key_board_with_copy_to_buffer(0, 1);
+                    disable_act = 0;
+                    break;
+                case '1': //出厂复位网络参数
+                    lcd_set_tip("恢复出厂网络设置");
+                    act_PB3(0, 0xffffffff, GREEN);
+                    act_PB1(0, 0xffffffff, GREEN);
+                    act_PB2(0, 0xffffffff, GREEN);
+                    disable_act = 1;
+                    key_board_with_copy_to_buffer(1, 0);
+                    if (check_config_password()) {
+                        assign_hostip(0xff, 0xff, 0xff, 0xff);
+                        assign_netmask(0xff, 0xff, 0xff, 0xff);
+                        assign_gateway(0xff, 0xff, 0xff, 0xff);
+                        assign_serverip(0xff, 0xff, 0xff, 0xff);
+                        app_eprom_flush();
 
-      nbytes = read(fd, buffer, 256);
-      if (nbytes > 0)
-        {
-          /* On success, echo the buffer to stdout */
-#ifdef CONFIG_EXAMPLES_KEYPADTEST_ENCODED
-          keypad_decode(buffer, nbytes);
-#else
-          (void)write(1, buffer, nbytes);
-#endif
+                        key_board_with_copy_to_buffer(0, 1);
+                    }
+                    disable_act = 0;
+                    act_PB3(0, 0, GREEN);
+                    act_PB1(0, 0, GREEN);
+                    act_PB2(0, 0, GREEN);
+                    break;
+                case '2': //震动阀值
+                    lcd_set_tip("设置震动监测阀值");
+                    act_PB3(0, 0xffffffff, GREEN);
+                    act_PB1(0, 0xffffffff, GREEN);
+                    act_PB2(0, 0xffffffff, GREEN);
+                    disable_act = 1;
+                    key_board_with_copy_to_buffer(1, 0);
+                    if (check_config_password()) {
+                        shock_alert_sampled = 1;
+
+                        key_board_with_copy_to_buffer(0, 1);
+
+                        shock_alert_sampled = 0;
+
+                        app_eprom_write(CONFIG_START_ADDR + 26, P15_voltage >> 8);
+                        app_eprom_write(CONFIG_START_ADDR + 27, P15_voltage & 0x00ff);
+                        app_eprom_flush();
+                    }
+                    disable_act = 0;
+                    act_PB3(0, 0, GREEN);
+                    act_PB1(0, 0, GREEN);
+                    act_PB2(0, 0, GREEN);
+                    break;
+                case '3': //上锁检测
+                    lcd_set_tip("设置上锁监测阀值");
+                    act_PB3(0, 0xffffffff, GREEN);
+                    act_PB1(0, 0xffffffff, GREEN);
+                    act_PB2(0, 0xffffffff, GREEN);
+                    disable_act = 1;
+                    key_board_with_copy_to_buffer(1, 0);
+                    if (check_config_password()) {
+                        P10_min_voltage = 0xff;
+                        P10_max_voltage = 0x00;
+
+                        lock_check_sampled = 1;
+
+                        key_board_with_copy_to_buffer(0, 1);
+
+                        lock_check_sampled = 0;
+
+                        P10_voltage = ((unsigned short) P10_min_voltage + (unsigned short) P10_max_voltage) / 2;
+                        app_eprom_write(CONFIG_START_ADDR + 28, P10_voltage >> 8);
+                        app_eprom_write(CONFIG_START_ADDR + 29, P10_voltage & 0x00ff);
+                        app_eprom_flush();
+                    }
+                    disable_act = 0;
+                    act_PB3(0, 0, GREEN);
+                    act_PB1(0, 0, GREEN);
+                    act_PB2(0, 0, GREEN);
+                    break;
+                case '4': //光感阀值
+                    lcd_set_tip("设置光感监测阀值");
+                    act_PB3(0, 0xffffffff, GREEN);
+                    act_PB1(0, 0xffffffff, GREEN);
+                    act_PB2(0, 0xffffffff, GREEN);
+                    disable_act = 1;
+                    key_board_with_copy_to_buffer(1, 0);
+                    if (check_config_password()) {
+                        key_board_with_copy_to_buffer(0, 1);
+
+                        P11_voltage = atoi(pwd);
+                        app_eprom_write(CONFIG_START_ADDR + 30, P11_voltage >> 8);
+                        app_eprom_write(CONFIG_START_ADDR + 31, P11_voltage & 0x00ff);
+                        app_eprom_flush();
+                    }
+                    disable_act = 0;
+                    act_PB3(0, 0, GREEN);
+                    act_PB1(0, 0, GREEN);
+                    act_PB2(0, 0, GREEN);
+                    break;
+                case '5': //主机IP设置
+                    lcd_set_tip("设置主机网络地址");
+                    act_PB3(0, 0xffffffff, GREEN);
+                    act_PB1(0, 0xffffffff, GREEN);
+                    act_PB2(0, 0xffffffff, GREEN);
+                    disable_act = 1;
+                    key_board_with_copy_to_buffer(1, 0);
+                    if (check_config_password()) {
+                        key_board_with_copy_to_buffer(0, 1);
+
+                        format_ip();
+
+                        assign_hostip(ip_address0, ip_address1, ip_address2, ip_address3);
+                        app_eprom_flush();
+                    }
+                    disable_act = 0;
+                    act_PB3(0, 0, GREEN);
+                    act_PB1(0, 0, GREEN);
+                    act_PB2(0, 0, GREEN);
+                    break;
+                case '6': //网络掩码
+                    lcd_set_tip("设置主机掩码地址");
+                    act_PB3(0, 0xffffffff, GREEN);
+                    act_PB1(0, 0xffffffff, GREEN);
+                    act_PB2(0, 0xffffffff, GREEN);
+                    disable_act = 1;
+                    key_board_with_copy_to_buffer(1, 0);
+                    if (check_config_password()) {
+                        key_board_with_copy_to_buffer(0, 1);
+                        format_ip();
+
+                        assign_netmask(ip_address0, ip_address1, ip_address2, ip_address3);
+                        app_eprom_flush();
+                    }
+                    disable_act = 0;
+                    act_PB3(0, 0, GREEN);
+                    act_PB1(0, 0, GREEN);
+                    act_PB2(0, 0, GREEN);
+                    break;
+                case '7': //网关
+                    lcd_set_tip("设置主机网关地址");
+                    act_PB3(0, 0xffffffff, GREEN);
+                    act_PB1(0, 0xffffffff, GREEN);
+                    act_PB2(0, 0xffffffff, GREEN);
+                    disable_act = 1;
+                    key_board_with_copy_to_buffer(1, 0);
+                    if (check_config_password()) {
+                        key_board_with_copy_to_buffer(0, 1);
+
+                        format_ip();
+
+                        assign_gateway(ip_address0, ip_address1, ip_address2, ip_address3);
+                        app_eprom_flush();
+                    }
+                    disable_act = 0;
+                    act_PB3(0, 0, GREEN);
+                    act_PB1(0, 0, GREEN);
+                    act_PB2(0, 0, GREEN);
+                    break;
+                case '8': //服务器ip
+                    lcd_set_tip("设置服务主机地址");
+                    act_PB3(0, 0xffffffff, GREEN);
+                    act_PB1(0, 0xffffffff, GREEN);
+                    act_PB2(0, 0xffffffff, GREEN);
+                    disable_act = 1;
+                    key_board_with_copy_to_buffer(1, 0);
+                    if (check_config_password()) {
+                        key_board_with_copy_to_buffer(0, 1);
+
+                        format_ip();
+
+                        assign_serverip(ip_address0, ip_address1, ip_address2, ip_address3);
+                        app_eprom_flush();
+                    }
+                    disable_act = 0;
+                    act_PB3(0, 0, GREEN);
+                    act_PB1(0, 0, GREEN);
+                    act_PB2(0, 0, GREEN);
+                    break;
+                case 0x3A:
+                    soft_reset();
+                    break;
+                default: //显示ip信息
+                    sprintf(lcd_temp[0], "H%bu.%bu.%bu.%bu", hostaddr[0], hostaddr[1], hostaddr[2], hostaddr[3]);
+                    sprintf(lcd_temp[1], "N%bu.%bu.%bu.%bu", netmask[0], netmask[1], netmask[2], netmask[3]);
+                    sprintf(lcd_temp[2], "G%bu.%bu.%bu.%bu", gateway[0], gateway[1], gateway[2], gateway[3]);
+                    sprintf(lcd_temp[3], "S%bu.%bu.%bu.%bu", server_ip[0], server_ip[1], server_ip[2], server_ip[3]);
+                    lcd_save_all(lcd_temp);
+                    key_board_with_copy_to_buffer(0, 0);
+                    lcd_load_all();
+                    sprintf(lcd_temp[0], "震动阀值:[%bu]", P15_voltage);
+                    sprintf(lcd_temp[1], "上锁阀值:[%bu]", P10_voltage);
+                    sprintf(lcd_temp[2], "光感阀值:[%bu]", P11_voltage);
+                    sprintf(lcd_temp[3], "MAC:%.2bX%.2bX%.2bX%.2bX%.2bX%.2bX", macaddr[0], macaddr[1], macaddr[2], macaddr[3], macaddr[4], macaddr[5]);
+                    lcd_save_all(lcd_temp);
+                    key_board_with_copy_to_buffer(0, 0);
+                    lcd_load_all();
+                    break;
+            }
+        } else {
+            if (unlock_step == 3) {
+                need_authorize = 1;
+            } else {
+                net_unlock_delay_count = UNLOCK_DELAY;
+            }
         }
     }
-  while (nbytes >= 0);
-
-  printf("keypadtest_main: Closing device %s: %d\n", CONFIG_EXAMPLES_KEYPAD_DEVNAME, (int)nbytes);
-  fflush(stdout);
-  close(fd);
-
+*/
 
 }
-#endif
 
 int ilock_main(int argc, char *argv[])
 {
 	led_init();
-	led1_op(LEDC_TWINKLE, LED_RED, SEC2TICK(3), MSEC2TICK(500));
-	led2_op(LEDC_TWINKLE, LED_GREEN, SEC2TICK(3), MSEC2TICK(500));
-//	led3_op(LEDC_TWINKLE, LED_BLUE, SEC2TICK(3), MSEC2TICK(500));
+	led1_op(LEDC_TWINKLE, LED_RED, SEC2TICK(5), MSEC2TICK(500));
+	led2_op(LEDC_TWINKLE, LED_GREEN, SEC2TICK(5), MSEC2TICK(500));
+	led3_op(LEDC_TWINKLE, LED_BLUE, SEC2TICK(5), MSEC2TICK(500));
 	getchar();
 	led_deinit();
 	return OK;

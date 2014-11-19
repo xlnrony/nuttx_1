@@ -280,7 +280,10 @@ static int led_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		  case LEDC_ALWAYS:
 				dev->ops->ioctl(dev, ledctl->color);
 				work_cancel(HPWORK, &dev->work);
-				work_queue(HPWORK, &dev->work, led_always_work, dev, ledctl->delay);
+				if (ledctl->delay != UINT32_MAX)
+				  {
+				    work_queue(HPWORK, &dev->work, led_always_work, dev, ledctl->delay);
+				  }
 		    break;
 		  case LEDC_TWINKLE:
 				dev->count = ledctl->delay / ledctl->interval;
