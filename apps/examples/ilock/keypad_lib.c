@@ -81,9 +81,8 @@
  * Public Functions
  ****************************************************************************/
 
-int keypad_readln(uint8_t *buf, uint8_t buflen, bool postip)
+int keypad_readln(char *buf, size_t buflen, bool postip)
 {
-  char buffer[256];
   ssize_t n;
   int fd;
   int ret;

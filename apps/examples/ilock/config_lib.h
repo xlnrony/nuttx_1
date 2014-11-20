@@ -1,5 +1,5 @@
 /****************************************************************************
- * examples/ilock/keypad_lib.h
+ * examples/ilock/led_lib.h
  *
  *   Copyright (C) 2011, 2013-2014 xlnrony. All rights reserved.
  *   Author: xlnrony <xlnrony@gmail.com>
@@ -33,8 +33,8 @@
  *
  ****************************************************************************/
 
-#ifndef __APPS_INCLUDE_KEYPAD_LIB_H
-#define __APPS_INCLUDE_KEYPAD_LIB_H
+#ifndef __APPS_INCLUDE_CONFIG_LIB_H
+#define __APPS_INCLUDE_CONFIG_LIB_H
 
 /****************************************************************************
  * Included Files
@@ -42,8 +42,7 @@
 
 #include <nuttx/config.h>
 #include <stdint.h>
-
-#if defined(CONFIG_KEYPAD)
+#include <net/if.h>
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -52,6 +51,17 @@
 /****************************************************************************
  * Public Types
  ****************************************************************************/
+struct config_s
+{
+  uint8_t macaddr[IFHWADDRLEN];
+  struct in_addr hostaddr;
+  struct in_addr netmask;	
+  struct in_addr dripaddr;	
+  struct in_addr svraddr;	
+  int32_t shockthreshold;  
+  int32_t lockthreshold;  	
+  int32_t lightthreshold;  		
+};
 
 /****************************************************************************
  * Public Data
@@ -65,17 +75,19 @@ extern "C"
 #define EXTERN extern
 #endif
 
+EXTERN struct config_s config;
+
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
 
-EXTERN int keypad_readln(char *buf, size_t buflen, bool postip);
+EXTERN void load_config(void);
+EXTERN void save_config(void);
 
 #undef EXTERN
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* CONFIG_KEYPAD */
-#endif /* __APPS_INCLUDE_KEYPAD_LIB_H */
+#endif /* __APPS_INCLUDE_CONFIG_LIB_H */
 

@@ -28,5 +28,11 @@ config DEBUG_ILOCK
 	default y
 	---help---
 		Enable iLock debug SYSLOG output (disabled by default)		
-
+		
+config SETTING_FILE_PATH
+	string "Setting file path"
+	default "/mnt/sd/config.ini"
+	---help---
+		Setting file path to be used. Default: "/mnt/sd/config.ini"
+		
 endif

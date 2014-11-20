@@ -1,8 +1,8 @@
 /****************************************************************************
- * examples/ilock/keypad_lib.h
+ * include/nuttx/systemreset.h
  *
- *   Copyright (C) 2011, 2013-2014 xlnrony. All rights reserved.
- *   Author: xlnrony <xlnrony@gmail.com>
+ *   Copyright (C) 2009, 2011 Gregory Nutt. All rights reserved.
+ *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -14,7 +14,7 @@
  *    notice, this list of conditions and the following disclaimer in
  *    the documentation and/or other materials provided with the
  *    distribution.
- * 3. Neither the name Gregory Nutt nor the names of its contributors may be
+ * 3. Neither the name NuttX nor the names of its contributors may be
  *    used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -33,49 +33,42 @@
  *
  ****************************************************************************/
 
-#ifndef __APPS_INCLUDE_KEYPAD_LIB_H
-#define __APPS_INCLUDE_KEYPAD_LIB_H
+#ifndef __INCLUDE_NUTTX_SYSTEMRESET_H
+#define __INCLUDE_NUTTX_SYSTEMRESET_H
 
 /****************************************************************************
  * Included Files
  ****************************************************************************/
 
 #include <nuttx/config.h>
-#include <stdint.h>
 
-#if defined(CONFIG_KEYPAD)
+#if defined(CONFIG_ARCH_CORTEXM0) || defined(CONFIG_ARCH_CORTEXM3) || \
+    defined(CONFIG_ARCH_CORTEXM4)
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
  
 /****************************************************************************
- * Public Types
- ****************************************************************************/
-
-/****************************************************************************
  * Public Data
  ****************************************************************************/
-
-#ifdef __cplusplus
-#define EXTERN extern "C"
-extern "C"
-{
-#else
-#define EXTERN extern
-#endif
 
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
+ 
+#ifdef __cplusplus
+#define EXTERN extern "C"
+extern "C" {
+#else
+#define EXTERN extern
+#endif
 
-EXTERN int keypad_readln(char *buf, size_t buflen, bool postip);
+EXTERN void up_systemreset(void);
 
 #undef EXTERN
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* CONFIG_KEYPAD */
-#endif /* __APPS_INCLUDE_KEYPAD_LIB_H */
-
+#endif /* CONFIG_ARCH_CORTEXM0,3,4 */
+#endif /* __INCLUDE_NUTTX_SYSTEMRESET_H */
