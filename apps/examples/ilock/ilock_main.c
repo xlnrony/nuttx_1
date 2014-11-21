@@ -161,6 +161,8 @@
  * Private Data
  ****************************************************************************/
 
+static uint8_t unlock_step = 3;
+
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
@@ -506,6 +508,100 @@ errout:
 }
 #endif
 
+void light_alert_in_task(void) 
+{
+  bit b_temp;
+  if (unlock_step == 1) {
+      shock_alert_enabled = 0;
+      if (get_adc_result(0) > P10_voltage) {
+          if (delay_check_P10_0 > 0) {
+              delay_check_P10_0--;
+              if (delay_check_P10_0 == 0 || !P34 || get_adc_result(1) < P11_voltage) {
+				delay_check_P10_0 = 0;
+                  unlock_step = 2;
+                  unlock_time_out = UNLOCK_FIRST_TIME_OUT;
+                  act_PB3(1, 60, GREEN); //门阀扭开通知
+                  act_PB1(1, 60, GREEN);
+                  lcd_add_log("门阀扭开");
+              }
+          } else {
+              delay_check_P10_0 = 100;
+          }
+      } else {
+          delay_check_P10_0 = 0;
+      }
+      if (net_unlock_delay_count == 0) {
+          if (delay_check_P14_1 > 0) {
+              delay_check_P14_1--;
+              if (delay_check_P14_1 == 0) {
+                  unlock_step = 3;
+                  alert_type |= ALERT_LOCK;
+                  shock_alert_enabled = 1;
+                  act_PB2(1, 60, BLUE); //门阀扭闭通知
+                  lcd_add_log(door_closed);
+              }
+          } else {
+              delay_check_P14_1 = 100;
+          }
+      } else {
+          delay_check_P14_1 = 0;
+      }
+  } else if (unlock_step == 2) {
+      if (unlock_time_out > 0) {
+          unlock_time_out--;
+      } else {
+          unlock_time_out = UNLOCK_SECOND_TIME_OUT;
+          alert_type |= ALERT_NOLOCK_TIME_OUT;
+          act_P17(1, 60);
+          act_PB1(1, 60, RED); //没关门超时
+          lcd_add_log("关门超时");
+      }
+      if (get_adc_result(0) < P10_voltage) {
+          if (delay_check_P10_1 > 0) {
+              delay_check_P10_1--;
+              if (delay_check_P10_1 == 0 && net_unlock_delay_count == 0 && P34 && get_adc_result(1) >= P11_voltage) {
+                  unlock_step = 3;
+                  alert_type |= ALERT_LOCK;
+                  shock_alert_enabled = 1;
+                  act_PB2(1, 60, BLUE); //门阀扭闭通知
+                  lcd_add_log(door_closed);
+              }
+          } else {
+              delay_check_P10_1 = 100;
+          }
+      } else {
+          delay_check_P10_1 = 0;
+      }
+  } else if (unlock_step == 3) {
+      b_temp = !P34;
+      if (b_temp && (!P34_last || check_illegal_unlock_timeout())) {
+          illegal_unlock("门开报警");
+      }
+      P34_last = b_temp;
+
+      b_temp = get_adc_result(1) < P11_voltage;
+      if (b_temp && (!P11_last || check_illegal_unlock_timeout())) {
+          illegal_unlock("光感报警");
+      }
+      P11_last = b_temp;
+
+      b_temp = get_adc_result(0) > P10_voltage;
+      if (b_temp && (!P10_last || check_illegal_unlock_timeout())) {
+          illegal_unlock("上锁报警");
+      }
+      P10_last = b_temp;
+  }
+  //	if(P34)
+  //	{
+  //	 	act_PB2(1, 0x0, GREEN);
+  //	}
+  //	else
+  //	{
+  //		act_PB2(1, 0xffffffff, GREEN);
+  //	}
+}
+
+
 void netlib_genmacaddr(uint8_t *macaddr) {
     srand(clock_systimer());
     macaddr[0] = 0xfc;
@@ -792,7 +888,18 @@ in_addr_t netlib_formataddr(FAR const char *cp)
                   break;
 		      }
 		  }
-    }
+       else 
+		  {
+            if (unlock_step == 3) 
+			   {
+                need_authorize = 1;
+              }
+	        else 
+			   {
+                net_unlock_delay_count = UNLOCK_DELAY;
+              }
+         }
+     }
 }
 
 int ilock_main(int argc, char *argv[])
