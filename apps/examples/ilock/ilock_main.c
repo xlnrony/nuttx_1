@@ -67,6 +67,7 @@
 #include "jksafekey_lib.h"
 #include "keypad_lib.h"
 #include "led_lib.h"
+#include "adc_lib.h"
 #include "config_lib.h"
 
 /****************************************************************************
@@ -162,7 +163,7 @@
  ****************************************************************************/
 
 static uint8_t unlock_step = 3;
-
+static uint32_t magnet_delay =0;
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
@@ -510,69 +511,91 @@ errout:
 
 void light_alert_in_task(void) 
 {
-  bit b_temp;
-  if (unlock_step == 1) {
-      shock_alert_enabled = 0;
-      if (get_adc_result(0) > P10_voltage) {
-          if (delay_check_P10_0 > 0) {
-              delay_check_P10_0--;
-              if (delay_check_P10_0 == 0 || !P34 || get_adc_result(1) < P11_voltage) {
-				delay_check_P10_0 = 0;
+  bool b_temp;
+  static uint32_t check_infra_red_delay0 = 0;
+  static uint32_t check_infra_red_delay1 = 0;
+  static uint32_t check_unlock_delay0 = 0;
+  static uint32_t unlock_time_out = 0;	
+  if (unlock_step == 1) 
+    {
+      //shock_alert_enabled = 0;
+      if (adc_infra_red_op() > config.infra_red_threshold) 
+        {
+          if (check_infra_red_delay0 > 0)
+            {
+              check_infra_red_delay0--;
+              if (check_infra_red_delay0 == 0 ||false ||adc_photo_resistor_op() < config.photo_resistor_threshold)
+				  {
+				    check_infra_red_delay0 = 0;
                   unlock_step = 2;
-                  unlock_time_out = UNLOCK_FIRST_TIME_OUT;
-                  act_PB3(1, 60, GREEN); //门阀扭开通知
-                  act_PB1(1, 60, GREEN);
-                  lcd_add_log("门阀扭开");
-              }
-          } else {
-              delay_check_P10_0 = 100;
-          }
-      } else {
-          delay_check_P10_0 = 0;
-      }
-      if (net_unlock_delay_count == 0) {
-          if (delay_check_P14_1 > 0) {
-              delay_check_P14_1--;
-              if (delay_check_P14_1 == 0) {
+                  unlock_time_out = CONFIG_UNLOCK_FIRST_TIME_OUT;
+				    led1_op(LED_ALWAYS, LED_GREEN, SEC2TICK(3), 0);
+				    led2_op(LED_ALWAYS, LED_GREEN, SEC2TICK(3), 0);
+                }
+            } 
+		   else 
+            {
+              check_infra_red_delay0 = SEC2TICK(5);
+            }
+        } 
+      else 
+	    {
+          check_infra_red_delay0 = 0;
+      	 }
+      if (magnet_delay == 0) {
+          if (check_unlock_delay0 > 0) {
+              check_unlock_delay0--;
+              if (check_unlock_delay0 == 0) {
                   unlock_step = 3;
-                  alert_type |= ALERT_LOCK;
-                  shock_alert_enabled = 1;
-                  act_PB2(1, 60, BLUE); //门阀扭闭通知
-                  lcd_add_log(door_closed);
+                  //alert_type |= ALERT_LOCK;
+                  //shock_alert_enabled = 1;
+				    led3_op(LED_ALWAYS, LED_BLUE, SEC2TICK(3), 0);
               }
           } else {
-              delay_check_P14_1 = 100;
+              check_unlock_delay0 = SEC2TICK(5);
           }
       } else {
-          delay_check_P14_1 = 0;
+          check_unlock_delay0 = 0;
       }
-  } else if (unlock_step == 2) {
-      if (unlock_time_out > 0) {
+    }
+  else if (unlock_step == 2) 
+	{
+      if (unlock_time_out > 0) 
+	    {
           unlock_time_out--;
-      } else {
-          unlock_time_out = UNLOCK_SECOND_TIME_OUT;
-          alert_type |= ALERT_NOLOCK_TIME_OUT;
-          act_P17(1, 60);
-          act_PB1(1, 60, RED); //没关门超时
-          lcd_add_log("关门超时");
-      }
-      if (get_adc_result(0) < P10_voltage) {
-          if (delay_check_P10_1 > 0) {
-              delay_check_P10_1--;
-              if (delay_check_P10_1 == 0 && net_unlock_delay_count == 0 && P34 && get_adc_result(1) >= P11_voltage) {
+        }
+	  else 
+		{
+          unlock_time_out = CONFIG_UNLOCK_SECOND_TIME_OUT;
+          //alert_type |= ALERT_NOLOCK_TIME_OUT;
+          //act_P17(1, 60);
+          led2_op(LED_ALWAYS, LED_RED, SEC2TICK(3), 0); //没关门超时
+       }
+      if (adc_infra_red_op() < config.infra_red_threshold) 
+		{
+          if (check_infra_red_delay1 > 0) 
+		     {
+              check_infra_red_delay1--;
+              if (check_infra_red_delay1 == 0 && magnet_delay == 0 && true && adc_photo_resistor_op() >= config.photo_resistor_threshold) 
+				  {
                   unlock_step = 3;
-                  alert_type |= ALERT_LOCK;
-                  shock_alert_enabled = 1;
-                  act_PB2(1, 60, BLUE); //门阀扭闭通知
-                  lcd_add_log(door_closed);
-              }
-          } else {
-              delay_check_P10_1 = 100;
-          }
-      } else {
-          delay_check_P10_1 = 0;
-      }
-  } else if (unlock_step == 3) {
+                  //alert_type |= ALERT_LOCK;
+                  //shock_alert_enabled = 1;
+                  led3_op(LED_ALWAYS, LED_BLUE, SEC2TICK(3), 0); //门阀扭闭通知
+                }
+            }
+		   else 
+			 {
+              check_infra_red_delay1 = SEC2TICK(5);
+            }
+        } 
+      else 
+        {
+          check_infra_red_delay1 = 0;
+        }
+    }
+  else if (unlock_step == 3) 
+	{
       b_temp = !P34;
       if (b_temp && (!P34_last || check_illegal_unlock_timeout())) {
           illegal_unlock("门开报警");
@@ -590,15 +613,7 @@ void light_alert_in_task(void)
           illegal_unlock("上锁报警");
       }
       P10_last = b_temp;
-  }
-  //	if(P34)
-  //	{
-  //	 	act_PB2(1, 0x0, GREEN);
-  //	}
-  //	else
-  //	{
-  //		act_PB2(1, 0xffffffff, GREEN);
-  //	}
+    }
 }
 
 

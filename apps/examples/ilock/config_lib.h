@@ -58,9 +58,9 @@ struct config_s
   struct in_addr netmask;	
   struct in_addr dripaddr;	
   struct in_addr svraddr;	
-  int32_t shockthreshold;  
-  int32_t lockthreshold;  	
-  int32_t lightthreshold;  		
+  int32_t shock_resistor_threshold;  
+  int32_t infra_red_threshold;  	
+  int32_t photo_resistor_threshold;  		
 };
 
 /****************************************************************************
