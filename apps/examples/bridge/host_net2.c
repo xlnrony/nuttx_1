@@ -1,8 +1,9 @@
 /****************************************************************************
- * net/netdev/netdev_findbyname.c
+ * examples/bridge/host_net2.c
  *
- *   Copyright (C) 2007, 2008 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ *   Copyright (C) 2014 Gregory Nutt. All rights reserved.
+ *
+ *   Authors: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -37,77 +38,58 @@
  * Included Files
  ****************************************************************************/
 
-#include <nuttx/config.h>
-#if defined(CONFIG_NET) && CONFIG_NSOCKET_DESCRIPTORS > 0
-
-#include <string.h>
-#include <errno.h>
-
-#include <nuttx/net/netdev.h>
-
-#include "netdev/netdev.h"
+#include "bridge_config.h"
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
 
+/* Send on network 1 */
+
+#define EXAMPLES_BRIDGE_SEND_IFNAME    CONFIG_EXAMPLES_BRIDGE_NET2_IFNAME
+#define EXAMPLES_BRIDGE_SEND_RECVPORT  CONFIG_EXAMPLES_BRIDGE_NET2_RECVPORT
+#define EXAMPLES_BRIDGE_SEND_IOBUFIZE  CONFIG_EXAMPLES_BRIDGE_NET2_IOBUFIZE
+#ifdef CONFIG_EXAMPLES_BRIDGE_NET2_NOMAC
+#  define EXAMPLES_BRIDGE_SEND_NOMAC
+#endif
+#define EXAMPLES_BRIDGE_SEND_MACADDR   CONFIG_EXAMPLES_BRIDGE_NET2_MACADDR
+#define EXAMPLES_BRIDGE_SEND_IPADDR    CONFIG_EXAMPLES_BRIDGE_NET2_IPADDR
+#define EXAMPLES_BRIDGE_SEND_DRIPADDR  CONFIG_EXAMPLES_BRIDGE_NET2_DRIPADDR
+#define EXAMPLES_BRIDGE_SEND_NETMASK   CONFIG_EXAMPLES_BRIDGE_NET2_NETMASK
+#define EXAMPLES_BRIDGE_SEND_IPHOST    CONFIG_EXAMPLES_BRIDGE_NET2_IPHOST
+#define EXAMPLES_BRIDGE_SEND_HOSTPORT  CONFIG_EXAMPLES_BRIDGE_NET2_HOSTPORT
+#define EXAMPLES_BRIDGE_SEND_STACKSIZE CONFIG_EXAMPLES_BRIDGE_NET2_STACKSIZE
+#define EXAMPLES_BRIDGE_SEND_PRIORITY  CONFIG_EXAMPLES_BRIDGE_NET2_PRIORITY
+
+/* Receive on network 2 */
+
+#define EXAMPLES_BRIDGE_RECV_IFNAME    CONFIG_EXAMPLES_BRIDGE_NET1_IFNAME
+#define EXAMPLES_BRIDGE_RECV_RECVPORT  CONFIG_EXAMPLES_BRIDGE_NET1_RECVPORT
+#define EXAMPLES_BRIDGE_RECV_IOBUFIZE  CONFIG_EXAMPLES_BRIDGE_NET1_IOBUFIZE
+#ifdef CONFIG_EXAMPLES_BRIDGE_NET1_NOMAC
+#  define EXAMPLES_BRIDGE_RECV_NOMAC
+#endif
+#define EXAMPLES_BRIDGE_RECV_MACADDR   CONFIG_EXAMPLES_BRIDGE_NET1_MACADDR
+#define EXAMPLES_BRIDGE_RECV_IPADDR    CONFIG_EXAMPLES_BRIDGE_NET1_IPADDR
+#define EXAMPLES_BRIDGE_RECV_DRIPADDR  CONFIG_EXAMPLES_BRIDGE_NET1_DRIPADDR
+#define EXAMPLES_BRIDGE_RECV_NETMASK   CONFIG_EXAMPLES_BRIDGE_NET1_NETMASK
+#define EXAMPLES_BRIDGE_RECV_IPHOST    CONFIG_EXAMPLES_BRIDGE_NET1_IPHOST
+#define EXAMPLES_BRIDGE_RECV_HOSTPORT  CONFIG_EXAMPLES_BRIDGE_NET1_HOSTPORT
+#define EXAMPLES_BRIDGE_RECV_STACKSIZE CONFIG_EXAMPLES_BRIDGE_NET1_STACKSIZE
+#define EXAMPLES_BRIDGE_RECV_PRIORITY  CONFIG_EXAMPLES_BRIDGE_NET1_PRIORITY
+
+#define LABEL "NET2->1: "
+
+#define MESSAGE \
+  "Ideas are more powerful than guns. We would not let our enemies have" \
+  "guns, why should we let them have ideas. -- Joseph Stalin"
+
 /****************************************************************************
- * Private Types
+ * Public Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Private Data
+ * Name: main
  ****************************************************************************/
 
-/****************************************************************************
- * Public Data
- ****************************************************************************/
-
-/****************************************************************************
- * Private Functions
- ****************************************************************************/
-
-/****************************************************************************
- * Global Functions
- ****************************************************************************/
-
-/****************************************************************************
- * Function: netdev_findbyname
- *
- * Description:
- *   Find a previously registered network device using its assigned
- *   network interface name
- *
- * Parameters:
- *   ifname The interface name of the device of interest
- *
- * Returned Value:
- *  Pointer to driver on success; null on failure
- *
- * Assumptions:
- *  Called from normal user mode
- *
- ****************************************************************************/
-
-FAR struct net_driver_s *netdev_findbyname(const char *ifname)
-{
-  struct net_driver_s *dev;
-  if (ifname)
-    {
-      netdev_semtake();
-      for (dev = g_netdevices; dev; dev = dev->flink)
-        {
-          if (strcmp(ifname, dev->d_ifname) == 0)
-            {
-              netdev_semgive();
-              return dev;
-            }
-        }
-
-      netdev_semgive();
-    }
-
-  return NULL;
-}
-
-#endif /* CONFIG_NET && CONFIG_NSOCKET_DESCRIPTORS */
+#include "host_main.c"
