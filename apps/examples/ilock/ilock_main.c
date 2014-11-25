@@ -509,6 +509,13 @@ errout:
 }
 #endif
 
+
+int ilock_main(int argc, char *argv[])
+{
+
+}
+
+#if 0
 void light_alert_in_task(void) 
 {
   bool b_temp;
@@ -927,3 +934,5 @@ int ilock_main(int argc, char *argv[])
 	led_deinit();
 	return OK;
 }
+
+#endif
