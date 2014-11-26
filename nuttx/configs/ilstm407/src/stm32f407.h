@@ -291,6 +291,7 @@ void stm32_keypad_initialize(void);
 
 #ifdef CONFIG_LED
 void stm32_led_initialize(void);
+void stm32_buzzer_initialize(void);
 #endif
 
 #endif /* __ASSEMBLY__ */

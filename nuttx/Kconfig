@@ -590,6 +590,12 @@ config DEBUG_KEYPAD
 	default n
 	---help---
 		Enable keypad driver debug SYSLOG output (disabled by default)		
+		
+config DEBUG_INDICATOR
+	bool "Indicator Debug Output"
+	default n
+	---help---
+		Enable Indicator driver debug SYSLOG output (disabled by default)				
 
 config DEBUG_I2C
 	bool "I2C Debug Output"

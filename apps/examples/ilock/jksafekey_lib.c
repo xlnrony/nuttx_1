@@ -476,37 +476,6 @@ static PLUG_RV jksafekey_transfer(
   return slock_stat->bSTATStatus;
 }
 
-//验证用户口令
-
-PLUG_RV jksafekey_verify_pin(int fd, char *pin) {
-	PLUG_RV ret;
-	uint8_t temp[16];
-	KEUSLock_CMD slock_cmd = {0};
-	KEUSLock_STAT slock_stat = {0};
-
-	int len = strlen(pin);
-	if (len < 4) 
-	  {
-	    return RV_PIN_INCORRECT;
-	  }
-
-	slock_cmd.cmd_type = Verify_PIN;
-	slock_cmd.cmd_mingxi = 0;
-	slock_cmd.cmd_OutLength = 16;
-	
-	memset(temp, 0, 16);
-	memcpy(temp, pin, len);
-	
-	if ((ret = jksafekey_transfer(fd, &slock_cmd, temp, &slock_stat, NULL)) != RV_OK)
-	  {
-	    return ret;
-	  }
-
-	return RV_OK;
-}
-
-//读取二进制数据(大于1024字节的情况，待处理)
-
 static PLUG_RV jksafekey_read_binary(int fd, uint16_t fileid, uint8_t* data, uint32_t offset, uint32_t len) {
   PLUG_RV ret;
   unsigned char temp[2];
@@ -590,14 +559,39 @@ static PLUG_RV jksafekey_get_data(int fd, int filetype, uint8_t* data, uint32_t*
     return RV_FAIL;
 }
 
-PLUG_RV jksafekey_get_pubkey(int fd, uint8_t keyspec, uint8_t* data) {
-    uint32_t keylen = 128;
-    return jksafekey_get_data(fd, (keyspec == AT_KEYEXCHANGE ? RSA_PUB_KEY_FILE_KEYX : RSA_PUB_KEY_FILE_SIGN), data, &keylen);
-}
-
-
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
+PLUG_RV jksafekey_verify_pin(int fd, char *pin) {
+	PLUG_RV ret;
+	uint8_t temp[16];
+	KEUSLock_CMD slock_cmd = {0};
+	KEUSLock_STAT slock_stat = {0};
+
+	int len = strlen(pin);
+	if (len < 4) 
+	  {
+	    return RV_PIN_INCORRECT;
+	  }
+
+	slock_cmd.cmd_type = Verify_PIN;
+	slock_cmd.cmd_mingxi = 0;
+	slock_cmd.cmd_OutLength = 16;
+	
+	memset(temp, 0, 16);
+	memcpy(temp, pin, len);
+	
+	if ((ret = jksafekey_transfer(fd, &slock_cmd, temp, &slock_stat, NULL)) != RV_OK)
+	  {
+	    return ret;
+	  }
+
+	return RV_OK;
+}
+
+PLUG_RV jksafekey_get_pubkey(int fd, uint8_t keyspec, uint8_t* data) {
+    uint32_t keylen = 128;
+    return jksafekey_get_data(fd, (keyspec == AT_KEYEXCHANGE ? RSA_PUB_KEY_FILE_KEYX : RSA_PUB_KEY_FILE_SIGN), data, &keylen);
+}
 

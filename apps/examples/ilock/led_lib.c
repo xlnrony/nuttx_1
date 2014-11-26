@@ -81,16 +81,16 @@ static int led3_fd;
 static void led_op(int fd, int cmd, uint8_t color, uint32_t delay, uint32_t interval)
 {
   int ret;
-  struct led_ctl ledctl;
+  struct ind_ctl_s indctl;
 	
-  ledctl.color = color;
-  ledctl.delay = delay;
-  ledctl.interval =interval;
+  indctl.color = color;
+  indctl.delay = delay;
+  indctl.interval =interval;
 	
-  ret = ioctl(fd, cmd, (unsigned long)&ledctl);
+  ret = ioctl(fd, cmd, (unsigned long)&indctl);
   if (ret < 0)
     {
-      leddbg("led_op: ioctl failed: %d\n", errno);
+      inddbg("led_op: ioctl failed: %d\n", errno);
     }
 }
 
@@ -118,19 +118,19 @@ void led_init(void)
   led1_fd = open(CONFIG_LED1_DEVNAME, 0);
   if (led1_fd < 0)
     {
-      leddbg("led_init: open %s failed: %d\n", CONFIG_LED1_DEVNAME, errno);
+      inddbg("led_init: open %s failed: %d\n", CONFIG_LED1_DEVNAME, errno);
     }
 
   led2_fd = open(CONFIG_LED2_DEVNAME, 0);
   if (led2_fd < 0)
     {
-      leddbg("led_init: open %s failed: %d\n", CONFIG_LED2_DEVNAME, errno);
+      inddbg("led_init: open %s failed: %d\n", CONFIG_LED2_DEVNAME, errno);
     }
 
   led3_fd = open(CONFIG_LED3_DEVNAME, 0);
   if (led3_fd < 0)
     {
-      leddbg("led_init: open %s failed: %d\n", CONFIG_LED3_DEVNAME, errno);
+      inddbg("led_init: open %s failed: %d\n", CONFIG_LED3_DEVNAME, errno);
     }
 }
 

@@ -67,6 +67,7 @@
 
 #define CONFIG_NET_SECTION_NAME 			"NET"
 #define CONFIG_SENSOR_SECTION_NAME 	"SENSOR"
+#define CONFIG_KEYSLOT_SECTION_NAME 	"SLOT%d"
 
 #define CONFIG_MACADDR_VAR_NAME 		"MACADDR"
 
@@ -75,19 +76,12 @@
 #define CONFIG_DRIPADDR_VAR_NAME 	"DRIPADDR"
 #define CONFIG_SVRADDR_VAR_NAME		"SVRADDR"
 
+#define CONFIG_PUBKEY_VAR_NAME		    "PUBKEY"
+#define CONFIG_GROUP_VAR_NAME		    "GROUP%d"
+
 #define CONFIG_SHOCK_VAR_NAME			"SHOCK"
 #define CONFIG_LOCK_VAR_NAME				"LOCK"
 #define CONFIG_LIGHT_VAR_NAME				"LIGHT"
-
-#define CONFIG_MACADDR_DEF_VALUE 	"FC:FC:FC:AB:AB:AB"
-#define CONFIG_HOSTADDR_DEF_VALUE 	"10.0.0.2"
-#define CONFIG_NETMASK_DEF_VALUE 		"255.255.255.0"
-#define CONFIG_DRIPADDR_DEF_VALUE 	"10.0.0.1"
-#define CONFIG_SVRADDR_DEF_VALUE 		"10.0.0.128"
-
-#define CONFIG_SHOCK_DEF_VALUE 			0
-#define CONFIG_LOCK_DEF_VALUE 				400
-#define CONFIG_LIGHT_DEF_VALUE 			512
 
 /****************************************************************************
  * Public Data
@@ -102,6 +96,86 @@ struct config_s config;
 /****************************************************************************
  * Private Data
  ****************************************************************************/
+
+static int nibble2bin(uint8_t ascii)
+{
+  if (ascii >= '0' && ascii <= '9')
+    {
+      return (ascii - 0x30);
+    }
+  else if (ascii >= 'a' && ascii <= 'f')
+    {
+      return (ascii - 'a' + 10);
+    }
+  else if (ascii >= 'A' && ascii <= 'F')
+    {
+      return (ascii - 'A' + 10);
+    }
+
+  return -EINVAL;
+}
+
+static int byte2bin(FAR const uint8_t *ascii)
+{
+  int nibble;
+  int byte;
+
+  /* Get the MS nibble (big endian order) */
+
+  nibble = nibble2bin(*ascii++);
+  if (nibble < 0)
+    {
+      return nibble;
+    }
+
+  byte = (nibble << 4);
+
+  /* Get the MS nibble */
+
+  nibble = nibble2bin(*ascii);
+  if (nibble < 0)
+    {
+      return nibble;
+    }
+
+  byte |= nibble;
+  return byte;
+}
+
+static int hex2bin(FAR uint8_t* dest, FAR const uint8_t *src, int nsrcbytes)
+{
+  int byte;
+
+  /* An even number of source bytes is expected */
+
+  if ((nsrcbytes & 1) != 0)
+    {
+      return -EINVAL;
+    }
+
+  /* Convert src bytes in groups of 2, writing one byte to the output on each
+   * pass through the loop. */
+
+  while (nsrcbytes > 0)
+    {
+      /* Get the MS nibble (big endian order) */
+
+      byte = byte2bin(src);
+      if (byte < 0)
+        {
+          return byte;
+        }
+
+      src += 2;
+
+      /* And write the byte to the destination */
+
+      *dest++ = byte;
+      nsrcbytes -= 2;
+    }
+
+  return OK;
+}
 
 /****************************************************************************
  * Public Function Prototypes
@@ -119,6 +193,10 @@ void load_config(void)
   char * 			netmask;
   char * 			dripaddr;
   char * 			svraddr;
+  char *			pubkey;
+  int i, j;
+  char keyslot[7];
+  char group[8];
 	
   inifile = inifile_initialize(CONFIG_SETTING_FILE_PATH);
   if (inifile != NULL)
@@ -172,6 +250,21 @@ void load_config(void)
 	  config.lightthreshold = inifile_read_integer(inifile, CONFIG_NET_SECTION_NAME, 
                                                                                      CONFIG_LIGHT_VAR_NAME, 
 															 			                      CONFIG_LIGHT_DEF_VALUE);
+
+	  for(i = 0; i< CONFIG_GROUP_SIZE; i++)
+	  	{
+	  	  sprintf(keyslot, CONFIG_KEYSLOT_SECTION_NAME, i);
+				
+		  pubkey = inifile_read_string(inifile, keyslot, CONFIG_PUBKEY_VAR_NAME, CONFIG_PUBKEY_DEF_VALUE);
+		  hex2bin(config.keyslots[i].pubkey, pubkey, CONFIG_PUBKEY_SIZE*2);
+		  inifile_free_string(pubkey);
+			
+		  for(j = 0; j< CONFIG_GROUP_SIZE; j++)
+	  		{
+		  	  sprintf(group, CONFIG_GROUP_VAR_NAME, i);
+			  config.keyslots[i].group[j] = (bool)inifile_read_integer(inifile, keyslot, group, CONFIG_GROUP_DEF_VALUE);
+		  	}
+	  	}
 	  inifile_uninitialize(inifile);
   	}
 }

@@ -45,7 +45,7 @@
 #include <debug.h>
 
 #include <arch/board/board.h>
-#include <nuttx/gpio/led.h>
+#include <nuttx/gpio/indicator.h>
 
 #include "chip.h"
 #include "up_arch.h"
@@ -65,82 +65,20 @@ struct stm32_dev_s
   uint32_t 				blue_pinset;	
 };
 
-static int stm32_led_setup(FAR struct led_dev_s *dev);
-static int stm32_led_shutdown(FAR struct led_dev_s *dev);
-static void stm32_led_ioctl(FAR struct led_dev_s *dev, uint8_t color);
+static int stm32_led_setup(FAR struct ind_dev_s *dev);
+static int stm32_led_shutdown(FAR struct ind_dev_s *dev);
+static void stm32_led_ioctl(FAR struct ind_dev_s *dev, uint8_t color);
 
 /****************************************************************************
  * Private Data
  ****************************************************************************/
 
-static const struct led_ops_s stm32_led_ops =
+static const struct ind_ops_s stm32_led_ops =
 {
   .setup    = stm32_led_setup,
   .shutdown = stm32_led_shutdown,
   .ioctl    = stm32_led_ioctl
 };
-
-
-/****************************************************************************
- * Private Functions
- ****************************************************************************/
-
-static int stm32_led_setup(FAR struct led_dev_s *dev)
-{
-  struct stm32_dev_s *priv = (struct stm32_dev_s *)dev->priv;
-  int                         ret;
-	
-  ret = stm32_configgpio(priv->red_pinset);
-  if (ret == OK)
-  	{
-     ret = stm32_configgpio(priv->green_pinset);
-	  if (ret == OK)
-	    {
-	      ret = stm32_configgpio(priv->blue_pinset);
-	  	}			
-  	}
-  return ret;
-}
-
-static int stm32_led_shutdown(FAR struct led_dev_s *dev)
-{
-  struct stm32_dev_s *priv = (struct stm32_dev_s *)dev->priv;
-	
-  stm32_unconfiggpio(priv->red_pinset);
-  stm32_unconfiggpio(priv->green_pinset);  
-  stm32_unconfiggpio(priv->blue_pinset);
-
-  return OK;
-}
-
-static void stm32_led_ioctl(FAR struct led_dev_s *dev, uint8_t color)
-{
-  struct stm32_dev_s *priv = (struct stm32_dev_s *)dev->priv;
-
-  switch(color)
-    {
-      case LED_RED:
-	    stm32_gpiowrite(priv->red_pinset, false);
-	    stm32_gpiowrite(priv->green_pinset, true);
-	    stm32_gpiowrite(priv->blue_pinset, true);
-	    break;
-	  case LED_GREEN:
-	    stm32_gpiowrite(priv->red_pinset, true);
-	    stm32_gpiowrite(priv->green_pinset, false);
-	    stm32_gpiowrite(priv->blue_pinset, true);
-	    break;
-	  case LED_BLUE:
-	    stm32_gpiowrite(priv->red_pinset, true);
-	    stm32_gpiowrite(priv->green_pinset, true);
-	    stm32_gpiowrite(priv->blue_pinset, false);
-	    break;
-	  case LED_NONE:
-	    stm32_gpiowrite(priv->red_pinset, true);
-	    stm32_gpiowrite(priv->green_pinset, true);
-	    stm32_gpiowrite(priv->blue_pinset, true);
-	    break;
-    }
-}
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 static struct stm32_dev_s stm32_led_priv_led1 =
@@ -184,26 +122,104 @@ static struct led_dev_s stm32_led_dev_led3 =
 };
 ///////////////////////////////////////////////////////////////////////////////////////////
 
+
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
+
+static int stm32_led_setup(FAR struct ind_dev_s *dev)
+{
+  struct stm32_dev_s *priv = (struct stm32_dev_s *)dev->priv;
+  int                         ret;
+	
+  ret = stm32_configgpio(priv->red_pinset);
+  if (ret == OK)
+  	{
+     ret = stm32_configgpio(priv->green_pinset);
+	  if (ret == OK)
+	    {
+          ret = stm32_configgpio(priv->blue_pinset);
+		   if (ret < 0)
+		   	{
+				leddbg("stm32_led_setup: stm32_configgpio(blue_pinset)failed: %d\n", ret);
+		   	}
+	  	}			
+	  else
+	  	{
+         leddbg("stm32_led_setup: stm32_configgpio(green_pinset) failed: %d\n", ret);
+	  	}
+  	}
+  else
+  	{
+      leddbg("stm32_led_setup: stm32_configgpio(red_pinset) failed: %d\n", ret);
+  	}
+  return ret;
+}
+
+static int stm32_led_shutdown(FAR struct ind_dev_s *dev)
+{
+  struct stm32_dev_s *priv = (struct stm32_dev_s *)dev->priv;
+	
+  stm32_unconfiggpio(priv->red_pinset);
+  stm32_unconfiggpio(priv->green_pinset);  
+  stm32_unconfiggpio(priv->blue_pinset);
+
+  return OK;
+}
+
+static void stm32_led_ioctl(FAR struct ind_dev_s *dev, uint8_t color)
+{
+  struct stm32_dev_s *priv = (struct stm32_dev_s *)dev->priv;
+
+  switch(color)
+    {
+      case LED_RED:
+	    stm32_gpiowrite(priv->red_pinset, false);
+	    stm32_gpiowrite(priv->green_pinset, true);
+	    stm32_gpiowrite(priv->blue_pinset, true);
+	    break;
+	  case LED_GREEN:
+	    stm32_gpiowrite(priv->red_pinset, true);
+	    stm32_gpiowrite(priv->green_pinset, false);
+	    stm32_gpiowrite(priv->blue_pinset, true);
+	    break;
+	  case LED_BLUE:
+	    stm32_gpiowrite(priv->red_pinset, true);
+	    stm32_gpiowrite(priv->green_pinset, true);
+	    stm32_gpiowrite(priv->blue_pinset, false);
+	    break;
+	  case LED_NONE:
+	    stm32_gpiowrite(priv->red_pinset, true);
+	    stm32_gpiowrite(priv->green_pinset, true);
+	    stm32_gpiowrite(priv->blue_pinset, true);
+	    break;
+    }
+}
+
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
+
 void stm32_led_initialize(void)
 {
   int ret;
 //////////////////////////////////////////////////////////////////////////////////////////////////
   /* Register the led driver at "/dev/led1" */
-  ret = led_register(CONFIG_LED1_DEVNAME, &stm32_led_dev_led1);
+  ret = ind_register(CONFIG_LED1_DEVNAME, &stm32_led_dev_led1);
   if (ret < 0)
     {
       leddbg("led_register failed: %d\n", ret);
     }			
 //////////////////////////////////////////////////////////////////////////////////////////////////
   /* Register the led driver at "/dev/led2" */
-  ret = led_register(CONFIG_LED2_DEVNAME, &stm32_led_dev_led2);
+  ret = ind_register(CONFIG_LED2_DEVNAME, &stm32_led_dev_led2);
   if (ret < 0)
     {
       leddbg("gpio_register failed: %d\n", ret);
     }			
 /////////////////////////////////////////////////////////////////////////////////////////////////
   /* Register the led driver at "/dev/led3" */
-  ret = led_register(CONFIG_LED3_DEVNAME, &stm32_led_dev_led3);
+  ret = ind_register(CONFIG_LED3_DEVNAME, &stm32_led_dev_led3);
   if (ret < 0)
     {
       leddbg("gpio_register failed: %d\n", ret);

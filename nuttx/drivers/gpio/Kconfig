@@ -33,8 +33,8 @@ config KEYPAD_NPOLLWAITERS
 
 endif # KEYPAD
 
-config LED
-	bool "Led Device Support"
+config INDICATOR
+	bool "Indicator Device Support"
 	default n
 	---help---
-		Drivers for led devices.
+		Drivers for Indicator devices.

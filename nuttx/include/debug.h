@@ -332,16 +332,16 @@
 #  define keypadllvdbg(x...)
 #endif
 
-#ifdef CONFIG_DEBUG_LED
-#  define leddbg(format, ...)    dbg(format, ##__VA_ARGS__)
-#  define ledlldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
-#  define ledvdbg(format, ...)   vdbg(format, ##__VA_ARGS__)
-#  define ledllvdbg(format, ...) llvdbg(format, ##__VA_ARGS__)
+#ifdef CONFIG_DEBUG_INDICATOR
+#  define inddbg(format, ...)    dbg(format, ##__VA_ARGS__)
+#  define indlldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
+#  define indvdbg(format, ...)   vdbg(format, ##__VA_ARGS__)
+#  define indllvdbg(format, ...) llvdbg(format, ##__VA_ARGS__)
 #else
-#  define leddbg(x...)
-#  define ledlldbg(x...)
-#  define ledvdbg(x...)
-#  define ledllvdbg(x...)
+#  define inddbg(x...)
+#  define indlldbg(x...)
+#  define indvdbg(x...)
+#  define indllvdbg(x...)
 #endif
 
 #else /* CONFIG_CPP_HAVE_VARARGS */
@@ -561,16 +561,16 @@
 #  define keypadllvdbg		(void)
 #endif
 
-#ifdef CONFIG_DEBUG_LED
-#  define leddbg     dbg
-#  define ledvdbg   vdbg
-#  define ledlldbg   lldbg
-#  define ledllvdbg llvdbg
+#ifdef CONFIG_DEBUG_INDICATOR
+#  define inddbg     dbg
+#  define indvdbg   vdbg
+#  define indlldbg   lldbg
+#  define indllvdbg llvdbg
 #else
-#  define leddbg 		(void)
-#  define ledvdbg		(void)
-#  define ledlldbg		(void)
-#  define ledllvdbg		(void)
+#  define inddbg 		(void)
+#  define indvdbg		(void)
+#  define indlldbg		(void)
+#  define indllvdbg		(void)
 #endif
 
 #endif /* CONFIG_CPP_HAVE_VARARGS */

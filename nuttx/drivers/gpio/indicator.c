@@ -1,5 +1,5 @@
 /****************************************************************************
- * drivers/gpio/led.c
+ * drivers/gpio/indicator.c
  *
  *   Copyright (C) 2011-2013 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -58,11 +58,11 @@
 #include <nuttx/kmalloc.h>
 #include <nuttx/fs/fs.h>
 #include <nuttx/arch.h>
-#include <nuttx/gpio/led.h>
+#include <nuttx/gpio/indicator.h>
 
 #include <arch/irq.h>
 
-#ifdef CONFIG_LED
+#ifdef CONFIG_INDICATOR
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -76,22 +76,22 @@
  * Private Function Prototypes
  ****************************************************************************/
 
-static int led_open(FAR struct file *filep);
-static int led_close(FAR struct file *filep);
-static int led_ioctl(FAR struct file *filep, int cmd, unsigned long arg);
+static int ind_open(FAR struct file *filep);
+static int ind_close(FAR struct file *filep);
+static int ind_ioctl(FAR struct file *filep, int cmd, unsigned long arg);
 
 /****************************************************************************
  * Private Data
  ****************************************************************************/
 
-static const struct file_operations led_fops =
+static const struct file_operations ind_fops =
 {
-  led_open,   /* open */
-  led_close,  	/* close */
+  ind_open,   /* open */
+  ind_close,  	/* close */
   0,                /* read */
   0,  					/* write */
   0,               	/* seek */
-  led_ioctl 		/* ioctl */
+  ind_ioctl 		/* ioctl */
 #ifndef CONFIG_DISABLE_POLL
   , 0        /* poll */
 #endif
@@ -102,21 +102,21 @@ static const struct file_operations led_fops =
  ****************************************************************************/
 
 /************************************************************************************
- * Name: led_open
+ * Name: ind_open
  *
  * Description:
- *   This function is called whenever the LED device is opened.
+ *   This function is called whenever the indicator device is opened.
  *
  ************************************************************************************/
 
-static int led_open(FAR struct file *filep)
+static int ind_open(FAR struct file *filep)
 {
   FAR struct inode           *inode = filep->f_inode;
-  FAR struct led_dev_s *dev = inode->i_private;
+  FAR struct ind_dev_s *dev = inode->i_private;
   uint8_t                     tmp;
   int                         ret;
 
-  ledvdbg("crefs: %d\n", dev->crefs);
+  indvdbg("crefs: %d\n", dev->crefs);
 
   /* Get exclusive access to the device structures */
 
@@ -148,7 +148,7 @@ static int led_open(FAR struct file *filep)
       /* Yes.. perform one time hardware initialization. */
 
       DEBUGASSERT(dev->ops->setup != NULL);
-      ledvdbg("calling setup\n");
+      indvdbg("calling setup\n");
 
       ret = dev->ops->setup(dev);
       if (ret < 0)
@@ -170,20 +170,20 @@ errout:
 }
 
 /************************************************************************************
- * Name: led_close
+ * Name: ind_close
  *
  * Description:
- *   This function is called when the LED device is closed.
+ *   This function is called when the indicator device is closed.
  *
  ************************************************************************************/
 
-static int led_close(FAR struct file *filep)
+static int ind_close(FAR struct file *filep)
 {
   FAR struct inode           *inode = filep->f_inode;
-  FAR struct led_dev_s *dev = inode->i_private;
+  FAR struct ind_dev_s *dev = inode->i_private;
   int                         ret;
 
-  ledvdbg("crefs: %d\n", dev->crefs);
+  indvdbg("crefs: %d\n", dev->crefs);
 
   /* Get exclusive access to the device structures */
 
@@ -211,7 +211,7 @@ static int led_close(FAR struct file *filep)
       /* Disable the PWM device */
 
       DEBUGASSERT(dev->ops->shutdown != NULL);
-      ledvdbg("calling shutdown: %d\n");
+      indvdbg("calling shutdown: %d\n");
 
       dev->ops->shutdown(dev);
     }
@@ -224,40 +224,40 @@ errout:
   return ret;
 }
 
-static void led_always_work(FAR void *arg)
+static void ind_always_work(FAR void *arg)
 {
-  FAR struct led_dev_s *dev = arg;
-  dev->ops->ioctl(dev, LED_NONE);
+  FAR struct ind_dev_s *dev = arg;
+  dev->ops->ioctl(dev, IND_NONE);
 }
 
-static void led_twinkle_work(FAR void *arg)
+static void ind_twinkle_work(FAR void *arg)
 {
-  FAR struct led_dev_s *dev = arg;
+  FAR struct ind_dev_s *dev = arg;
   if (--dev->count > 0)
   	{
 	  if (dev->count % 2 != 0)
 	    {
-	      dev->ops->ioctl(dev, dev->color);
+	      dev->ops->ioctl(dev, dev->type);
 	    }
 	  else
 	    {
-	      dev->ops->ioctl(dev, LED_NONE);
+	      dev->ops->ioctl(dev, IND_NONE);
 	    }
-	  work_queue(HPWORK, &dev->work, led_twinkle_work, dev, dev->interval);
+	  work_queue(HPWORK, &dev->work, ind_twinkle_work, dev, dev->interval);
   	}
   else
   	{
-	  dev->ops->ioctl(dev, LED_NONE);
+	  dev->ops->ioctl(dev, IND_NONE);
   	}
 }
 
-static int led_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
+static int ind_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 {
   FAR struct inode           *inode = filep->f_inode;
-  FAR struct led_dev_s *dev = inode->i_private;
+  FAR struct ind_dev_s *dev = inode->i_private;
   ssize_t                         ret = OK;
 
-  ledvdbg("cmd: %d arg: %ld\n", cmd, arg);
+  indvdbg("cmd: %d arg: %ld\n", cmd, arg);
 
   /* Get exclusive access to the device structures */
 
@@ -274,31 +274,31 @@ static int led_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
   else
   	{
      DEBUGASSERT(dev->ops->ioctl != NULL);
-	  struct led_ctl *ledctl = (struct led_ctl *)arg;
+	  struct ind_ctl_s *indctl = (struct ind_ctl_s *)arg;
 	  switch(cmd)
 	  	{
-		  case LEDC_ALWAYS:
-				dev->ops->ioctl(dev, ledctl->color);
+		  case INDC_ALWAYS:
+				dev->ops->ioctl(dev, indctl->type);
 				work_cancel(HPWORK, &dev->work);
-				if (ledctl->delay != UINT32_MAX)
+				if (indctl->delay != UINT32_MAX)
 				  {
-				    work_queue(HPWORK, &dev->work, led_always_work, dev, ledctl->delay);
+				    work_queue(HPWORK, &dev->work, ind_always_work, dev, indctl->delay);
 				  }
 		    break;
-		  case LEDC_TWINKLE:
-				dev->count = ledctl->delay / ledctl->interval;
-				dev->color = ledctl->color;
-				dev->interval = ledctl->interval;
+		  case INDC_TWINKLE:
+				dev->count = indctl->delay / indctl->interval;
+				dev->type = indctl->type;
+				dev->interval = indctl->interval;
 				if (dev->count % 2 != 0)
 				  {
-				    dev->ops->ioctl(dev, dev->color);
+				    dev->ops->ioctl(dev, dev->type);
 				  }
 				else
 				  {
-				    dev->ops->ioctl(dev, LED_NONE);
+				    dev->ops->ioctl(dev, IND_NONE);
 				  }
 				work_cancel(HPWORK, &dev->work);
-				work_queue(HPWORK, &dev->work, led_twinkle_work, dev, dev->interval);
+				work_queue(HPWORK, &dev->work, ind_twinkle_work, dev, dev->interval);
 		    break;
 	      default:
 	        ret = -ENOTTY;
@@ -314,16 +314,16 @@ static int led_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
  * Public Functions
  ****************************************************************************/
 
-int led_register(FAR const char *path, FAR struct led_dev_s *dev)
+int ind_register(FAR const char *path, FAR struct ind_dev_s *dev)
 {
   /* Initialize the PWM device structure (it was already zeroed by kmm_zalloc()) */
 
   sem_init(&dev->exclsem, 0, 1);
 
-  /* Register the LED device */
+  /* Register the indicator device */
 
-  ledvdbg("Registering %s\n", path);
-  return register_driver(path, &led_fops, 0666, dev);
+  indvdbg("Registering %s\n", path);
+  return register_driver(path, &ind_fops, 0666, dev);
 }
 
-#endif /* CONFIG_LED */
+#endif /* CONFIG_INDICATOR */

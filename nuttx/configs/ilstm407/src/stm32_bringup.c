@@ -87,6 +87,10 @@ int stm32_bringup(void)
   stm32_led_initialize();
 #endif
 
+#ifdef CONFIG_LED
+  stm32_buzzer_initialize();
+#endif
+
 #ifdef CONFIG_GPIO
   stm32_gpio_initialize();
 #endif	

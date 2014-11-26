@@ -55,7 +55,7 @@ CSRCS += stm32_keypad.c
 endif
 
 ifeq ($(CONFIG_LED),y)
-CSRCS += stm32_led.c
+CSRCS += stm32_led.c stm32_buzzer.c
 endif
 
 ifeq ($(CONFIG_STM32_OTGFS),y)
