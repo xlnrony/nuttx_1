@@ -169,8 +169,20 @@
  * Private Data
  ****************************************************************************/
 
-static uint8_t unlock_step = 3;
-static uint32_t magnet_delay =0;
+static uint8_t g_unlock_step = 3;
+static uint32_t g_magnet_delay = 0;
+static uint32_t g_last_time = 0;
+ 
+static bool g_group[CONFIG_GROUP_SIZE] = {true};
+static bool g_check[CONFIG_GROUP_SIZE] = {false};
+
+/****************************************************************************
+ * Public Data
+ ****************************************************************************/
+
+bool g_remote_auth = false;
+uint8_t g_log_flag = 0;
+
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
@@ -678,6 +690,85 @@ void act_magnet_in_task(void)
     }
 }
 
+void auth_init(void)
+{
+  int i;
+    //remote_auth_unlock_flag = 0;
+  for (i = 0; i < CONFIG_GROUP_SIZE; i++)
+  {
+    g_group[i] = true;
+    g_check[i] = false;
+  }
+}
+
+void auth_time_out_check(void)
+{
+  if (ABS(clock_systimer(), g_last_time) > SEC2TICK(600)) 
+    {
+      auth_init();
+    }
+}
+
+bool this_time_auth(uint8_t pubkey[CONFIG_PUBKEY_SIZE]) 
+{
+  int i, j;
+  bool ret = false;
+  for (i = 0; i < CONFIG_GROUP_SIZE; i++) 
+    {
+      if (memcmp(config.keyslots[i].pubkey, pubkey)==0)
+      	{
+      	  break;
+      	}
+    }
+  if (i < CONFIG_GROUP_SIZE)
+  	{
+	  for(j = 0; j < CONFIG_GROUP_SIZE; j++)
+	  	{
+		  if (!config.keyslots[i].group[j])
+		  	{
+			  g_group[j] = false;
+		  	}
+		  if (g_group[j])
+		  	{		  	
+		  	  ret = true;
+		  	}
+	  	}
+  	}
+  if (ret)
+  	{
+      g_last_time = clock_systimer();
+      g_check[i] = true;
+  	}
+  return ret;
+}
+
+bool need_more_auth(void)
+{
+  int i, j;
+  for (i = 0; i < CONFIG_GROUP_SIZE; i++)
+	{
+      if (g_group[i])
+        {
+          for (j = 0; j< CONFIG_GROUP_SIZE; j++)
+          	{
+		      if (g_check[j])
+		        {
+		          continue;
+		    	 }
+          	
+			  if (config.keyslots[j].group[i])
+			  	{
+				  return true;
+			  	}
+          	}
+        }
+    }
+  return false;
+}
+
+
+
+
 static int scan_task(int argc, char *argv[])
 {
 
@@ -705,117 +796,74 @@ static int scan_task(int argc, char *argv[])
     }
 }
 
-void Authorize(void) {
-  int fd;
+bool authorize(char *pwd) {
+  int jksafekey_fd;
   PLUG_RV ret;
   
-  printf("Opening device %s\n", CONFIG_EXAMPLES_JKSAFEKEY_DEVNAME);
-  fd = open(CONFIG_EXAMPLES_JKSAFEKEY_DEVNAME, O_RDWR);
-  if (fd < 0)
+  jksafekey_fd = open(CONFIG_JKSAFEKEY_DEVNAME, O_RDWR);
+  if (jksafekey_fd < 0)
     {
-      printf("Failed: %d\n", errno);
-      fflush(stdout);
-    return 0;
+      ilockdbg("authorize: opening device %s Failed: %d\n", CONFIG_JKSAFEKEY_DEVNAME, errno);
+	  buzzer_op(INDC_TWINKLE, IND_ON, SEC2TICK(1), MSEC2TICK(500));
+	  led1_op(INDC_TWINKLE, IND_BLUE, SEC2TICK(3), MSEC2TICK(500));
+      goto errclose;
     }
-
-  printf("Device %s opened\n", CONFIG_EXAMPLES_JKSAFEKEY_DEVNAME);
-  fflush(stdout);
-
-#if 0
-  ret = jksafekey_verify_pin(fd, "123466");
-  if (ret < 0)
-  	 {
-      printf("jksafekey_verify_pin failed: %d\n", ret);
-      fflush(stdout);
-      goto errout;
-  	 }
-#endif	
 
   uint8_t pubkey[128] = {0};	
 
-  ret = jksafekey_get_pubkey(fd, AT_SIGNATURE, pubkey);
+  ret = jksafekey_get_pubkey(jksafekey_fd, AT_SIGNATURE, pubkey);
   if (ret != RV_OK)
   	 {
-      printf("jksafekey_get_pubkey failed: %d\n", ret);
-      fflush(stdout);
-      goto errout;
+      ilockdbg("jksafekey_get_pubkey failed: %d\n", ret);
+	  buzzer_op(INDC_TWINKLE, IND_ON, SEC2TICK(1), MSEC2TICK(500));
+	  led1_op(INDC_TWINKLE, IND_RED, SEC2TICK(3), MSEC2TICK(500));
+	  led2_op(INDC_TWINKLE, IND_RED, SEC2TICK(3), MSEC2TICK(500));
+      goto errclose;
   	 }
 
-  int i;	
-  char onebyte[4]={0};
-  char rxfmtbuf[384]={0};
-	
-  for(i=0;i<128;i++)
+  ret = jksafekey_verify_pin(jksafekey_fd, pwd);
+  if (ret < 0)
+  	 {
+      ilockdbg("authorize: jksafekey_verify_pin failed: %d\n", ret);
+//	        log_flag |= LOG_KEY_PASSWORD_ERROR;
+	  buzzer_op(INDC_TWINKLE, IND_ON, SEC2TICK(3), MSEC2TICK(500));
+      led3_op(INDC_ALWAYS, IND_RED, SEC2TICK(3), MSEC2TICK(500));
+      goto errclose;
+  	 }
+
+  close(jksafekey_fd);
+
+  auth_time_out_check();
+  if (!this_time_auth())
     {
-      sprintf(onebyte, "%02x ", pubkey[i]);
-      strcat(rxfmtbuf, onebyte);
-  	 }
-  printf("jksafekey_get_pubkey result:%s\n", rxfmtbuf);  
-
-errout:
-  printf("Closing device %s\n", CONFIG_EXAMPLES_JKSAFEKEY_DEVNAME);
-  fflush(stdout);
-  close(fd);
-
-  return 0;
-
-/*	
-    if (need_authorize) {
-        need_authorize = 0;
-		ch376_reset_os();
-	    if (init_usb_key() != USB_INT_SUCCESS) {
-	        act_P17(0, 20);
-	        act_PB3(0, 60, BLUE);
-	        set_usb_mode(0);
-	        lcd_add_log("钥匙无效");
-	        return;
-	    }
-	    if (GetPubKey(AT_SIGNATURE, pubkey) != RV_OK) {
-	        act_P17(0, 20);
-	        act_PB3(0, 60, RED);
-	        act_PB1(0, 60, RED);
-	        set_usb_mode(0);
-	        lcd_add_log("证书无效");
-	        return;
-	    }
-	    if (VerifyPIN(pwd) != RV_OK) {
-	        log_flag |= LOG_KEY_PASSWORD_ERROR;
-	        act_PB2(1, 60, RED);
-	        act_P17(0, 60);
-	        set_usb_mode(0);
-	        lcd_add_log("密码无效");
-	        return;
-	    }
-	    group_no_time_out_check();
-	    if (!find_pub_key()) {
-	        clear_check();
-	        if (!find_pub_key()) {
-	            act_PB2(0, 60, RED);
-	            act_PB3(0, 60, RED);
-	            act_P17(0, 20);
-	            set_usb_mode(0);
-	            lcd_add_log(key_no_bind);
-	            return;
-	        }
-	    }
-	    if (find_group_no()) {
-			//last_group_no = group_no;
-	        log_flag |= LOG_HALF_UNLOCK;
-	        act_PB3(0, 60, GREEN);
-	        set_usb_mode(0);
-	        lcd_add_log(key_half_unlock);
-	        return;
-	    }
-	    if (remote_auth_unlock_flag) {
-	        act_net_unlock(LOG_AUTH_UNLOCK);
-	    } else {
-	        act_net_unlock(LOG_UNLOCK);
-	    }
-	    set_usb_mode(0);
+      auth_init();
+      if (!this_time_auth())
+        {
+          led1_op(INDC_TWINKLE, IND_RED, SEC2TICK(3), MSEC2TICK(500));
+          led3_op(INDC_TWINKLE, IND_RED, SEC2TICK(3), MSEC2TICK(500));
+          buzzer_op(INDC_TWINKLE, IND_ON, SEC2TICK(1), MSEC2TICK(500));
+          goto errout;
+        }
     }
-    */
-}
+  if (need_more_auth())
+    {
+      //log_flag |= LOG_HALF_UNLOCK;
+      led1_op(INDC_TWINKLE, IND_GREEN, SEC2TICK(3), MSEC2TICK(500));
+      goto errout;
+  }
+  if (g_remote_auth) {
+      act_net_unlock(LOG_AUTH_UNLOCK);
+  } else {
+      act_net_unlock(LOG_UNLOCK);
+  }
 
+  return true;
+	
+errclose:
+  close(jksafekey_fd);
+errout:
+  return false;
+}
 
 static int unlock_task(int argc, char *argv[])
 {

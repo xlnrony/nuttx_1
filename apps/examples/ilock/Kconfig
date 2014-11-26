@@ -30,9 +30,81 @@ config DEBUG_ILOCK
 		Enable iLock debug SYSLOG output (disabled by default)		
 		
 config SETTING_FILE_PATH
-	string "Setting file path"
+	string "iLock setting file path"
 	default "/mnt/sd/config.ini"
 	---help---
 		Setting file path to be used. Default: "/mnt/sd/config.ini"
+
+config MACADDR_DEF_VALUE
+	string "iLock default macaddr"
+	default "FC:FC:FC:AB:AB:AB"
+	---help---
+		iLock default macaddr to be used. Default: "FC:FC:FC:AB:AB:AB"
+
+config HOSTADDR_DEF_VALUE
+	string "iLock default hostaddr"
+	default "10.0.0.2"
+	---help---
+		iLock default hostaddr to be used. Default: "10.0.0.2"
+
+config NETMASK_DEF_VALUE
+	string "iLock default netmask"
+	default "255.255.255.0"
+	---help---
+		iLock default netmask to be used. Default: "255.255.255.0"
+
+config DRIPADDR_DEF_VALUE
+	string "iLock default dripaddr"
+	default "10.0.0.1"
+	---help---
+		iLock default dripaddr to be used. Default: "10.0.0.1"
+
+config SVRADDR_DEF_VALUE
+	string "iLock default svraddr"
+	default "10.0.0.128"
+	---help---
+		iLock default svraddr to be used. Default: "10.0.0.128"
+		
+config SHOCK_RESISTOR_DEF_VALUE
+	int "Shock resistor default value"
+	default 0
+	---help---
+		Shock resistor default value. Default 0
+		
+config INFRA_RED_DEF_VALUE
+	int "Infra-red default value"
+	default 400
+	---help---
+		Infra-red default value. Default 400
+
+config PHOTO_RESISTOR_DEF_VALUE
+	int "Photo resistor default value"
+	default 512
+	---help---
+		Photo resistor default value. Default 512
+
+config PUBKEY_DEF_VALUE
+	string "Pubkey default value"
+	default "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"
+	---help---
+		Pubkey default to be used. Default: "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"
+
+config PUBKEY_SIZE
+	int "Pubkey size value"
+	default 128
+	---help---
+		Pubkey size value. Default 128
+
+config GROUP_DEF_VALUE
+	int "Group default value"
+	default 0
+	---help---
+		Group default value. Default 0
+
+config GROUP_SIZE
+	int "Group size value"
+	default 32
+	---help---
+		Group size value. Default 32
 		
 endif

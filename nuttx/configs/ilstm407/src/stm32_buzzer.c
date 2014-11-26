@@ -1,8 +1,8 @@
 /****************************************************************************
- * examples/ilock/led_lib.h
+ * configs/ilstm407/src/stm32_led.c
  *
- *   Copyright (C) 2011, 2013-2014 xlnrony. All rights reserved.
- *   Author: xlnrony <xlnrony@gmail.com>
+ *   Copyright (C) 2011-2013 Gregory Nutt. All rights reserved.
+ *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -14,7 +14,7 @@
  *    notice, this list of conditions and the following disclaimer in
  *    the documentation and/or other materials provided with the
  *    distribution.
- * 3. Neither the name Gregory Nutt nor the names of its contributors may be
+ * 3. Neither the name NuttX nor the names of its contributors may be
  *    used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -33,84 +33,115 @@
  *
  ****************************************************************************/
 
-#ifndef __APPS_INCLUDE_CONFIG_LIB_H
-#define __APPS_INCLUDE_CONFIG_LIB_H
-
 /****************************************************************************
  * Included Files
  ****************************************************************************/
 
 #include <nuttx/config.h>
+
 #include <stdint.h>
-#include <net/if.h>
+#include <stdbool.h>
+#include <errno.h>
+#include <debug.h>
+
+#include <arch/board/board.h>
+#include <nuttx/gpio/indicator.h>
+
+#include "chip.h"
+#include "up_arch.h"
+#include "up_internal.h"
+#include "stm32.h"
+#include "stm32f407.h"
+
+#ifdef CONFIG_LED
 
 /****************************************************************************
- * Pre-processor Definitions
+ * Definitions
  ****************************************************************************/
+struct stm32_dev_s
+{
+  uint32_t 				pinset;
+};
 
-#define CONFIG_MACADDR_DEF_VALUE 	"FC:FC:FC:AB:AB:AB"
-#define CONFIG_HOSTADDR_DEF_VALUE 	"10.0.0.2"
-#define CONFIG_NETMASK_DEF_VALUE 		"255.255.255.0"
-#define CONFIG_DRIPADDR_DEF_VALUE 	"10.0.0.1"
-#define CONFIG_SVRADDR_DEF_VALUE 		"10.0.0.128"
+static int stm32_buzzer_setup(FAR struct ind_dev_s *dev);
+static int stm32_buzzer_shutdown(FAR struct ind_dev_s *dev);
+static void stm32_buzzer_ioctl(FAR struct ind_dev_s *dev, uint8_t color);
 
-#define CONFIG_SHOCK_RESISTOR_DEF_VALUE 			0
-#define CONFIG_INFRA_RED_DEF_VALUE 						400
-#define CONFIG_PHOTO_RESISTOR_DEF_VALUE 			512
-
-#define CONFIG_PUBKEY_DEF_VALUE 		"FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"
-#define CONFIG_PUBKEY_SIZE						128
-
-#define CONFIG_GROUP_DEF_VALUE 			0
-#define CONFIG_GROUP_SIZE 						32
- 
 /****************************************************************************
- * Public Types
+ * Private Data
  ****************************************************************************/
- struct keyslot_s
-{
-	uint8_t pubkey[CONFIG_PUBKEY_SIZE];
-	bool group[CONFIG_GROUP_SIZE];
-}
 
-struct config_s
+static const struct ind_ops_s stm32_buzzer_ops =
 {
-  uint8_t macaddr[IFHWADDRLEN];
-  struct in_addr hostaddr;
-  struct in_addr netmask;	
-  struct in_addr dripaddr;	
-  struct in_addr svraddr;	
-  int32_t shock_resistor_threshold;  
-  int32_t infra_red_threshold;  	
-  int32_t photo_resistor_threshold;  		
-  struct keyslot_s keyslots[CONFIG_GROUP_SIZE];
+  .setup    = stm32_buzzer_setup,
+  .shutdown = stm32_buzzer_shutdown,
+  .ioctl    = stm32_buzzer_ioctl
+};
+
+static struct stm32_dev_s stm32_buzzer_priv =
+{
+  .pinset		= GPIO_BUZZER,
+};
+
+static struct ind_dev_s stm32_buzzer_dev =
+{
+  .ops = &stm32_buzzer_ops,
+  .priv = &stm32_buzzer_priv,
 };
 
 /****************************************************************************
- * Public Data
+ * Private Functions
  ****************************************************************************/
 
-#ifdef __cplusplus
-#define EXTERN extern "C"
-extern "C"
+static int stm32_buzzer_setup(FAR struct led_dev_s *dev)
 {
-#else
-#define EXTERN extern
-#endif
+  struct stm32_dev_s *priv = (struct stm32_dev_s *)dev->priv;
+  int ret;
+  ret = stm32_configgpio(priv->pinset);
+  if (ret < 0)
+  	{
+      leddbg("stm32_buzzer_setup: stm32_configgpio failed: %d\n", ret);
+  	}
+  return ret;
+}
 
-EXTERN struct config_s config;
+static int stm32_buzzer_shutdown(FAR struct led_dev_s *dev)
+{
+  struct stm32_dev_s *priv = (struct stm32_dev_s *)dev->priv;
+	
+  stm32_unconfiggpio(priv->pinset);
+
+  return OK;
+}
+
+static void stm32_buzzer_ioctl(FAR struct led_dev_s *dev, uint8_t color)
+{
+  struct stm32_dev_s *priv = (struct stm32_dev_s *)dev->priv;
+
+  switch(color)
+    {
+      case IND_RED, IND_GREEN, IND_BLUE, IND_ON:
+	    stm32_gpiowrite(priv->pinset, false);
+	    break;
+	  case IND_NONE:
+	    stm32_gpiowrite(priv->pinset, true);
+	    break;
+    }
+}
 
 /****************************************************************************
- * Public Function Prototypes
+ * Public Functions
  ****************************************************************************/
 
-EXTERN void load_config(void);
-EXTERN void save_config(void);
-
-#undef EXTERN
-#ifdef __cplusplus
+void stm32_buzzer_initialize(void)
+{
+  int ret;
+//////////////////////////////////////////////////////////////////////////////////////////////////
+  ret = ind_register(CONFIG_BUZZER_DEVNAME, &stm32_buzzer_dev);
+  if (ret < 0)
+    {
+      leddbg("stm32_buzzer_initialize: led_register failed: %d\n", ret);
+    }			
 }
-#endif
 
-#endif /* __APPS_INCLUDE_CONFIG_LIB_H */
-
+#endif /* CONFIG_GPIO */

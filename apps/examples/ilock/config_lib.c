@@ -79,9 +79,9 @@
 #define CONFIG_PUBKEY_VAR_NAME		    "PUBKEY"
 #define CONFIG_GROUP_VAR_NAME		    "GROUP%d"
 
-#define CONFIG_SHOCK_VAR_NAME			"SHOCK"
-#define CONFIG_LOCK_VAR_NAME				"LOCK"
-#define CONFIG_LIGHT_VAR_NAME				"LIGHT"
+#define CONFIG_SHOCK_RESISTOR_VAR_NAME			"SHOCK_RESISTOR"
+#define CONFIG_INFRA_RED_VAR_NAME						"INFRA_RED"
+#define CONFIG_PHOTO_RESISTOR_VAR_NAME			"PHOTO_RESISTOR"
 
 /****************************************************************************
  * Public Data
@@ -177,6 +177,19 @@ static int hex2bin(FAR uint8_t* dest, FAR const uint8_t *src, int nsrcbytes)
   return OK;
 }
 
+static int bin2hex(FAR uint8_t* dest, FAR const uint8_t *src, int nsrcbytes)
+{
+  while (nsrcbytes > 0)
+    {
+      sprintf(dest, "%2x", *src);
+      src ++;
+      dest += 2;
+      nsrcbytes -= 2;
+    }
+
+  return OK;
+}
+
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
@@ -239,17 +252,17 @@ void load_config(void)
 	  config.svraddr.s_addr = inet_addr(svraddr);
 	  inifile_free_string(svraddr);
 
-	  config.shockthreshold = inifile_read_integer(inifile, CONFIG_NET_SECTION_NAME, 
-                                                                                     CONFIG_SHOCK_VAR_NAME, 
-															 			                      CONFIG_SHOCK_DEF_VALUE);
+	  config.shock_resistor_threshold = inifile_read_integer(inifile, CONFIG_NET_SECTION_NAME, 
+                                                                                     CONFIG_SHOCK_RESISTOR_VAR_NAME, 
+															 			                      CONFIG_SHOCK_RESISTOR_DEF_VALUE);
 
-	  config.lockthreshold = inifile_read_integer(inifile, CONFIG_NET_SECTION_NAME, 
-                                                                                     CONFIG_LOCK_VAR_NAME, 
-															 			                      CONFIG_LOCK_DEF_VALUE);
+	  config.infra_red_threshold = inifile_read_integer(inifile, CONFIG_NET_SECTION_NAME, 
+                                                                                     CONFIG_INFRA_RED_VAR_NAME, 
+															 			                      CONFIG_INFRA_RED_DEF_VALUE);
 
-	  config.lightthreshold = inifile_read_integer(inifile, CONFIG_NET_SECTION_NAME, 
-                                                                                     CONFIG_LIGHT_VAR_NAME, 
-															 			                      CONFIG_LIGHT_DEF_VALUE);
+	  config.infra_red_threshold = inifile_read_integer(inifile, CONFIG_NET_SECTION_NAME, 
+                                                                                     CONFIG_INFRA_RED_VAR_NAME, 
+															 			                      CONFIG_INFRA_RED_DEF_VALUE);
 
 	  for(i = 0; i< CONFIG_GROUP_SIZE; i++)
 	  	{
@@ -261,7 +274,7 @@ void load_config(void)
 			
 		  for(j = 0; j< CONFIG_GROUP_SIZE; j++)
 	  		{
-		  	  sprintf(group, CONFIG_GROUP_VAR_NAME, i);
+		  	  sprintf(group, CONFIG_GROUP_VAR_NAME, j);
 			  config.keyslots[i].group[j] = (bool)inifile_read_integer(inifile, keyslot, group, CONFIG_GROUP_DEF_VALUE);
 		  	}
 	  	}
@@ -272,6 +285,8 @@ void load_config(void)
 void save_config(void)
 {
   FILE *stream;
+  char pubkey[CONFIG_PUBKEY_SIZE*2+1];
+  int i, j;
 
   stream = fopen(CONFIG_SETTING_FILE_PATH, "w");
   if (stream != NULL)
@@ -289,10 +304,23 @@ void save_config(void)
 
 	  fprintf(stream, "[%s]\n", CONFIG_SENSOR_SECTION_NAME);
 		
-	  fprintf(stream, "  %s=%d\n", CONFIG_SHOCK_VAR_NAME, config.shockthreshold);
-	  fprintf(stream, "  %s=%d\n", CONFIG_LOCK_VAR_NAME, config.lockthreshold);
-	  fprintf(stream, "  %s=%d\n", CONFIG_LIGHT_VAR_NAME, config.lightthreshold);
-		
+	  fprintf(stream, "  %s=%d\n", CONFIG_SHOCK_RESISTOR_VAR_NAME, config.shock_resistor_threshold);
+	  fprintf(stream, "  %s=%d\n", CONFIG_INFRA_RED_VAR_NAME, config.lock_resistor_threshold);
+	  fprintf(stream, "  %s=%d\n", CONFIG_PHOTO_RESISTOR_VAR_NAME, config.lightthreshold);
+
+	  for(i = 0; i< CONFIG_GROUP_SIZE; i++)
+	  	{
+    	  fprintf(stream, "["CONFIG_KEYSLOT_SECTION_NAME"]\n", i);
+
+		  bin2hex(pubkey, config.keyslots[i].pubkey, CONFIG_PUBKEY_SIZE); 
+		  fprintf(stream, "  %s=%d\n", CONFIG_PUBKEY_VAR_NAME, pubkey);
+			
+		  for(j = 0; j< CONFIG_GROUP_SIZE; j++)
+	  		{
+		  	  sprintf(group, CONFIG_GROUP_VAR_NAME, j);
+			  fprintf(stream, "  %s=%d\n", CONFIG_GROUP_VAR_NAME, config.keyslots[i].group[j]);					
+		  	}
+	  	}
 	  fclose(stream);
   	}
 }

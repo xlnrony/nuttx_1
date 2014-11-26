@@ -42,7 +42,7 @@
 
 #include <nuttx/config.h>
 #include <stdint.h>
-#include <nuttx/gpio/led.h>
+#include <nuttx/gpio/indicator.h>
 
 #if defined(CONFIG_LED)
 

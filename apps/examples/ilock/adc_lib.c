@@ -1,5 +1,5 @@
 /****************************************************************************
- * examples/ilock/led_lib.h
+ * examples/ilock/adc_lib.c
  *
  *   Copyright (C) 2011, 2013-2014 xlnrony. All rights reserved.
  *   Author: xlnrony <xlnrony@gmail.com>
@@ -33,84 +33,114 @@
  *
  ****************************************************************************/
 
-#ifndef __APPS_INCLUDE_CONFIG_LIB_H
-#define __APPS_INCLUDE_CONFIG_LIB_H
-
 /****************************************************************************
  * Included Files
  ****************************************************************************/
 
 #include <nuttx/config.h>
-#include <stdint.h>
-#include <net/if.h>
+
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/ioctl.h>
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sched.h>
+#include <string.h>
+#include <ctype.h>
+#include <assert.h>
+#include <errno.h>
+
+#include "adc_lib.h"
+
+#if defined(CONFIG_ADC)
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
 
-#define CONFIG_MACADDR_DEF_VALUE 	"FC:FC:FC:AB:AB:AB"
-#define CONFIG_HOSTADDR_DEF_VALUE 	"10.0.0.2"
-#define CONFIG_NETMASK_DEF_VALUE 		"255.255.255.0"
-#define CONFIG_DRIPADDR_DEF_VALUE 	"10.0.0.1"
-#define CONFIG_SVRADDR_DEF_VALUE 		"10.0.0.128"
-
-#define CONFIG_SHOCK_RESISTOR_DEF_VALUE 			0
-#define CONFIG_INFRA_RED_DEF_VALUE 						400
-#define CONFIG_PHOTO_RESISTOR_DEF_VALUE 			512
-
-#define CONFIG_PUBKEY_DEF_VALUE 		"FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"
-#define CONFIG_PUBKEY_SIZE						128
-
-#define CONFIG_GROUP_DEF_VALUE 			0
-#define CONFIG_GROUP_SIZE 						32
- 
 /****************************************************************************
- * Public Types
- ****************************************************************************/
- struct keyslot_s
-{
-	uint8_t pubkey[CONFIG_PUBKEY_SIZE];
-	bool group[CONFIG_GROUP_SIZE];
-}
-
-struct config_s
-{
-  uint8_t macaddr[IFHWADDRLEN];
-  struct in_addr hostaddr;
-  struct in_addr netmask;	
-  struct in_addr dripaddr;	
-  struct in_addr svraddr;	
-  int32_t shock_resistor_threshold;  
-  int32_t infra_red_threshold;  	
-  int32_t photo_resistor_threshold;  		
-  struct keyslot_s keyslots[CONFIG_GROUP_SIZE];
-};
-
-/****************************************************************************
- * Public Data
+ * Private Types
  ****************************************************************************/
 
-#ifdef __cplusplus
-#define EXTERN extern "C"
-extern "C"
-{
-#else
-#define EXTERN extern
-#endif
-
-EXTERN struct config_s config;
+/****************************************************************************
+ * Private Data
+ ****************************************************************************/
 
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
 
-EXTERN void load_config(void);
-EXTERN void save_config(void);
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
 
-#undef EXTERN
-#ifdef __cplusplus
+static int32_t adc_op(const char * path, unsigned long channel)
+{
+  int32_t ret;
+  int fd;
+  ssize_t n;
+  struct adc_msg_s sample;	
+	
+  fd = open(path, O_RDONLY);
+  if (fd < 0)
+    {
+      ret = -errno;
+      avdbg("adc_op: open %s failed: %d\n", path, ret);
+      return ret;
+    }
+
+  ret = ioctl(fd, ANIOC_TRIGGER, channel);
+  if (ret < 0)
+    {
+      ret = -errno;
+      avdbg("adc_op: ANIOC_TRIGGER ioctl failed: %d\n", ret);
+      goto errout;
+    }
+
+  n = read(fd, &sample, sizeof(struct adc_msg_s));
+  if (n < 0)
+    {
+      ret = -errno;
+      avdbg("adc_op: read failed: %d\n", ret);
+    }
+  else if (n == 0)
+    {
+      avdbg("adc_op: No data read, Ignoring\n");
+      ret = -EBADMSG;
+    }
+  else
+    {
+      DEBUGASSERT(n == sizeof(struct adc_msg_s));
+      ret = sample.am_data;
+    }
+
+errout:
+  close(fd);
+  return ret;
 }
-#endif
 
-#endif /* __APPS_INCLUDE_CONFIG_LIB_H */
+
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
+
+inline int32_t adc_shock_resistor_op(void)
+{
+  return adc_op(CONFIG_ADC1_DEVNAME, 4);
+}
+
+inline int32_t adc_photo_resistor_op(void)
+{
+  return adc_op(CONFIG_ADC2_DEVNAME, 5);
+}
+
+inline int32_t adc_infra_red_op(void)
+{
+  return adc_op(CONFIG_ADC2_DEVNAME, 6);
+}
+
+#endif
 
