@@ -33,7 +33,9 @@
  *
  ****************************************************************************/
 
-/* This is a driver for SPI EEPROMos that uses the same commands as the 25AA160.
+/* This is a driver for SPI EEPROMs that use the same commands as the
+ * 25AA160.
+ *
  * Write time 5ms, 6ms for 25xx1025 (determined automatically with polling)
  * Max SPI speed is :
  * 10 MHz for -A/B/C/D/E/UID versions
@@ -638,6 +640,13 @@ static ssize_t ee25xx_write(FAR struct file *filep, FAR const char *buffer,
   if (eedev->readonly)
     {
       return ret;
+    }
+
+  /* Forbid writes past the end of the device */
+
+  if (filep->f_pos >= eedev->size)
+    {
+      return -EFBIG;
     }
 
   /* Clamp len to avoid crossing the end of the memory */
