@@ -46,7 +46,7 @@ PRIORITY	= SCHED_PRIORITY_DEFAULT
 STACKSIZE	= 2048
 
 ASRCS		=
-CSRCS		= ilock_main.c epass3003_lib.c jksafekey_lib.c led_lib.c config_lib.c gpio_lib.c
+CSRCS		= ilock_main.c epass3003_lib.c jksafekey_lib.c led_lib.c config_lib.c gpio_lib.c keypad_lib.c buzzer_lib.c adc_lib.c
 
 AOBJS		= $(ASRCS:.S=$(OBJEXT))
 COBJS		= $(CSRCS:.c=$(OBJEXT))

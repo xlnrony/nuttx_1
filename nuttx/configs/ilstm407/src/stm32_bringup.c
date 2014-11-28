@@ -93,7 +93,7 @@ int stm32_bringup(void)
 
 #ifdef CONFIG_GPIO
   stm32_gpio_initialize();
-#endif	
+#endif
 
 #ifdef CONFIG_KEYPAD
   stm32_keypad_initialize();
@@ -101,7 +101,7 @@ int stm32_bringup(void)
 
 #ifdef CONFIG_ADC
   stm32_adc_initialize();
-#endif	
+#endif
 
 #ifdef HAVE_USBHOST
   /* Initialize USB host operation.  stm32_usbhost_initialize() starts a thread

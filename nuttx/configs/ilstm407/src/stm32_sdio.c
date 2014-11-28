@@ -113,13 +113,13 @@ void stm32_sdio_initialize(void)
 
   sdio_mediachange(g_sdio_dev, true);
 
-  snprintf(devname, 16, "/dev/mmcsd%d", SDIO_MINOR);	
+  snprintf(devname, 16, "/dev/mmcsd%d", SDIO_MINOR);
   ret = mount(devname, CONFIG_SDCARD_MAPPED_PATH, "vfat", 0, NULL);
   if (ret != OK)
-  	{
+    {
       fdbg("Failed to mount sdcard: %d\n", ret);
       return;
-  	}	
+    }
 }
 
 #endif /* HAVE_SDIO */

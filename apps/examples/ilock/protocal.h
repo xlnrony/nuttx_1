@@ -1,3 +1,4 @@
+
 /****************************************************************************
  * examples/ilock/protocal.h
  *
@@ -60,13 +61,13 @@
 #define CLEAR_ALL_PUBKEY_CATEGORY  				10
 #define SOFT_RESET_CATEGORY		   				11
 #define UNLOCK_CATEGORY		   					12
-#define UPLOAD_PUBKEY_CATEGORY	   				13			
+#define UPLOAD_PUBKEY_CATEGORY	   				13
 #define REMOTE_AUTHORIZE_CATEGORY  				14
 #define TIME_SYNC_CATEGORY		   				15
 #define ALERT_CATEGORY			   				16
 #define CONNECT_CATEGORY		 				17
-#define TIME_VIEW_CATEGORY		   				18	
-#define SENSOR_VIEW_CATEGORY	   			   	19	
+#define TIME_VIEW_CATEGORY		   				18
+#define SENSOR_VIEW_CATEGORY	   			   	19
 #define ASSIGN_SHOCK_CHECK_VOLTAGE_CATEGORY	   	20
 #define ASSIGN_LOCK_CHECK_VOLTAGE_CATEGORY	   	21
 #define ASSIGN_LIGHT_CHECK_VOLTAGE_CATEGORY	   	22
@@ -81,17 +82,17 @@
 
 #define ALERT_SHOCK 				1
 #define ALERT_LIGHT 				2
-//#define ALERT_NET_DISCONNECT		4
+//#define ALERT_NET_DISCONNECT          4
 #define ALERT_POWER 				8
 #define ALERT_LOCK					16
 #define ALERT_NOLOCK_TIME_OUT		32
-//#define ALERT_LOW_POWER				64
-//#define ALERT_NET_CONNECT			128
+//#define ALERT_LOW_POWER                               64
+//#define ALERT_NET_CONNECT                     128
 
 #define LOG_HALF_UNLOCK				1
 #define LOG_UNLOCK					2
 #define LOG_KEY_PASSWORD_ERROR		4
-#define LOG_AUTH_UNLOCK				8	
+#define LOG_AUTH_UNLOCK				8
 #define LOG_TEMP_UNLOCK				16
 #define LOG_DENNY_UNLOCK			32
 
@@ -99,7 +100,6 @@
 #define NEED_CHECK_HALF_UNLOCK 		1
 
 #define FIRMWARE_CACHE_SIZE			1280
-
 
 #define HEART_BEAT_CATEGORY_RECV_SIZE					(sizeof(((struct protocal *)NULL)->head))
 #define HEART_BEAT_CATEGORY_SEND_SIZE					(sizeof(((struct protocal *)NULL)->head))
@@ -169,141 +169,158 @@
 struct protocal_s
 {
   struct
+  {
+    char magic[4];
+    uint32_t serial_no;
+    uint8_t category;
+  } head;
+
+  union
+  {
+    struct
     {
-      char magic[4];
-      uint32_t serial_no;
-      uint8_t category;
-    } head;
+      uint32_t connect_knl_version;
+      uint32_t connect_app_version;
+    } connect_category;
 
-  union 
+    struct
     {
-      struct
-	    {
-          uint32_t connect_knl_version;
-          uint32_t connect_app_version;
-        } connect_category;
+      uint8_t sync_time[6];
+    } time_sync_category;
 
-      struct
-	    {
-          uint8_t sync_time[6];
-        } time_sync_category;
+    struct
+    {
+      uint8_t view_time[6];
+    } time_view_category;
 
-      struct
-	    {
-          uint8_t view_time[6];
-        } time_view_category;
+    struct
+    {
+      uint8_t alert_type;
+      uint8_t alert_time[6];
+    } alert_category;
 
-      struct
-	    {
-          uint8_t alert_type;
-          uint8_t alert_time[6];
-        } alert_category;
+    struct
+    {
+      uint8_t log_group_no;
+      uint8_t log_pubkey[CONFIG_PUBKEY_SIZE];
+      uint8_t flag;
+      uint8_t log_time[6];
+    } log_category;
 
-      struct
-	    {
-          uint8_t log_group_no;
-          uint8_t log_pubkey[128];
-          uint8_t flag;
-          uint8_t log_time[6];
-        } log_category;
+    struct
+    {
+      uint8_t download_group_no;
+      uint8_t download_pubkey[CONFIG_PUBKEY_SIZE];
+    } download_pubkey_category;
 
-      struct
-	    {
-          uint8_t download_group_no;
-          uint8_t download_pubkey[128];
-        } download_pubkey_category;
+    struct
+    {
+      uint8_t upload_pubkey[CONFIG_PUBKEY_SIZE];
+    } upload_pubkey_category;
 
-      struct
-	    {
-          uint8_t upload_pubkey[128];
-        } upload_pubkey_category;
+    struct
+    {
+      uint8_t clear_pubkey[CONFIG_PUBKEY_SIZE];
+    } clear_pubkey_category;
 
-      struct {
-          uint8_t clear_pubkey[128];
-      } clear_pubkey_category;
+    struct
+    {
+      uint8_t macaddr[IFHWADDRLEN];
+    } assign_mac_category;
 
-      struct {
-          unsigned char macaddr[6];
-      } assign_mac_category;
+    struct
+    {
+      uint32_t assigned_sn;
+    } assign_sn_category;
 
-      struct {
-          unsigned char assigned_sn[4];
-      } assign_sn_category;
+    struct
+    {
+      uint32_t hostip;
+    } assign_hostip_category;
 
-      struct {
-          unsigned char hostip[4];
-      } assign_hostip_category;
+    struct
+    {
+      uint32_t netmask;
+    } assign_netmask_category;
 
-      struct {
-          unsigned char netmask[4];
-      } assign_netmask_category;
+    struct
+    {
+      uint32_t gateway;
+    } assign_gateway_cateory;
 
-      struct {
-          unsigned char gateway[4];
-      } assign_gateway_cateory;
+    struct
+    {
+      uint32_t serverip;
+    } assign_serverip_category;
 
-      struct {
-          unsigned char serverip[4];
-      } assign_serverip_category;
+    struct
+    {
+      uint8_t unlock_flag;
+    } unlock_category;
 
-      struct {
-          unsigned char unlock_flag;
-      } unlock_category;
+    struct
+    {
+      uint16_t view_shock_voltage;
+      uint16_t view_lock_voltage;
+      uint16_t view_light_voltage;
+      uint16_t view_bat_voltage;
+      uint16_t view_pow_voltage;
+    } sensor_view_category;
 
-      struct {
-          unsigned int view_shock_voltage;
-          unsigned int view_lock_voltage;
-          unsigned int view_light_voltage;
-		unsigned int view_bat_voltage;
-		unsigned int view_pow_voltage;
-      } sensor_view_category;
+    struct
+    {
+      uint32_t assign_shock_resistor_threshold;
+    } assign_shock_resistor_threshold_category;
 
-      struct {
-          unsigned int assign_shock_check_voltage;
-      } assign_shock_check_voltage_category;
+    struct
+    {
+      uint16_t assign_infra_red_threshold;
+    } assign_infra_red_threshold_category;
 
-      struct {
-          unsigned int assign_lock_check_voltage;
-      } assign_lock_check_voltage_category;
+    struct
+    {
+      uint16_t assign_photo_resistor_threshold;
+    } assign_photo_resistor_threshold_category;
 
-      struct {
-          unsigned int assign_light_check_voltage;
-      } assign_light_check_voltage_category;
+    struct
+    {
+      uint32_t firmware_crc32;
+      uint32_t firmware_len;
+      uint32_t firmware_pos;
+      uint8_t firmware[FIRMWARE_CACHE_SIZE];
+    } download_firmware_category;
 
-      struct {
-          unsigned long firmware_crc32;
-          unsigned long firmware_len;
-          unsigned long firmware_pos;
-          unsigned char firmware[FIRMWARE_CACHE_SIZE];
-      } download_firmware_category;
+    struct
+    {
+      uint32_t view_hostip;
+      uint32_t view_netmask;
+      uint32_t view_gateway;
+      uint32_t view_serverip;
+      uint8_t view_macaddr[IFHWADDRLEN];
+    } view_net_addr_category;
 
-	struct {
-		unsigned char view_hostip[4];
-          unsigned char view_netmask[4];
-          unsigned char view_gateway[4];
-          unsigned char view_serverip[4];
-          unsigned char view_macaddr[6];
-	} view_net_addr_category;
+    struct
+    {
+      uint8_t crc32_success;
+    } crc32_firmware_category;
 
-      struct {
-          unsigned char crc32_success;
-      } crc32_firmware_category;
+    struct
+    {
+      uint8_t clear_group_no;
+    } clear_all_pubkey_in_group_category;
 
-	struct {
-	 	unsigned char clear_group_no;
-	} clear_all_pubkey_in_group_category;
+    struct
+    {
+      uint32_t view_iap_version;
+      uint32_t view_app_version;
+    } version_view_category;
 
-	struct {
-          unsigned long view_iap_version;
-          unsigned long view_app_version;
-	} version_view_category;
-
-	struct {
-		unsigned char config_password[6];
-	} define_config_password_category;
+    struct
+    {
+      uint8_t config_password[6];
+    } define_config_password_category;
   } body;
 };
-
 
 /****************************************************************************
  * Public Data
@@ -326,6 +343,4 @@ extern "C"
 }
 #endif
 
-#endif /* CONFIG_PROTOCAL */
-#endif /* __APPS_INCLUDE_PROTOCAL_H */
-
+#endif                                 /* __APPS_INCLUDE_PROTOCAL_H */

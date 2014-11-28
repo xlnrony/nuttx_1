@@ -62,7 +62,7 @@ struct stm32_dev_s
 {
   uint32_t 				red_pinset;
   uint32_t 				green_pinset;
-  uint32_t 				blue_pinset;	
+  uint32_t 				blue_pinset;
 };
 
 static int stm32_led_setup(FAR struct ind_dev_s *dev);
@@ -131,37 +131,37 @@ static int stm32_led_setup(FAR struct ind_dev_s *dev)
 {
   struct stm32_dev_s *priv = (struct stm32_dev_s *)dev->priv;
   int                         ret;
-	
+
   ret = stm32_configgpio(priv->red_pinset);
   if (ret == OK)
-  	{
-     ret = stm32_configgpio(priv->green_pinset);
-	  if (ret == OK)
-	    {
+    {
+      ret = stm32_configgpio(priv->green_pinset);
+      if (ret == OK)
+        {
           ret = stm32_configgpio(priv->blue_pinset);
-		   if (ret < 0)
-		   	{
-				leddbg("stm32_led_setup: stm32_configgpio(blue_pinset)failed: %d\n", ret);
-		   	}
-	  	}			
-	  else
-	  	{
-         leddbg("stm32_led_setup: stm32_configgpio(green_pinset) failed: %d\n", ret);
-	  	}
-  	}
+          if (ret < 0)
+            {
+              leddbg("stm32_led_setup: stm32_configgpio(blue_pinset)failed: %d\n", ret);
+            }
+        }
+      else
+        {
+          leddbg("stm32_led_setup: stm32_configgpio(green_pinset) failed: %d\n", ret);
+        }
+    }
   else
-  	{
+    {
       leddbg("stm32_led_setup: stm32_configgpio(red_pinset) failed: %d\n", ret);
-  	}
+    }
   return ret;
 }
 
 static int stm32_led_shutdown(FAR struct ind_dev_s *dev)
 {
   struct stm32_dev_s *priv = (struct stm32_dev_s *)dev->priv;
-	
+
   stm32_unconfiggpio(priv->red_pinset);
-  stm32_unconfiggpio(priv->green_pinset);  
+  stm32_unconfiggpio(priv->green_pinset);
   stm32_unconfiggpio(priv->blue_pinset);
 
   return OK;
@@ -174,25 +174,25 @@ static void stm32_led_ioctl(FAR struct ind_dev_s *dev, uint8_t color)
   switch(color)
     {
       case LED_RED:
-	    stm32_gpiowrite(priv->red_pinset, false);
-	    stm32_gpiowrite(priv->green_pinset, true);
-	    stm32_gpiowrite(priv->blue_pinset, true);
-	    break;
-	  case LED_GREEN:
-	    stm32_gpiowrite(priv->red_pinset, true);
-	    stm32_gpiowrite(priv->green_pinset, false);
-	    stm32_gpiowrite(priv->blue_pinset, true);
-	    break;
-	  case LED_BLUE:
-	    stm32_gpiowrite(priv->red_pinset, true);
-	    stm32_gpiowrite(priv->green_pinset, true);
-	    stm32_gpiowrite(priv->blue_pinset, false);
-	    break;
-	  case LED_NONE:
-	    stm32_gpiowrite(priv->red_pinset, true);
-	    stm32_gpiowrite(priv->green_pinset, true);
-	    stm32_gpiowrite(priv->blue_pinset, true);
-	    break;
+        stm32_gpiowrite(priv->red_pinset, false);
+        stm32_gpiowrite(priv->green_pinset, true);
+        stm32_gpiowrite(priv->blue_pinset, true);
+        break;
+      case LED_GREEN:
+        stm32_gpiowrite(priv->red_pinset, true);
+        stm32_gpiowrite(priv->green_pinset, false);
+        stm32_gpiowrite(priv->blue_pinset, true);
+        break;
+      case LED_BLUE:
+        stm32_gpiowrite(priv->red_pinset, true);
+        stm32_gpiowrite(priv->green_pinset, true);
+        stm32_gpiowrite(priv->blue_pinset, false);
+        break;
+      case LED_NONE:
+        stm32_gpiowrite(priv->red_pinset, true);
+        stm32_gpiowrite(priv->green_pinset, true);
+        stm32_gpiowrite(priv->blue_pinset, true);
+        break;
     }
 }
 
@@ -209,21 +209,21 @@ void stm32_led_initialize(void)
   if (ret < 0)
     {
       leddbg("led_register failed: %d\n", ret);
-    }			
+    }
 //////////////////////////////////////////////////////////////////////////////////////////////////
   /* Register the led driver at "/dev/led2" */
   ret = ind_register(CONFIG_LED2_DEVNAME, &stm32_led_dev_led2);
   if (ret < 0)
     {
       leddbg("gpio_register failed: %d\n", ret);
-    }			
+    }
 /////////////////////////////////////////////////////////////////////////////////////////////////
   /* Register the led driver at "/dev/led3" */
   ret = ind_register(CONFIG_LED3_DEVNAME, &stm32_led_dev_led3);
   if (ret < 0)
     {
       leddbg("gpio_register failed: %d\n", ret);
-    }				
+    }
 }
 
 #endif /* CONFIG_GPIO */

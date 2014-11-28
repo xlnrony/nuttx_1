@@ -78,15 +78,15 @@ static int led3_fd;
  * Private Functions
  ****************************************************************************/
 
-static void led_op(int fd, int cmd, uint8_t color, uint32_t delay, uint32_t interval)
+static void led_op(int fd, int cmd, uint8_t type, uint32_t delay, uint32_t interval)
 {
   int ret;
   struct ind_ctl_s indctl;
-	
-  indctl.color = color;
+
+  indctl.type = type;
   indctl.delay = delay;
   indctl.interval =interval;
-	
+
   ret = ioctl(fd, cmd, (unsigned long)&indctl);
   if (ret < 0)
     {
@@ -98,56 +98,63 @@ static void led_op(int fd, int cmd, uint8_t color, uint32_t delay, uint32_t inte
  * Public Functions
  ****************************************************************************/
 
-inline void led1_op(int cmd, uint8_t color, uint32_t delay, uint32_t interval)
+inline void led1_op(int cmd, uint8_t type, uint32_t delay, uint32_t interval)
 {
-	led_op(led1_fd, cmd, color, delay, interval);
+  led_op(led1_fd, cmd, type, delay, interval);
 }
 
-inline void led2_op(int cmd, uint8_t color, uint32_t delay, uint32_t interval)
+inline void led2_op(int cmd, uint8_t type, uint32_t delay, uint32_t interval)
 {
-	led_op(led2_fd, cmd, color, delay, interval);
+  led_op(led2_fd, cmd, type, delay, interval);
 }
 
-inline void led3_op(int cmd, uint8_t color, uint32_t delay, uint32_t interval)
+inline void led3_op(int cmd, uint8_t type, uint32_t delay, uint32_t interval)
 {
-	led_op(led3_fd, cmd, color, delay, interval);
+  led_op(led3_fd, cmd, type, delay, interval);
 }
 
-void led_init(void)
+int led_init(void)
 {
+  int ret;
   led1_fd = open(CONFIG_LED1_DEVNAME, 0);
   if (led1_fd < 0)
     {
-      inddbg("led_init: open %s failed: %d\n", CONFIG_LED1_DEVNAME, errno);
+      ret = -errno;
+      inddbg("led_init: open %s failed: %d\n", CONFIG_LED1_DEVNAME, ret);
+      return ret;
     }
 
   led2_fd = open(CONFIG_LED2_DEVNAME, 0);
   if (led2_fd < 0)
     {
       inddbg("led_init: open %s failed: %d\n", CONFIG_LED2_DEVNAME, errno);
+      return ret;
     }
 
   led3_fd = open(CONFIG_LED3_DEVNAME, 0);
   if (led3_fd < 0)
     {
       inddbg("led_init: open %s failed: %d\n", CONFIG_LED3_DEVNAME, errno);
+      return ret;
     }
+
+  return OK;
 }
 
 void led_deinit(void)
 {
   if (led1_fd > 0)
-  	{
-	  close(led1_fd);
-  	}
+    {
+      close(led1_fd);
+    }
   if (led2_fd > 0)
-  	{
-	  close(led2_fd);
-  	}
+    {
+      close(led2_fd);
+    }
   if (led3_fd > 0)
-  	{
-	  close(led3_fd);
-  	}
+    {
+      close(led3_fd);
+    }
 }
 
 

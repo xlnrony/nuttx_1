@@ -1,3 +1,4 @@
+
 /****************************************************************************
  * examples/ilock/gpio_lib.h
  *
@@ -42,14 +43,13 @@
 
 #include <nuttx/config.h>
 #include <stdint.h>
-#include <nuttx/gpio/led.h>
 
 #if defined(CONFIG_GPIO)
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
- 
+
 /****************************************************************************
  * Public Types
  ****************************************************************************/
@@ -80,6 +80,5 @@ EXTERN void gpio_deinit(void);
 }
 #endif
 
-#endif /* CONFIG_GPIO */
-#endif /* __APPS_INCLUDE_GPIO_LIB_H */
-
+#endif                               /* CONFIG_GPIO */
+#endif                                 /* __APPS_INCLUDE_GPIO_LIB_H */

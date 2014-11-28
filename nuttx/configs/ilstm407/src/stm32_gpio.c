@@ -75,9 +75,9 @@ static int stm32_gpio_setup(FAR struct gpio_dev_s *dev)
 {
   struct stm32_dev_s *priv = (struct stm32_dev_s *)dev->priv;
   int                         ret;
-	
+
   ret = stm32_configgpio(priv->pinset);
-	
+
   return ret;
 }
 
@@ -85,9 +85,9 @@ static int stm32_gpio_shutdown(FAR struct gpio_dev_s *dev)
 {
   struct stm32_dev_s *priv = (struct stm32_dev_s *)dev->priv;
   int                         ret;
-	
+
   ret = stm32_unconfiggpio(priv->pinset);
-	
+
   return ret;
 }
 
@@ -96,31 +96,31 @@ static int stm32_gpio_ioctl(FAR struct gpio_dev_s *dev, int cmd, unsigned long a
   struct stm32_dev_s *priv = (struct stm32_dev_s *)dev->priv;
   int ret = OK;
   bool *b;
-  
+
   gpiodbg("cmd=%d arg=%ld\n", cmd, arg);
 
   switch (cmd)
     {
       case GPIOC_WRITE:
-		 if ((priv->pinset & GPIO_MODE_MASK) == GPIO_OUTPUT)
-		   {
-		 	  stm32_gpiowrite(priv->pinset,(bool)arg); 		
-		 	}
-		 else
-		 	{
-	         ret = -EACCES;
-		 	}
+        if ((priv->pinset & GPIO_MODE_MASK) == GPIO_OUTPUT)
+          {
+            stm32_gpiowrite(priv->pinset,(bool)arg);
+          }
+        else
+          {
+            ret = -EACCES;
+          }
         break;
       case GPIOC_READ:
-		 if ((priv->pinset & GPIO_MODE_MASK) == GPIO_INPUT)
-		   {
-			  b = (bool *) arg;
-			  *b = stm32_gpioread(priv->pinset);
-		   }
-		 else
-		   {
-	         ret = -EACCES;
-		   }
+        if ((priv->pinset & GPIO_MODE_MASK) == GPIO_INPUT)
+          {
+            b = (bool *) arg;
+            *b = stm32_gpioread(priv->pinset);
+          }
+        else
+          {
+            ret = -EACCES;
+          }
         break;
 
       /* Unsupported or invalid command */
@@ -194,25 +194,25 @@ void stm32_gpio_initialize(void)
   if (ret < 0)
     {
       gpiodbg("gpio_register failed: %d\n", ret);
-    }		
+    }
 ////////////////////////////////////////////////////////////////////////////////////////////////
   ret = gpio_register(CONFIG_MAGNET_GND_DEVNAME, &stm32_gpio_dev_magnet_gnd);
   if (ret < 0)
     {
       gpiodbg("gpio_register failed: %d\n", ret);
-    }		
+    }
 ////////////////////////////////////////////////////////////////////////////////////////////////
   ret = gpio_register(CONFIG_BUZZER_DEVNAME, &stm32_gpio_dev_buzzer);
   if (ret < 0)
     {
       gpiodbg("gpio_register failed: %d\n", ret);
-    }		
-////////////////////////////////////////////////////////////////////////////////////////////////	
+    }
+////////////////////////////////////////////////////////////////////////////////////////////////
   ret = gpio_register(CONFIG_CLOSE_SW_DEVNAME, &stm32_gpio_dev_close_sw);
   if (ret < 0)
     {
       gpiodbg("gpio_register failed: %d\n", ret);
-    }			
+    }
 }
 
 #endif /* CONFIG_GPIO */

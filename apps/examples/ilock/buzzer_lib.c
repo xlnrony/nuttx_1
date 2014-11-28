@@ -53,7 +53,7 @@
 #include <assert.h>
 #include <errno.h>
 
-#include "led_lib.h"
+#include "buzzer_lib.h"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -80,15 +80,15 @@ static int buzzer_fd;
  * Public Functions
  ****************************************************************************/
 
-void buzzer_op(int cmd, uint8_t color, uint32_t delay, uint32_t interval)
+void buzzer_op(int cmd, uint8_t type, uint32_t delay, uint32_t interval)
 {
   int ret;
-  struct ind_ctl indctl;
-	
-  indctl.color = color;
+  struct ind_ctl_s indctl;
+
+  indctl.type = type;
   indctl.delay = delay;
   indctl.interval =interval;
-	
+
   ret = ioctl(buzzer_fd, cmd, (unsigned long)&indctl);
   if (ret < 0)
     {
@@ -96,21 +96,25 @@ void buzzer_op(int cmd, uint8_t color, uint32_t delay, uint32_t interval)
     }
 }
 
-void buzzer_init(void)
+int buzzer_init(void)
 {
+  int ret;
   buzzer_fd = open(CONFIG_BUZZER_DEVNAME, 0);
   if (buzzer_fd < 0)
     {
-      inddbg("buzzer_init: open %s failed: %d\n", CONFIG_BUZZER_DEVNAME, errno);
+      ret = -errno;
+      inddbg("buzzer_init: open %s failed: %d\n", CONFIG_BUZZER_DEVNAME, ret);
+      return ret;
     }
+  return OK;
 }
 
 void buzzer_deinit(void)
 {
   if (buzzer_fd > 0)
-  	{
-	  close(buzzer_fd);
-  	}
+    {
+      close(buzzer_fd);
+    }
 }
 
 

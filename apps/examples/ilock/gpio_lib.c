@@ -53,7 +53,9 @@
 #include <assert.h>
 #include <errno.h>
 
-#include "led_lib.h"
+#include <nuttx/gpio/gpio.h>
+
+#include "gpio_lib.h"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -92,7 +94,7 @@ static bool gpio_read(int fd)
 {
   int ret;
   bool value = false;
-	
+
   DEBUGASSERT(fd>0);
   ret = ioctl(fd, GPIOC_READ, (unsigned long)&value);
   if (ret < 0)
@@ -133,13 +135,13 @@ void gpio_init(void)
 void gpio_deinit(void)
 {
   if (magnet_fd > 0)
-  	{
-	  close(magnet_fd);
-  	}
+    {
+      close(magnet_fd);
+    }
   if (closesw_fd > 0)
-  	{
-	  close(closesw_fd);
-  	}
+    {
+      close(closesw_fd);
+    }
 }
 
 

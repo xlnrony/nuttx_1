@@ -43,6 +43,7 @@
 #include <nuttx/config.h>
 #include <stdint.h>
 #include <net/if.h>
+#include <netinet/in.h>
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -63,26 +64,26 @@
 
 #define CONFIG_GROUP_DEF_VALUE 			0
 #define CONFIG_GROUP_SIZE 						32
- 
+
 /****************************************************************************
  * Public Types
  ****************************************************************************/
- struct keyslot_s
+struct keyslot_s
 {
-	uint8_t pubkey[CONFIG_PUBKEY_SIZE];
-	bool group[CONFIG_GROUP_SIZE];
-}
+  uint8_t pubkey[CONFIG_PUBKEY_SIZE];
+  bool group[CONFIG_GROUP_SIZE];
+};
 
 struct config_s
 {
   uint8_t macaddr[IFHWADDRLEN];
   struct in_addr hostaddr;
-  struct in_addr netmask;	
-  struct in_addr dripaddr;	
-  struct in_addr svraddr;	
-  int32_t shock_resistor_threshold;  
-  int32_t infra_red_threshold;  	
-  int32_t photo_resistor_threshold;  		
+  struct in_addr netmask;
+  struct in_addr dripaddr;
+  struct in_addr svraddr;
+  int32_t shock_resistor_threshold;
+  int32_t infra_red_threshold;
+  int32_t photo_resistor_threshold;
   struct keyslot_s keyslots[CONFIG_GROUP_SIZE];
 };
 
@@ -98,7 +99,7 @@ extern "C"
 #define EXTERN extern
 #endif
 
-EXTERN struct config_s config;
+EXTERN struct config_s *config;
 
 /****************************************************************************
  * Public Function Prototypes
@@ -106,6 +107,8 @@ EXTERN struct config_s config;
 
 EXTERN void load_config(void);
 EXTERN void save_config(void);
+EXTERN int config_init(void);
+EXTERN void config_deinit(void);
 
 #undef EXTERN
 #ifdef __cplusplus

@@ -99,19 +99,19 @@ int keypad_readln(char *buf, size_t buflen, bool postip)
       return ret;
     }
 
-  keypaddbg("keypad_readln: Device %s opened\n", CONFIG_EXAMPLES_KEYPAD_DEVNAME);
+  keypaddbg("keypad_readln: Device %s opened\n", CONFIG_KEYPAD_DEVNAME);
 
   /* Loop until there is a read failure */
-	
+
   i = 0;
   memset(buf, 0, buflen);
   if (postip)
-  	{
-	  led1_op(LEDC_ALWAYS, LED_RED, UINT32_MAX , 0);
-	  led2_op(LEDC_ALWAYS, LED_NONE, UINT32_MAX, 0);
-	  led3_op(LEDC_ALWAYS, LED_NONE, UINT32_MAX, 0);
-  	}
-	
+    {
+      led1_op(INDC_ALWAYS, IND_RED, UINT32_MAX , 0);
+      led2_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
+      led3_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
+    }
+
   do
     {
       /* Read a buffer of data */
@@ -121,95 +121,95 @@ int keypad_readln(char *buf, size_t buflen, bool postip)
         {
           if (*buf == ';')
             {
-			    *buf = 0x00;
+              *buf = 0x00;
             }
           else if (*buf == ':' && i > 0)
             {
-	           i = 0;
-	           memset(buf, 0, buflen);
-	           if (postip) 
-			      {
-				     led1_op(LEDC_ALWAYS, LED_RED, UINT32_MAX, 0);
-				     led2_op(LEDC_ALWAYS, LED_NONE, UINT32_MAX, 0);
-				     led3_op(LEDC_ALWAYS, LED_NONE, UINT32_MAX, 0);
-	             }
+              i = 0;
+              memset(buf, 0, buflen);
+              if (postip)
+                {
+                  led1_op(INDC_ALWAYS, IND_RED, UINT32_MAX, 0);
+                  led2_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
+                  led3_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
+                }
             }
-		   else
-		     {
-		       if (postip)
-		         {
-		           switch(i)
-		          	 {
-					 	case 0:
-							led1_op(LEDC_ALWAYS, LED_GREEN, UINT32_MAX, 0);
-							led2_op(LEDC_ALWAYS, LED_NONE, UINT32_MAX, 0);
-							led3_op(LEDC_ALWAYS, LED_NONE, UINT32_MAX, 0);
-							break;
-						case 1:
-							led1_op(LEDC_ALWAYS, LED_BLUE, UINT32_MAX, 0);
-							led2_op(LEDC_ALWAYS, LED_NONE, UINT32_MAX, 0);
-							led3_op(LEDC_ALWAYS, LED_NONE, UINT32_MAX, 0);
-							break;
-						case 2:
-							led1_op(LEDC_ALWAYS, LED_NONE, UINT32_MAX, 0);
-							led2_op(LEDC_ALWAYS, LED_RED, UINT32_MAX, 0);
-							led3_op(LEDC_ALWAYS, LED_NONE, UINT32_MAX, 0);
-							break;
-						case 3:
-							led1_op(LEDC_ALWAYS, LED_NONE, UINT32_MAX, 0);
-							led2_op(LEDC_ALWAYS, LED_GREEN, UINT32_MAX, 0);
-							led3_op(LEDC_ALWAYS, LED_NONE, UINT32_MAX, 0);
-							break;
-						case 4:
-							led1_op(LEDC_ALWAYS, LED_NONE, UINT32_MAX, 0);
-							led2_op(LEDC_ALWAYS, LED_BLUE, UINT32_MAX, 0);
-							led3_op(LEDC_ALWAYS, LED_NONE, UINT32_MAX, 0);
-							break;
-						case 5:
-							led1_op(LEDC_ALWAYS, LED_NONE, UINT32_MAX, 0);
-							led2_op(LEDC_ALWAYS, LED_NONE, UINT32_MAX, 0);
-							led3_op(LEDC_ALWAYS, LED_RED, UINT32_MAX, 0);
-							break;
-						case 6:
-							led1_op(LEDC_ALWAYS, LED_NONE, UINT32_MAX, 0);
-							led2_op(LEDC_ALWAYS, LED_NONE, UINT32_MAX, 0);
-							led3_op(LEDC_ALWAYS, LED_GREEN, UINT32_MAX, 0);
-							break;
-						case 7:
-							led1_op(LEDC_ALWAYS, LED_NONE, UINT32_MAX, 0);
-							led2_op(LEDC_ALWAYS, LED_NONE, UINT32_MAX, 0);
-							led3_op(LEDC_ALWAYS, LED_BLUE, UINT32_MAX, 0);
-							break;
-						case 8:
-							led1_op(LEDC_ALWAYS, LED_RED, UINT32_MAX, 0);
-							led2_op(LEDC_ALWAYS, LED_RED, UINT32_MAX, 0);
-							led3_op(LEDC_ALWAYS, LED_RED, UINT32_MAX, 0);
-							break;
-						case 9:
-							led1_op(LEDC_ALWAYS, LED_GREEN, UINT32_MAX, 0);
-							led2_op(LEDC_ALWAYS, LED_GREEN, UINT32_MAX, 0);
-							led3_op(LEDC_ALWAYS, LED_GREEN, UINT32_MAX, 0);
-							break;
-						case 10:
-							led1_op(LEDC_ALWAYS, LED_BLUE, UINT32_MAX, 0);
-							led2_op(LEDC_ALWAYS, LED_BLUE, UINT32_MAX, 0);
-							led3_op(LEDC_ALWAYS, LED_BLUE, UINT32_MAX, 0);
-							break;
-						default:
-							led1_op(LEDC_ALWAYS, LED_NONE, UINT32_MAX, 0);
-							led2_op(LEDC_ALWAYS, LED_NONE, UINT32_MAX, 0);
-							led3_op(LEDC_ALWAYS, LED_NONE, UINT32_MAX, 0);
-							break;
-		          	  }
-		         }
-		     }
+          else
+            {
+              if (postip)
+                {
+                  switch(i)
+                    {
+                      case 0:
+                        led1_op(INDC_ALWAYS, IND_GREEN, UINT32_MAX, 0);
+                        led2_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
+                        led3_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
+                        break;
+                      case 1:
+                        led1_op(INDC_ALWAYS, IND_BLUE, UINT32_MAX, 0);
+                        led2_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
+                        led3_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
+                        break;
+                      case 2:
+                        led1_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
+                        led2_op(INDC_ALWAYS, IND_RED, UINT32_MAX, 0);
+                        led3_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
+                        break;
+                      case 3:
+                        led1_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
+                        led2_op(INDC_ALWAYS, IND_GREEN, UINT32_MAX, 0);
+                        led3_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
+                        break;
+                      case 4:
+                        led1_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
+                        led2_op(INDC_ALWAYS, IND_BLUE, UINT32_MAX, 0);
+                        led3_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
+                        break;
+                      case 5:
+                        led1_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
+                        led2_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
+                        led3_op(INDC_ALWAYS, IND_RED, UINT32_MAX, 0);
+                        break;
+                      case 6:
+                        led1_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
+                        led2_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
+                        led3_op(INDC_ALWAYS, IND_GREEN, UINT32_MAX, 0);
+                        break;
+                      case 7:
+                        led1_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
+                        led2_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
+                        led3_op(INDC_ALWAYS, IND_BLUE, UINT32_MAX, 0);
+                        break;
+                      case 8:
+                        led1_op(INDC_ALWAYS, IND_RED, UINT32_MAX, 0);
+                        led2_op(INDC_ALWAYS, IND_RED, UINT32_MAX, 0);
+                        led3_op(INDC_ALWAYS, IND_RED, UINT32_MAX, 0);
+                        break;
+                      case 9:
+                        led1_op(INDC_ALWAYS, IND_GREEN, UINT32_MAX, 0);
+                        led2_op(INDC_ALWAYS, IND_GREEN, UINT32_MAX, 0);
+                        led3_op(INDC_ALWAYS, IND_GREEN, UINT32_MAX, 0);
+                        break;
+                      case 10:
+                        led1_op(INDC_ALWAYS, IND_BLUE, UINT32_MAX, 0);
+                        led2_op(INDC_ALWAYS, IND_BLUE, UINT32_MAX, 0);
+                        led3_op(INDC_ALWAYS, IND_BLUE, UINT32_MAX, 0);
+                        break;
+                      default:
+                        led1_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
+                        led2_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
+                        led3_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
+                        break;
+                    }
+                }
+            }
         }
     }
   while (n >= 0 && (n == 1 ? (*buf++ != 0x00 && ++i < buflen) : true));
 
   if (n<0)
     {
-	  ret = -errno;
+      ret = -errno;
       keypaddbg("keypad_readln: read() failed: %d\n", ret);
     }
 

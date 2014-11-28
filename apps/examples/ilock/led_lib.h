@@ -44,12 +44,12 @@
 #include <stdint.h>
 #include <nuttx/gpio/indicator.h>
 
-#if defined(CONFIG_LED)
+#if defined(CONFIG_INDICATOR)
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
- 
+
 /****************************************************************************
  * Public Types
  ****************************************************************************/
@@ -70,10 +70,10 @@ extern "C"
  * Public Function Prototypes
  ****************************************************************************/
 
-EXTERN inline void led1_op(int cmd, uint8_t color, uint32_t delay, uint32_t interval);
-EXTERN inline void led2_op(int cmd, uint8_t color, uint32_t delay, uint32_t interval);
-EXTERN inline void led3_op(int cmd, uint8_t color, uint32_t delay, uint32_t interval);
-EXTERN void led_init(void);
+EXTERN inline void led1_op(int cmd, uint8_t type, uint32_t delay, uint32_t interval);
+EXTERN inline void led2_op(int cmd, uint8_t type, uint32_t delay, uint32_t interval);
+EXTERN inline void led3_op(int cmd, uint8_t type, uint32_t delay, uint32_t interval);
+EXTERN int led_init(void);
 EXTERN void led_deinit(void);
 
 #undef EXTERN
@@ -81,6 +81,6 @@ EXTERN void led_deinit(void);
 }
 #endif
 
-#endif /* CONFIG_LED */
+#endif /* CONFIG_INDICATOR */
 #endif /* __APPS_INCLUDE_LED_LIB_H */
 

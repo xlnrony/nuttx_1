@@ -85,113 +85,122 @@
 /*
  *  算法类型
  */
-typedef enum _ALGO_TYPE {
-    ALGO_DES = 0x0000,
-    ALGO_3DES_2KEY_EDE = 0x0001,
-    ALGO_SSF33 = 0x0004,
-    ALGO_SCB2 = 0x0008,
-    ALGO_RSA = 0x0010,
-    ALGO_MD2 = 0x0100,
-    ALGO_MD5 = 0x0200,
-    ALGO_SHA1 = 0x0300,
-    K_ENUM_FORCE(ALGO_TYPE)
+typedef enum _ALGO_TYPE
+{
+  ALGO_DES = 0x0000,
+  ALGO_3DES_2KEY_EDE = 0x0001,
+  ALGO_SSF33 = 0x0004,
+  ALGO_SCB2 = 0x0008,
+  ALGO_RSA = 0x0010,
+  ALGO_MD2 = 0x0100,
+  ALGO_MD5 = 0x0200,
+  ALGO_SHA1 = 0x0300,
+  K_ENUM_FORCE(ALGO_TYPE)
 } ALGO_TYPE;
 
 /*
  *  算法模式
  */
-typedef enum _ALGO_MODE{
-    SYMMETRIC_ECB = 0,
-    SYMMETRIC_CBC = 1,
-    SYMMETRIC_CFB = 2,
-    SYMMETRIC_OFB = 3,
-    K_ENUM_FORCE(ALGO_MODE)
-}ALGO_MODE;
+typedef enum _ALGO_MODE
+{
+  SYMMETRIC_ECB = 0,
+  SYMMETRIC_CBC = 1,
+  SYMMETRIC_CFB = 2,
+  SYMMETRIC_OFB = 3,
+  K_ENUM_FORCE(ALGO_MODE)
+} ALGO_MODE;
 
 /*
  *  Token状态
  */
-typedef enum _TOKEN_STATUS{
-    TOKEN_OFFLINE = 0,
-    TOKEN_ONLINE  = 1,
-    TOKEN_LOGIN   = 2,
-    K_ENUM_FORCE(TOKEN_STATUS)
-}TOKEN_STATUS;
+typedef enum _TOKEN_STATUS
+{
+  TOKEN_OFFLINE = 0,
+  TOKEN_ONLINE  = 1,
+  TOKEN_LOGIN   = 2,
+  K_ENUM_FORCE(TOKEN_STATUS)
+} TOKEN_STATUS;
 
 /*
  *  PADDING类型
  */
-typedef enum _PADDING_TYPE{
-    PKCS1_PADDING       = 0x0000,
-    K_ENUM_FORCE(PADDING_TYPE)
-}PADDING_TYPE;
+typedef enum _PADDING_TYPE
+{
+  PKCS1_PADDING       = 0x0000,
+  K_ENUM_FORCE(PADDING_TYPE)
+} PADDING_TYPE;
 
 /*
  *  Token信息
  */
-typedef struct _PT_Token_Info {
-    unsigned char nMaxSOPINLen; /*  管理员PIN的最大长度 */
-    unsigned char nMinSOPINLen; /*  管理员PIN的最小长度 */
-    unsigned char nMaxPINLen; /*  用户PIN的长度   */
-    unsigned char nMinPINLen; /*  用户PIN的长度   */
-    unsigned short nAlgoCap; /*  密码运算能力属性，参见上面的宏  */
-    char szSerialNumber[16]; /*  序列号，用于区分Token的唯一标识 */
-    unsigned long nTotalMemory; /*  Token总空间，字节数 */
-    char szLabel[32]; /* Token标签 */
+typedef struct _PT_Token_Info
+{
+  unsigned char nMaxSOPINLen; /*  管理员PIN的最大长度 */
+  unsigned char nMinSOPINLen; /*  管理员PIN的最小长度 */
+  unsigned char nMaxPINLen; /*  用户PIN的长度   */
+  unsigned char nMinPINLen; /*  用户PIN的长度   */
+  unsigned short nAlgoCap; /*  密码运算能力属性，参见上面的宏  */
+  char szSerialNumber[16]; /*  序列号，用于区分Token的唯一标识 */
+  unsigned long nTotalMemory; /*  Token总空间，字节数 */
+  char szLabel[32]; /* Token标签 */
 } PT_Token_Info, *PPT_Token_Info;
 
 /*
  *  PIN类型
  */
-typedef enum _PIN_TYPE{
-    SO_PIN      = 0,
-    USER_PIN    = 1,
-    K_ENUM_FORCE(PIN_TYPE)
-}PIN_TYPE;
+typedef enum _PIN_TYPE
+{
+  SO_PIN      = 0,
+  USER_PIN    = 1,
+  K_ENUM_FORCE(PIN_TYPE)
+} PIN_TYPE;
 
 /*
  *  RSA密钥位数，生成RSA密钥时使用
  */
-typedef enum _PLUGTOKEN_RSA_BITS{
-    PLUGRSA_512_BIT     =512,
-    PLUGRSA_1024_BIT    =1024,
-    PLUGRSA_2048_BIT    =2048,
-    K_ENUM_FORCE(PLUGTOKEN_RSA_BITS)
-}PLUGTOKEN_RSA_BITS;
+typedef enum _PLUGTOKEN_RSA_BITS
+{
+  PLUGRSA_512_BIT     =512,
+  PLUGRSA_1024_BIT    =1024,
+  PLUGRSA_2048_BIT    =2048,
+  K_ENUM_FORCE(PLUGTOKEN_RSA_BITS)
+} PLUGTOKEN_RSA_BITS;
 
 /*
  *  Token中文件的类型
  */
-typedef enum _TOKEN_FILE_TYPE{
-    BINARY_FILE         = 0,
-    DES_KEY_FILE        = 1,    
-    DES_2KEY_FILE       = 2,    
-    DES_3KEY_FILE       = 3,
-    SSF33_KEY_FILE      = 4,
-    RSA_PRV_KEY_FILE    = 5,
-	SM1_KEY_FILE       = 6,
-	CERT_FILE_SIGN			= 7,
-	RSA_PUB_KEY_FILE_SIGN	= 8,
-	CERT_FILE_KEYX		=9,
-	RSA_PUB_KEY_FILE_KEYX =10,
-	CONTAINER_FILE		= 11,
-    K_ENUM_FORCE(TOKEN_FILE_TYPE)
-}TOKEN_FILE_TYPE;
+typedef enum _TOKEN_FILE_TYPE
+{
+  BINARY_FILE         = 0,
+  DES_KEY_FILE        = 1,
+  DES_2KEY_FILE       = 2,
+  DES_3KEY_FILE       = 3,
+  SSF33_KEY_FILE      = 4,
+  RSA_PRV_KEY_FILE    = 5,
+  SM1_KEY_FILE       = 6,
+  CERT_FILE_SIGN			= 7,
+  RSA_PUB_KEY_FILE_SIGN	= 8,
+  CERT_FILE_KEYX		=9,
+  RSA_PUB_KEY_FILE_KEYX =10,
+  CONTAINER_FILE		= 11,
+  K_ENUM_FORCE(TOKEN_FILE_TYPE)
+} TOKEN_FILE_TYPE;
 
 /*
  *  Token中文件的访问权限
  */
-typedef enum _TOKEN_FILE_PRIVILEDGE{
-    READ_PRIVILEDGE_MASK    = 0x0f,
-    READ_NO_PIN             = 0x00,
-    READ_PIN_PROTECT        = 0x01,
-    READ_NOT_ALLOWED        = 0x02,
-    WRITE_PRIVILEDGE_MASK   = 0xf0,
-    WRITE_NO_PIN            = 0x00,
-    WRITE_PIN_PROTECT       = 0x10,
-    WRITE_NOT_ALLOWED       = 0x20,
-    K_ENUM_FORCE(TOKEN_FILE_PRIVILEDGE)
-}TOKEN_FILE_PRIVILEDGE;
+typedef enum _TOKEN_FILE_PRIVILEDGE
+{
+  READ_PRIVILEDGE_MASK    = 0x0f,
+  READ_NO_PIN             = 0x00,
+  READ_PIN_PROTECT        = 0x01,
+  READ_NOT_ALLOWED        = 0x02,
+  WRITE_PRIVILEDGE_MASK   = 0xf0,
+  WRITE_NO_PIN            = 0x00,
+  WRITE_PIN_PROTECT       = 0x10,
+  WRITE_NOT_ALLOWED       = 0x20,
+  K_ENUM_FORCE(TOKEN_FILE_PRIVILEDGE)
+} TOKEN_FILE_PRIVILEDGE;
 
 #define MD2_NAME "MD2"
 #define MD2_LONG_NAME "Message Digest 2 (MD2)"
@@ -211,8 +220,8 @@ typedef enum _TOKEN_FILE_PRIVILEDGE{
 #define SHA_BITS 160
 #define SHA_MIN_BITS 160
 #define SHA_MAX_BITS 160
-#define SHA1_OID "\x30\x21\x30\x09\x06\x05\x2b\x0E\x03\x02\x1A\x05\x00\x04\x14"  
-#define SHA1_OID_LEN    15 
+#define SHA1_OID "\x30\x21\x30\x09\x06\x05\x2b\x0E\x03\x02\x1A\x05\x00\x04\x14"
+#define SHA1_OID_LEN    15
 #define SSL3_SHAMD5_NAME "SSL3 SHAMD5"
 #define SSL3_SHAMD5_LONG_NAME "SSL3 SHAMD5"
 #define SSL3_SHAMD5_BITS 288
@@ -271,7 +280,7 @@ typedef enum _TOKEN_FILE_PRIVILEDGE{
 #define CALG_SSF33               (ALG_CLASS_DATA_ENCRYPT|ALG_TYPE_BLOCK|ALG_SID_SSF33)
 #define CALG_SM1               (ALG_CLASS_DATA_ENCRYPT|ALG_TYPE_BLOCK|ALG_SID_SM1)
 
-// added in 2007-11-08, 
+// added in 2007-11-08,
 #define ALG_SSF33			0x00000001
 #define ALG_SCB2			0x00000002
 #define ALG_SCB2_S			0x00000004
@@ -333,32 +342,35 @@ typedef enum _TOKEN_FILE_PRIVILEDGE{
 /***************************************************/
 //  USBSLOCK 命令包（CMD）结构定义
 // 说明：CMD包固定长度为16个字节，本结构兼容7816-3。
-//同时还有较多的保留字用于扩展命令。 
+//同时还有较多的保留字用于扩展命令。
 //主机应先发命令，后发数据
 
 /***************************************************/
-typedef struct tagUSLock_CMD {
-    uint8_t cmd_type; // 0 命令类型   RSA； 相当于7816-3 中的INS
-    uint8_t cmd_mingxi; // 1 命令明细 1 加密、解密，得到密钥；相当于7816-3 中的CLA
-    uint8_t cmd_Reseved0; // 2 保留字节，可用于自定义用途。RSA公钥位数
-    uint8_t cmd_Reseved1; // 3 保留字节，可用于自定义用途。
-    uint16_t cmd_OutLength; //4//5 本次CMD希望Bulk-out端点传送的数据长度。如果长度为0，本次传输无数据传送。
-    uint16_t cmd_InLength; //6，7 本次CMD应回应的数据长度。如果长度为0，本次传输无数据传输。
+typedef struct tagUSLock_CMD
+{
+  uint8_t cmd_type; // 0 命令类型   RSA； 相当于7816-3 中的INS
+  uint8_t cmd_mingxi; // 1 命令明细 1 加密、解密，得到密钥；相当于7816-3 中的CLA
+  uint8_t cmd_Reseved0; // 2 保留字节，可用于自定义用途。RSA公钥位数
+  uint8_t cmd_Reseved1; // 3 保留字节，可用于自定义用途。
+  uint16_t cmd_OutLength; //4//5 本次CMD希望Bulk-out端点传送的数据长度。如果长度为0，本次传输无数据传送。
+  uint16_t cmd_InLength; //6，7 本次CMD应回应的数据长度。如果长度为0，本次传输无数据传输。
 
-    union _flag {
-        struct _left {
-            uint8_t cmd_P1; // 8  7816-3 中的P1
-            uint8_t cmd_P2; // 9  7816-3 中的P2
-            uint8_t cmd_Reseved2; // A 保留字节，可用于自定义用途。
-            uint8_t cmd_Reseved3; // B 保留字节，可用于自定义用途。
-        } left;
-        uint32_t para; //命令参数，如RSA位数，数据索引，数据地址
-    } flag;
+  union _flag
+  {
+    struct _left
+    {
+      uint8_t cmd_P1; // 8  7816-3 中的P1
+      uint8_t cmd_P2; // 9  7816-3 中的P2
+      uint8_t cmd_Reseved2; // A 保留字节，可用于自定义用途。
+      uint8_t cmd_Reseved3; // B 保留字节，可用于自定义用途。
+    } left;
+    uint32_t para; //命令参数，如RSA位数，数据索引，数据地址
+  } flag;
 
-    uint8_t cmd_Reseved4; // C 保留字节，可用于自定义用途。
-    uint8_t cmd_Reseved5; // D 保留字节，可用于自定义用途。
-    uint8_t cmd_Reseved6; // C 保留字节，可用于自定义用途。
-    uint8_t cmd_Reseved7; // D 保留字节，可用于自定义用途。
+  uint8_t cmd_Reseved4; // C 保留字节，可用于自定义用途。
+  uint8_t cmd_Reseved5; // D 保留字节，可用于自定义用途。
+  uint8_t cmd_Reseved6; // C 保留字节，可用于自定义用途。
+  uint8_t cmd_Reseved7; // D 保留字节，可用于自定义用途。
 } KEUSLock_CMD, *LPUSLock_CMD;
 
 /***************************************************/
@@ -367,16 +379,17 @@ typedef struct tagUSLock_CMD {
 //设备应先返状态，后返数据；如果状态表示不成功，则不返回数据
 
 /***************************************************/
-typedef struct tagUSLock_STAT {
-    uint16_t bSTATStatus; // 0,1 该字段用来指示CMD命令执行成功或者失败。
-    uint8_t dSTATReseved0; // 2 保留字节，可用于自定义用途。
-    uint8_t dSTATDataResidue; // 3 为兼容7816-3协议设置。剩余数据长度。用来监视数据传输过程。
-    uint32_t dSTATtag; // 4,5,6,7 备需要根据相应的CMD响应，填充。可根据命令自定义。
-    uint32_t dSTATReseved1; // 8,9,a,b 保留字节，可用于自定义用途。
-    uint8_t dSTATReseved2; // C 保留字节，可用于自定义用途。
-    uint8_t dSTATReseved3; // D 保留字节，可用于自定义用途。
-    uint8_t dSTATReseved4; // E 保留字节，可用于自定义用途。
-    uint8_t dSTATReseved5; // F 保留字节，可用于自定义用途。
+typedef struct tagUSLock_STAT
+{
+  uint16_t bSTATStatus; // 0,1 该字段用来指示CMD命令执行成功或者失败。
+  uint8_t dSTATReseved0; // 2 保留字节，可用于自定义用途。
+  uint8_t dSTATDataResidue; // 3 为兼容7816-3协议设置。剩余数据长度。用来监视数据传输过程。
+  uint32_t dSTATtag; // 4,5,6,7 备需要根据相应的CMD响应，填充。可根据命令自定义。
+  uint32_t dSTATReseved1; // 8,9,a,b 保留字节，可用于自定义用途。
+  uint8_t dSTATReseved2; // C 保留字节，可用于自定义用途。
+  uint8_t dSTATReseved3; // D 保留字节，可用于自定义用途。
+  uint8_t dSTATReseved4; // E 保留字节，可用于自定义用途。
+  uint8_t dSTATReseved5; // F 保留字节，可用于自定义用途。
 } KEUSLock_STAT, *LPUSLock_STAT;
 
 
@@ -400,9 +413,9 @@ static int jksafekey_write_bulk(int fd, uint8_t cdb[USBMSC_MAXCDBLEN], size_t le
   memcpy(p + USBMSC_MAXCDBLEN, buff, len);
   ret = write(fd, p, USBMSC_MAXCDBLEN + len);
   if (ret == USBMSC_MAXCDBLEN + len)
-  	{
-		ret = OK;
-  	}
+    {
+      ret = OK;
+    }
   free(p);
   return ret;
 }
@@ -415,10 +428,10 @@ static int jksafekey_read_bulk(int fd, uint8_t cdb[USBMSC_MAXCDBLEN], size_t len
   memcpy(p + USBMSC_MAXCDBLEN, buff, len);
   ret = read(fd, p, USBMSC_MAXCDBLEN + len);
   if (ret == USBMSC_MAXCDBLEN + len)
-  	{
-  	    memcpy(buff, p + USBMSC_MAXCDBLEN, len);
-		ret = OK;
-  	}
+    {
+      memcpy(buff, p + USBMSC_MAXCDBLEN, len);
+      ret = OK;
+    }
   free(p);
   return ret;
 }
@@ -427,12 +440,13 @@ static int jksafekey_read_bulk(int fd, uint8_t cdb[USBMSC_MAXCDBLEN], size_t len
 #define SWAP32(x)   ((SWAP((x) & 0xFFFF) << 16) | SWAP(((x) >> 16) & 0xFFFF))
 
 static PLUG_RV jksafekey_transfer(
-		 int fd,	
-        KEUSLock_CMD *slock_cmd, // 指向输入 命令包的指针
-        void* InBuffer, // 输入buffer指针
-        KEUSLock_STAT *slock_stat, // 指向输出状态包的指针
-        void* OutBuffer // 输出buffer指针
-        ) {        
+  int fd,
+  KEUSLock_CMD *slock_cmd, // 指向输入 命令包的指针
+  void* InBuffer, // 输入buffer指针
+  KEUSLock_STAT *slock_stat, // 指向输出状态包的指针
+  void* OutBuffer // 输出buffer指针
+)
+{
   uint8_t GET_PARA[USBMSC_MAXCDBLEN] = {0xf7, 0x00, 0x00, 0x86, 0x10, 0x00, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
   uint8_t GET_BUSY[USBMSC_MAXCDBLEN] = {0xf5, 0x00, 0x00, 0x86, 0x10, 0x00, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
   uint8_t device_busy;
@@ -444,31 +458,37 @@ static PLUG_RV jksafekey_transfer(
   memcpy(InputBuffer, slock_cmd, sizeof(KEUSLock_CMD));
   memcpy(InputBuffer + sizeof(KEUSLock_CMD) , InBuffer, slock_cmd->cmd_OutLength);
   //判断是否为忙
-  do {
-      if (jksafekey_read_bulk(fd, GET_BUSY, 1, &device_busy) < 0) {
+  do
+    {
+      if (jksafekey_read_bulk(fd, GET_BUSY, 1, &device_busy) < 0)
+        {
           slock_stat->bSTATStatus = RV_FAIL;
           return RV_FAIL;
-      }
-  } while (device_busy == 1);
+        }
+    }
+  while (device_busy == 1);
   //
-  if (jksafekey_write_bulk(fd, GET_PARA, sizeof(KEUSLock_CMD) + slock_cmd->cmd_OutLength, InputBuffer) < 0) {
+  if (jksafekey_write_bulk(fd, GET_PARA, sizeof(KEUSLock_CMD) + slock_cmd->cmd_OutLength, InputBuffer) < 0)
+    {
       slock_stat->bSTATStatus = RV_FAIL;
       return RV_FAIL;
-  }
-  if (jksafekey_read_bulk(fd, GET_PARA, sizeof(KEUSLock_STAT) + slock_cmd->cmd_InLength, OutputBuffer) < 0) {
+    }
+  if (jksafekey_read_bulk(fd, GET_PARA, sizeof(KEUSLock_STAT) + slock_cmd->cmd_InLength, OutputBuffer) < 0)
+    {
       slock_stat->bSTATStatus = RV_FAIL;
       return RV_FAIL;
-  }
+    }
   //设为不忙
   device_busy = 0;
-  if (jksafekey_write_bulk(fd, GET_BUSY, 0, &device_busy) < 0) {
+  if (jksafekey_write_bulk(fd, GET_BUSY, 0, &device_busy) < 0)
+    {
       slock_stat->bSTATStatus = RV_FAIL;
       return RV_FAIL;
-  }
+    }
   memcpy(slock_stat, OutputBuffer, sizeof(KEUSLock_STAT));
-  slock_stat->bSTATStatus = SWAP(slock_stat->bSTATStatus);	
+  slock_stat->bSTATStatus = SWAP(slock_stat->bSTATStatus);
   if ((slock_cmd->cmd_InLength != 0) && (slock_stat->bSTATStatus == RV_OK))
-      memcpy(OutBuffer, OutputBuffer + sizeof(KEUSLock_STAT), slock_cmd->cmd_InLength);
+    memcpy(OutBuffer, OutputBuffer + sizeof(KEUSLock_STAT), slock_cmd->cmd_InLength);
 
   free(InputBuffer);
   free(OutputBuffer);
@@ -476,7 +496,8 @@ static PLUG_RV jksafekey_transfer(
   return slock_stat->bSTATStatus;
 }
 
-static PLUG_RV jksafekey_read_binary(int fd, uint16_t fileid, uint8_t* data, uint32_t offset, uint32_t len) {
+static PLUG_RV jksafekey_read_binary(int fd, uint16_t fileid, uint8_t* data, uint32_t offset, uint32_t len)
+{
   PLUG_RV ret;
   unsigned char temp[2];
   KEUSLock_CMD slock_cmd = {0};
@@ -487,7 +508,7 @@ static PLUG_RV jksafekey_read_binary(int fd, uint16_t fileid, uint8_t* data, uin
   //打开文件
   slock_cmd.cmd_type = Open_File1;
   slock_cmd.cmd_OutLength = 2;
-    *((uint16_t *) (temp)) = fileid & 0xff;
+  *((uint16_t *) (temp)) = fileid & 0xff;
 
   if ((ret = jksafekey_transfer(fd, &slock_cmd, temp, &slock_stat, NULL)) != RV_OK)
     return ret;
@@ -495,103 +516,111 @@ static PLUG_RV jksafekey_read_binary(int fd, uint16_t fileid, uint8_t* data, uin
   memset(&slock_cmd, 0, sizeof(KEUSLock_CMD));
   slock_cmd.cmd_type = ReadDataBlock;
 //处理大于1024字节的情况
-  while (datalen1 > 1024) {
-    slock_cmd.flag.para = offset1;
-    slock_cmd.cmd_InLength = 1024;
-    if ((ret = jksafekey_transfer(fd, &slock_cmd, NULL, &slock_stat, data)) != RV_OK)
+  while (datalen1 > 1024)
+    {
+      slock_cmd.flag.para = offset1;
+      slock_cmd.cmd_InLength = 1024;
+      if ((ret = jksafekey_transfer(fd, &slock_cmd, NULL, &slock_stat, data)) != RV_OK)
         return ret;
-    data += 1024;
-    offset1 += 1024;
-    datalen1 -= 1024;
-  }
-  if (datalen1) {
-    slock_cmd.flag.para = offset1;
-    slock_cmd.cmd_InLength = datalen1;
-    if ((ret = jksafekey_transfer(fd, &slock_cmd, NULL, &slock_stat, data)) != RV_OK)
+      data += 1024;
+      offset1 += 1024;
+      datalen1 -= 1024;
+    }
+  if (datalen1)
+    {
+      slock_cmd.flag.para = offset1;
+      slock_cmd.cmd_InLength = datalen1;
+      if ((ret = jksafekey_transfer(fd, &slock_cmd, NULL, &slock_stat, data)) != RV_OK)
         return ret;
-  }
+    }
   //关闭文件
   memset(&slock_cmd, 0, 16);
   slock_cmd.cmd_type = Close_File1;
   return jksafekey_transfer(fd, &slock_cmd, NULL, &slock_stat, NULL);
 }
 
-static PLUG_RV jksafekey_get_data(int fd, int filetype, uint8_t* data, uint32_t* len) {
-    PLUG_RV ret;
-    uint8_t tmp[4];
-    int fileid;
-    switch (filetype) {
-        case CERT_FILE_SIGN:
-        case CERT_FILE_KEYX:
-            fileid = 0x0B + (filetype == CERT_FILE_SIGN ? 3 : 6);
-            ret = jksafekey_read_binary(fd, Pref_FileID + fileid, tmp, 0, 4);
+static PLUG_RV jksafekey_get_data(int fd, int filetype, uint8_t* data, uint32_t* len)
+{
+  PLUG_RV ret;
+  uint8_t tmp[4];
+  int fileid;
+  switch (filetype)
+    {
+      case CERT_FILE_SIGN:
+      case CERT_FILE_KEYX:
+        fileid = 0x0B + (filetype == CERT_FILE_SIGN ? 3 : 6);
+        ret = jksafekey_read_binary(fd, Pref_FileID + fileid, tmp, 0, 4);
 
-            if (tmp[0] == 0)
-                return RV_FAIL;
-            if (!data) {
-                *len = (uint32_t) tmp[2]*256 + (uint32_t) tmp[3] + 4;
-                break;
-            }
-            ret = jksafekey_read_binary(fd, Pref_FileID + fileid, data, 0, *len);
+        if (tmp[0] == 0)
+          return RV_FAIL;
+        if (!data)
+          {
+            *len = (uint32_t) tmp[2]*256 + (uint32_t) tmp[3] + 4;
             break;
-        case RSA_PUB_KEY_FILE_SIGN:
-            fileid = 0x0B + 2;
-            ret = jksafekey_read_binary(fd, Pref_FileID + fileid, data, 0, *len);
-            if (data[0] == 0)
-                return RV_FAIL;
-            break;
-        case RSA_PUB_KEY_FILE_KEYX:
-            fileid = 0x0B + 5;
-            ret = jksafekey_read_binary(fd, Pref_FileID + fileid, data, 0, *len);
-            if (data[0] == 0)
-                return RV_FAIL;
-            break;
-        case CONTAINER_FILE:
-            fileid = 0x0B;
-            ret = jksafekey_read_binary(fd, Pref_FileID + fileid, data, 0, *len); //CONTAINER_NAME_LEN);
-            break;
-        default:
-            fileid = 0;
+          }
+        ret = jksafekey_read_binary(fd, Pref_FileID + fileid, data, 0, *len);
+        break;
+      case RSA_PUB_KEY_FILE_SIGN:
+        fileid = 0x0B + 2;
+        ret = jksafekey_read_binary(fd, Pref_FileID + fileid, data, 0, *len);
+        if (data[0] == 0)
+          return RV_FAIL;
+        break;
+      case RSA_PUB_KEY_FILE_KEYX:
+        fileid = 0x0B + 5;
+        ret = jksafekey_read_binary(fd, Pref_FileID + fileid, data, 0, *len);
+        if (data[0] == 0)
+          return RV_FAIL;
+        break;
+      case CONTAINER_FILE:
+        fileid = 0x0B;
+        ret = jksafekey_read_binary(fd, Pref_FileID + fileid, data, 0, *len); //CONTAINER_NAME_LEN);
+        break;
+      default:
+        fileid = 0;
     }
-    if (fileid) {
-        return ret;
+  if (fileid)
+    {
+      return ret;
     }
-    return RV_FAIL;
+  return RV_FAIL;
 }
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
-PLUG_RV jksafekey_verify_pin(int fd, char *pin) {
-	PLUG_RV ret;
-	uint8_t temp[16];
-	KEUSLock_CMD slock_cmd = {0};
-	KEUSLock_STAT slock_stat = {0};
+PLUG_RV jksafekey_verify_pin(int fd, char *pin)
+{
+  PLUG_RV ret;
+  uint8_t temp[16];
+  KEUSLock_CMD slock_cmd = {0};
+  KEUSLock_STAT slock_stat = {0};
 
-	int len = strlen(pin);
-	if (len < 4) 
-	  {
-	    return RV_PIN_INCORRECT;
-	  }
+  int len = strlen(pin);
+  if (len < 4)
+    {
+      return RV_PIN_INCORRECT;
+    }
 
-	slock_cmd.cmd_type = Verify_PIN;
-	slock_cmd.cmd_mingxi = 0;
-	slock_cmd.cmd_OutLength = 16;
-	
-	memset(temp, 0, 16);
-	memcpy(temp, pin, len);
-	
-	if ((ret = jksafekey_transfer(fd, &slock_cmd, temp, &slock_stat, NULL)) != RV_OK)
-	  {
-	    return ret;
-	  }
+  slock_cmd.cmd_type = Verify_PIN;
+  slock_cmd.cmd_mingxi = 0;
+  slock_cmd.cmd_OutLength = 16;
 
-	return RV_OK;
+  memset(temp, 0, 16);
+  memcpy(temp, pin, len);
+
+  if ((ret = jksafekey_transfer(fd, &slock_cmd, temp, &slock_stat, NULL)) != RV_OK)
+    {
+      return ret;
+    }
+
+  return RV_OK;
 }
 
-PLUG_RV jksafekey_get_pubkey(int fd, uint8_t keyspec, uint8_t* data) {
-    uint32_t keylen = 128;
-    return jksafekey_get_data(fd, (keyspec == AT_KEYEXCHANGE ? RSA_PUB_KEY_FILE_KEYX : RSA_PUB_KEY_FILE_SIGN), data, &keylen);
+PLUG_RV jksafekey_get_pubkey(int fd, uint8_t keyspec, uint8_t* data)
+{
+  uint32_t keylen = 128;
+  return jksafekey_get_data(fd, (keyspec == AT_KEYEXCHANGE ? RSA_PUB_KEY_FILE_KEYX : RSA_PUB_KEY_FILE_SIGN), data, &keylen);
 }
 

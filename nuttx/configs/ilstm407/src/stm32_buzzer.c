@@ -99,16 +99,16 @@ static int stm32_buzzer_setup(FAR struct led_dev_s *dev)
   int ret;
   ret = stm32_configgpio(priv->pinset);
   if (ret < 0)
-  	{
+    {
       leddbg("stm32_buzzer_setup: stm32_configgpio failed: %d\n", ret);
-  	}
+    }
   return ret;
 }
 
 static int stm32_buzzer_shutdown(FAR struct led_dev_s *dev)
 {
   struct stm32_dev_s *priv = (struct stm32_dev_s *)dev->priv;
-	
+
   stm32_unconfiggpio(priv->pinset);
 
   return OK;
@@ -121,11 +121,11 @@ static void stm32_buzzer_ioctl(FAR struct led_dev_s *dev, uint8_t color)
   switch(color)
     {
       case IND_RED, IND_GREEN, IND_BLUE, IND_ON:
-	    stm32_gpiowrite(priv->pinset, false);
-	    break;
-	  case IND_NONE:
-	    stm32_gpiowrite(priv->pinset, true);
-	    break;
+        stm32_gpiowrite(priv->pinset, false);
+        break;
+      case IND_NONE:
+        stm32_gpiowrite(priv->pinset, true);
+        break;
     }
 }
 
@@ -141,7 +141,7 @@ void stm32_buzzer_initialize(void)
   if (ret < 0)
     {
       leddbg("stm32_buzzer_initialize: led_register failed: %d\n", ret);
-    }			
+    }
 }
 
 #endif /* CONFIG_GPIO */

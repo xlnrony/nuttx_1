@@ -1,3 +1,4 @@
+
 /****************************************************************************
  * examples/ilock/ilock_main.c
  *
@@ -70,6 +71,8 @@
 #include "adc_lib.h"
 #include "config_lib.h"
 #include "gpio_lib.h"
+#include "buzzer_lib.h"
+#include "protocal.h"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -126,40 +129,51 @@
 #  define CONFIG_UNLOCK_SECOND_TIME_OUT SEC2TICK(60)
 #endif
 
+#ifndef CONFIG_MAGNET_DELAY
+#  define CONFIG_MAGNET_DELAY SEC2TICK(10)
+#endif
+
+#ifndef CONFIG_SCAN_TASK_STACKSIZE
+#  define CONFIG_SCAN_TASK_STACKSIZE 2048
+#endif
+
+#ifndef CONFIG_UNLOCK_TASK_STACKSIZE
+#  define CONFIG_UNLOCK_TASK_STACKSIZE 2048
+#endif
+
 #ifdef CONFIG_CPP_HAVE_VARARGS
 
 /* C-99 style variadic macros are supported */
 
-#ifdef CONFIG_DEBUG_ILOCK
-#  define ilockdbg(format, ...)    dbg(format, ##__VA_ARGS__)
-#  define ilocklldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
-#  define ilockvdbg(format, ...)   vdbg(format, ##__VA_ARGS__)
-#  define ilockllvdbg(format, ...) llvdbg(format, ##__VA_ARGS__)
-#else
-#  define ilockdbg(x...)
-#  define ilocklldbg(x...)
-#  define ilockvdbg(x...)
-#  define ilockllvdbg(x...)
-#endif
+#  ifdef CONFIG_DEBUG_ILOCK
+#    define ilockdbg(format, ...)    dbg(format, ##__VA_ARGS__)
+#    define ilocklldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
+#    define ilockvdbg(format, ...)   vdbg(format, ##__VA_ARGS__)
+#    define ilockllvdbg(format, ...) llvdbg(format, ##__VA_ARGS__)
+#  else
+#    define ilockdbg(x...)
+#    define ilocklldbg(x...)
+#    define ilockvdbg(x...)
+#    define ilockllvdbg(x...)
+#  endif
 
-#else /* CONFIG_CPP_HAVE_VARARGS */
+#else                                  /* CONFIG_CPP_HAVE_VARARGS */
 
 /* Variadic macros NOT supported */
 
-#ifdef CONFIG_DEBUG_ILOCK
-#  define ilockdbg     dbg
-#  define ilockvdbg   vdbg
-#  define ilocklldbg   lldbg
-#  define ilockllvdbg llvdbg
-#else
-#  define ilockdbg 		(void)
-#  define ilockvdbg		(void)
-#  define ilocklldbg		(void)
-#  define ilockllvdbg	(void)
-#endif
+#  ifdef CONFIG_DEBUG_ILOCK
+#    define ilockdbg     dbg
+#    define ilockvdbg   vdbg
+#    define ilocklldbg   lldbg
+#    define ilockllvdbg llvdbg
+#  else
+#    define ilockdbg 		(void)
+#    define ilockvdbg		(void)
+#    define ilocklldbg		(void)
+#    define ilockllvdbg	(void)
+#  endif
 
-#endif /* CONFIG_CPP_HAVE_VARARGS */
-
+#endif                                 /* CONFIG_CPP_HAVE_VARARGS */
 
 /****************************************************************************
  * Private Types
@@ -172,9 +186,9 @@
 static uint8_t g_unlock_step = 3;
 static uint32_t g_magnet_delay = 0;
 static uint32_t g_last_time = 0;
- 
-static bool g_group[CONFIG_GROUP_SIZE] = {true};
-static bool g_check[CONFIG_GROUP_SIZE] = {false};
+
+static bool g_group[CONFIG_GROUP_SIZE] = { true };
+static bool g_check[CONFIG_GROUP_SIZE] = { false };
 
 /****************************************************************************
  * Public Data
@@ -182,6 +196,7 @@ static bool g_check[CONFIG_GROUP_SIZE] = {false};
 
 bool g_remote_auth = false;
 uint8_t g_log_flag = 0;
+uint8_t g_alert_type = 0;
 
 /****************************************************************************
  * Public Function Prototypes
@@ -191,14 +206,15 @@ uint8_t g_log_flag = 0;
  * Private Functions
  ****************************************************************************/
 
-void netlib_genmacaddr(uint8_t *macaddr) {
-    srand(clock_systimer());
-    macaddr[0] = 0xfc;
-    macaddr[1] = 0xfc;
-    macaddr[2] = 0xfc;
-    macaddr[3] = rand();
-    macaddr[4] = rand();
-    macaddr[5] = rand();
+void netlib_genmacaddr(uint8_t * macaddr)
+{
+  srand(clock_systimer());
+  macaddr[0] = 0xfc;
+  macaddr[1] = 0xfc;
+  macaddr[2] = 0xfc;
+  macaddr[3] = rand();
+  macaddr[4] = rand();
+  macaddr[5] = rand();
 }
 
 in_addr_t netlib_formataddr(FAR const char *cp)
@@ -207,482 +223,159 @@ in_addr_t netlib_formataddr(FAR const char *cp)
   uint32_t result;
 
   sscanf(cp, "%3u%3u%3u%3u", &a, &b, &c, &d);
-  result   = a << 8;
-  result  |= b;
+  result = a << 8;
+  result |= b;
   result <<= 8;
-  result  |= c;
+  result |= c;
   result <<= 8;
-  result  |= d;
+  result |= d;
   return HTONL(result);
 }
-
-
-
-
-#if 0
-int ilock_main(int argc, char *argv[])
-{
-//  pid_t pid;
-//  ssize_t nbytes;
-  int fd;
-  int ret;
-  bool connected = false;
-  int rhpndx;
-  static FAR struct usbhost_connection_s *g_usbconn;
-  
-
-  /* First, register all of the USB host HID keyboard class driver */
-
-  printf("epass3003_main: Register class drivers\n");
-  ret = usbhost_epass3003init();
-  if (ret != OK)
-    {
-      printf("epass3003_main: Failed to register the KBD class\n");
-    }
-
-  /* Then get an instance of the USB host interface.  The platform-specific
-   * code must provide a wrapper called arch_usbhost_initialize() that will
-   * perform the actual USB host initialization.
-   */
-
-  printf("epass3003_main: Initialize epass3003 driver\n");
-  g_usbconn = usbhost_initialize(0);
-  if (g_usbconn)
-    {
-      /* Start a thread to handle device connection. */
-
-      printf("epass3003_main: Start epass3003_waiter\n");
-
-      /* Wait for the device to change state.
-       *
-       * REVISIT:  This will not handle USB implementations (such as the the
-       * SAMA5) which have multiple downstream, root hub ports.  In such cases,
-       * connected must be an array with dimension equal to the number of root
-       * hub ports.
-       */
-
-      rhpndx = usbhost_connection_wait(g_usbconn, &connected);
-      DEBUGASSERT(rhpndx == OK);
-
-      connected = !connected;
-      printf("epass3003_waiter: %s\n", connected ? "connected" : "disconnected");
-
-      /* Did we just become connected? */
-
-      if (!connected)
-        {
-          /* Yes.. enumerate the newly connected device */
-          printf("epass3003_main: epass3003_waiter returned but not connected\n");
-	   return 0;
-        }
-
-      ret = usbhost_connection_enumerate(g_usbconn, rhpndx);
-      if (ret < 0)
-      	 {
-          printf("usbhost_connection_enumerate failed: %d\n", ret);
-          fflush(stdout);
-	   return 0;
-      	 }
-      printf("Opening device %s\n", CONFIG_EXAMPLES_EPASS3003_DEVNAME);
-      fd = open(CONFIG_EXAMPLES_EPASS3003_DEVNAME, O_RDWR);
-      if (fd < 0)
-        {
-          printf("Failed: %d\n", errno);
-          fflush(stdout);
-	      return 0;
-        }
-	  
-      printf("Device %s opened\n", CONFIG_EXAMPLES_EPASS3003_DEVNAME);
-      fflush(stdout);
-
-      uint8_t txbuf[]="\x00\x84\x00\x00\x08";
-      size_t txpktlen=5;
-      uint8_t rxbuf[128]={0};
-      size_t rxlen=128;
-      char onebyte[4]={0};
-      char rxfmtbuf[384]={0};
-
-      ret = epass3003_transmit_apdu(fd, txbuf, txpktlen, rxbuf, &rxlen);
-      if (ret < 0)
-      	 {
-          printf("epass3003_transmit_apdu failed: %d\n", ret);
-          fflush(stdout);
-          goto errout;
-      	 }
-
-      int i;	
-      for(i=0;i<rxlen;i++)
-        {
-          sprintf(onebyte, "%02x ", rxbuf[i]);
-          strcat(rxfmtbuf, onebyte);
-      	 }
-      printf("epass3003_transmit_apdu result:%s\n", rxfmtbuf);  
-	  
-errout:
-      printf("Closing device %s\n", CONFIG_EXAMPLES_EPASS3003_DEVNAME);
-      fflush(stdout);
-      close(fd);
-	  
-    }
-
-  return 0;
-}
-
-#endif
-
-#if 0
-int ilock_main(int argc, char *argv[])
-{
-  int fd;
-  int errval = 0;
-  int ret;
-
-  if (argc != 3)
-  	{
-	   printf("gpio:main: Need two extra parameters\n");
-      errval = 3;
-      goto errout;
-  	}
-	
-  printf("gpio_main: Hardware initialized. Opening the gpio device: %s\n",
-          argv[1]);
-
-  fd = open(argv[1], 0);
-  if (fd < 0)
-    {
-      printf("adc_main: open %s failed: %d\n", argv[1], errno);
-      errval = 1;
-      goto errout;
-    }
-
-  fflush(stdout);
-
-  ret = ioctl(fd, GPIOC_WRITE, *argv[2] - '0');
-  if (ret < 0)
-    {
-      int errcode = errno;
-      printf("gpio_main: GPIOC_WRITE ioctl failed: %d\n", errcode);
-      errval = 2;
-      goto errout_with_dev;
-    }
-	
-  getchar();
-	
-  close(fd);
-  fflush(stdout);
-	
-  return OK;
-	
-  /* Error exits */
-
-errout_with_dev:
-  close(fd);
-
-errout:
-  printf("Terminating!\n");
-  fflush(stdout);
-  return errval;
-}
-#endif
-
-#if 0
-int ilock_main(int argc, char *argv[])
-{
-  int fd;
-  PLUG_RV ret;
-  
-  printf("Opening device %s\n", CONFIG_EXAMPLES_JKSAFEKEY_DEVNAME);
-  fd = open(CONFIG_EXAMPLES_JKSAFEKEY_DEVNAME, O_RDWR);
-  if (fd < 0)
-    {
-      printf("Failed: %d\n", errno);
-      fflush(stdout);
-    return 0;
-    }
-
-  printf("Device %s opened\n", CONFIG_EXAMPLES_JKSAFEKEY_DEVNAME);
-  fflush(stdout);
-
-#if 0
-  ret = jksafekey_verify_pin(fd, "123466");
-  if (ret < 0)
-  	 {
-      printf("jksafekey_verify_pin failed: %d\n", ret);
-      fflush(stdout);
-      goto errout;
-  	 }
-#endif	
-
-  uint8_t pubkey[128] = {0};	
-
-  ret = jksafekey_get_pubkey(fd, AT_SIGNATURE, pubkey);
-  if (ret != RV_OK)
-  	 {
-      printf("jksafekey_get_pubkey failed: %d\n", ret);
-      fflush(stdout);
-      goto errout;
-  	 }
-
-  int i;	
-  char onebyte[4]={0};
-  char rxfmtbuf[384]={0};
-	
-  for(i=0;i<128;i++)
-    {
-      sprintf(onebyte, "%02x ", pubkey[i]);
-      strcat(rxfmtbuf, onebyte);
-  	 }
-  printf("jksafekey_get_pubkey result:%s\n", rxfmtbuf);  
-
-errout:
-  printf("Closing device %s\n", CONFIG_EXAMPLES_JKSAFEKEY_DEVNAME);
-  fflush(stdout);
-  close(fd);
-
-  return 0;
-}
-#endif
-
-#if 0
-int ilock_main(int argc, char *argv[])
-{
-  struct adc_msg_s sample;
-  size_t readsize;
-  ssize_t nbytes;
-
-  int mvfd;
-  int mgfd;
-  int timfd;
-	
-  int errval = 0;
-  int ret;
-
-  printf("Opening the gpio device: %s\n", CONFIG_MAGNET_VCC_DEVNAME);
-  mvfd = open(CONFIG_MAGNET_VCC_DEVNAME, 0);
-  if (mvfd < 0)
-    {
-      printf("open %s failed: %d\n", CONFIG_MAGNET_VCC_DEVNAME, errno);
-      errval = 1;
-      goto errout;
-    }
-
-  printf("Opening the gpio device: %s\n", CONFIG_MAGNET_GND_DEVNAME);
-  mgfd = open(CONFIG_MAGNET_GND_DEVNAME, 0);
-  if (mgfd < 0)
-    {
-      printf("open %s failed: %d\n", CONFIG_MAGNET_GND_DEVNAME, errno);
-      errval = 1;
-      goto errout_with_mvfd;
-    }
-
-  fflush(stdout);
-
-  ret = ioctl(mvfd, GPIOC_WRITE, 1);
-  if (ret < 0)
-    {
-      printf("GPIOC_WRITE ioctl failed: %d\n", errno);
-      errval = 2;
-      goto errout_with_mgfd;
-    }
-
-  sleep(1);
-
-  ret = ioctl(mgfd, GPIOC_WRITE, 0);
-  if (ret < 0)
-    {
-      printf("GPIOC_WRITE ioctl failed: %d\n", errno);
-      errval = 2;
-      goto errout_with_mgfd;
-    }
-
-  sleep(1);
-
-  printf("Opening the TIM device: %s\n", CONFIG_MAGNET_LX_DEVNAME);
-  timfd = open(CONFIG_MAGNET_LX_DEVNAME, O_RDONLY);
-  if (timfd < 0)
-    {
-      printf("open %s failed: %d\n", CONFIG_MAGNET_LX_DEVNAME, errno);
-      errval = 2;
-      goto errout_with_mgfd;
-    }
-	
-  readsize = sizeof(struct adc_msg_s);
-  nbytes = read(timfd, &sample, readsize);
-  if (nbytes < 0)
-    {
-      errval = errno;
-      if (errval != EINTR)
-        {
-          printf("read %s failed: %d\n", CONFIG_MAGNET_LX_DEVNAME, errval);
-          errval = 3;
-          goto errout_with_timfd;
-        }
-
-      printf("Interrupted read...\n");
-    }
-  else if (nbytes == 0)
-    {
-      printf("No data read, Ignoring\n");
-    }
-  else
-    {
-      printf("channel: %d value: %d\n", sample.am_channel, sample.am_data);
-    }
-  fflush(stdout);
-	
-  errval = OK;
-	
-  /* Error exits */
-
-errout_with_timfd:
-  close(timfd);
-errout_with_mgfd:
-  close(mgfd);	
-errout_with_mvfd:
-  close(mvfd);
-
-errout:
-  printf("Terminating!\n");
-  fflush(stdout);
-  return errval;
-}
-#endif
-
 
 bool illegal_unlock_timeout(void)
 {
   static uint32_t last_illegal_unlock_tick = 0;
 
-  if (ABS(clock_systimer() - last_illegal_unlock_tick) > SEC2TICK(100)) 
-	{
-        last_illegal_unlock_tick = clock_systimer();
-        return true;
+  if (ABS(clock_systimer() - last_illegal_unlock_tick) > SEC2TICK(100))
+    {
+      last_illegal_unlock_tick = clock_systimer();
+      return true;
     }
   else
-	{
-        return false;
+    {
+      return false;
     }
 }
 
-void unlock_step_in_task(void) 
+void unlock_step_in_task(void)
 {
   bool b;
   static uint32_t check_infra_red_delay0 = 0;
   static uint32_t check_infra_red_delay1 = 0;
   static uint32_t check_unlock_delay0 = 0;
-  static uint32_t unlock_time_out = 0;	
+  static uint32_t unlock_time_out = 0;
   static bool closesw_last;
   static bool photo_resistor_last;
   static bool infra_red_last;
-	
-  if (unlock_step == 1) 
+
+  if (g_unlock_step == 1)
     {
-      //shock_alert_enabled = 0;
-      if (adc_infra_red_op() > config.infra_red_threshold) 
+      // shock_alert_enabled = 0;
+      if (adc_infra_red_op() > config->infra_red_threshold)
         {
           if (check_infra_red_delay0 > 0)
             {
               check_infra_red_delay0--;
-              if (check_infra_red_delay0 == 0 ||!closesw_read() ||adc_photo_resistor_op() < config.photo_resistor_threshold)
-				  {
-				    check_infra_red_delay0 = 0;
-                  unlock_step = 2;
+              if (check_infra_red_delay0 == 0 || !closesw_read()
+                  || adc_photo_resistor_op() < config->photo_resistor_threshold)
+                {
+                  check_infra_red_delay0 = 0;
+                  g_unlock_step = 2;
                   unlock_time_out = CONFIG_UNLOCK_FIRST_TIME_OUT;
-				    led1_op(INDC_ALWAYS, IND_GREEN, SEC2TICK(3), 0);
-				    led2_op(INDC_ALWAYS, IND_GREEN, SEC2TICK(3), 0);
+                  led1_op(INDC_ALWAYS, IND_GREEN, SEC2TICK(3), 0);
+                  led2_op(INDC_ALWAYS, IND_GREEN, SEC2TICK(3), 0);
                 }
-            } 
-		   else 
+            }
+          else
             {
               check_infra_red_delay0 = SEC2TICK(5);
             }
-        } 
-      else 
-	    {
-          check_infra_red_delay0 = 0;
-      	 }
-      if (magnet_delay == 0) {
-          if (check_unlock_delay0 > 0) {
-              check_unlock_delay0--;
-              if (check_unlock_delay0 == 0) {
-                  unlock_step = 3;
-                  //alert_type |= ALERT_LOCK;
-                  //shock_alert_enabled = 1;
-				    led3_op(INDC_ALWAYS, LED_BLUE, SEC2TICK(3), 0);
-              }
-          } else {
-              check_unlock_delay0 = SEC2TICK(5);
-          }
-      } else {
-          check_unlock_delay0 = 0;
-      }
-    }
-  else if (unlock_step == 2) 
-	{
-      if (unlock_time_out > 0) 
-	    {
-          unlock_time_out--;
         }
-	  else 
-		{
-          unlock_time_out = CONFIG_UNLOCK_SECOND_TIME_OUT;
-          //alert_type |= ALERT_NOLOCK_TIME_OUT;
-          //act_P17(1, 60);
-          led2_op(INDC_ALWAYS, LED_RED, SEC2TICK(3), 0); //没关门超时
-       }
-      if (adc_infra_red_op() < config.infra_red_threshold) 
-		{
-          if (check_infra_red_delay1 > 0) 
-		     {
-              check_infra_red_delay1--;
-              if (check_infra_red_delay1 == 0 && 
-					 magnet_delay == 0 && 
-					 closesw_read() && 
-					 adc_photo_resistor_op() >= config.photo_resistor_threshold) 
-				  {
-                  unlock_step = 3;
-                  //alert_type |= ALERT_LOCK;
-                  //shock_alert_enabled = 1;
-                  led3_op(INDC_ALWAYS, LED_BLUE, SEC2TICK(3), 0); //门阀扭闭通知
+      else
+        {
+          check_infra_red_delay0 = 0;
+        }
+      if (g_magnet_delay == 0)
+        {
+          if (check_unlock_delay0 > 0)
+            {
+              check_unlock_delay0--;
+              if (check_unlock_delay0 == 0)
+                {
+                  g_unlock_step = 3;
+                  g_alert_type |= ALERT_LOCK;
+                  // shock_alert_enabled = 1;
+                  led3_op(INDC_ALWAYS, IND_BLUE, SEC2TICK(3), 0);
                 }
             }
-		   else 
-			 {
+          else
+            {
+              check_unlock_delay0 = SEC2TICK(5);
+            }
+        }
+      else
+        {
+          check_unlock_delay0 = 0;
+        }
+    }
+  else if (g_unlock_step == 2)
+    {
+      if (unlock_time_out > 0)
+        {
+          unlock_time_out--;
+        }
+      else
+        {
+          unlock_time_out = CONFIG_UNLOCK_SECOND_TIME_OUT;
+          g_alert_type |= ALERT_NOLOCK_TIME_OUT;
+          buzzer_op(INDC_ALWAYS, IND_ON, SEC2TICK(3), 0);
+          led2_op(INDC_ALWAYS, IND_RED, SEC2TICK(3), 0);        // 没关门超时
+        }
+      if (adc_infra_red_op() < config->infra_red_threshold)
+        {
+          if (check_infra_red_delay1 > 0)
+            {
+              check_infra_red_delay1--;
+              if (check_infra_red_delay1 == 0 && g_magnet_delay == 0 &&
+                  closesw_read() &&
+                  adc_photo_resistor_op() >= config->photo_resistor_threshold)
+                {
+                  g_unlock_step = 3;
+                  g_alert_type |= ALERT_LOCK;
+                  // shock_alert_enabled = 1;
+                  led3_op(INDC_ALWAYS, IND_BLUE, SEC2TICK(3), 0);       // 门阀扭闭通知
+                }
+            }
+          else
+            {
               check_infra_red_delay1 = SEC2TICK(5);
             }
-        } 
-      else 
+        }
+      else
         {
           check_infra_red_delay1 = 0;
         }
     }
-  else if (unlock_step == 3) 
-	{
-      b = !closesw_read() ;
-      if (b && (!closesw_last || illegal_unlock_timeout())) {
-          //illegal_unlock("门开报警");
-      }
+  else if (g_unlock_step == 3)
+    {
+      b = !closesw_read();
+      if (b && (!closesw_last || illegal_unlock_timeout()))
+        {
+          // illegal_unlock("门开报警");
+        }
       closesw_last = b;
 
-      b = adc_photo_resistor_op() < config.photo_resistor_threshold;
-      if (b && (!photo_resistor_last || illegal_unlock_timeout())) {
-          //illegal_unlock("光感报警");
-      }
+      b = adc_photo_resistor_op() < config->photo_resistor_threshold;
+      if (b && (!photo_resistor_last || illegal_unlock_timeout()))
+        {
+          // illegal_unlock("光感报警");
+        }
       photo_resistor_last = b;
 
-      b = adc_infra_red_op() > config.infra_red_threshold;
-      if (b && (!infra_red_last || illegal_unlock_timeout())) {
-          //illegal_unlock("上锁报警");
-      }
+      b = adc_infra_red_op() > config->infra_red_threshold;
+      if (b && (!infra_red_last || illegal_unlock_timeout()))
+        {
+          // illegal_unlock("上锁报警");
+        }
       infra_red_last = b;
     }
 }
 
 void act_magnet_in_task(void)
 {
-  if (magnet_delay > 0)
+  if (g_magnet_delay > 0)
     {
-      magnet_delay--;
+      g_magnet_delay--;
     }
   else
     {
@@ -693,81 +386,78 @@ void act_magnet_in_task(void)
 void auth_init(void)
 {
   int i;
-    //remote_auth_unlock_flag = 0;
+  // remote_auth_unlock_flag = 0;
   for (i = 0; i < CONFIG_GROUP_SIZE; i++)
-  {
-    g_group[i] = true;
-    g_check[i] = false;
-  }
+    {
+      g_group[i] = true;
+      g_check[i] = false;
+    }
 }
 
 void auth_time_out_check(void)
 {
-  if (ABS(clock_systimer(), g_last_time) > SEC2TICK(600)) 
+  if (ABS(clock_systimer() - g_last_time) > SEC2TICK(600))
     {
       auth_init();
     }
 }
 
-bool this_time_auth(uint8_t pubkey[CONFIG_PUBKEY_SIZE]) 
+bool auth_this_time(uint8_t pubkey[CONFIG_PUBKEY_SIZE])
 {
   int i, j;
   bool ret = false;
-  for (i = 0; i < CONFIG_GROUP_SIZE; i++) 
+  for (i = 0; i < CONFIG_GROUP_SIZE; i++)
     {
-      if (memcmp(config.keyslots[i].pubkey, pubkey)==0)
-      	{
-      	  break;
-      	}
+      if (memcmp(config->keyslots[i].pubkey, pubkey, CONFIG_PUBKEY_SIZE) == 0)
+        {
+          break;
+        }
     }
   if (i < CONFIG_GROUP_SIZE)
-  	{
-	  for(j = 0; j < CONFIG_GROUP_SIZE; j++)
-	  	{
-		  if (!config.keyslots[i].group[j])
-		  	{
-			  g_group[j] = false;
-		  	}
-		  if (g_group[j])
-		  	{		  	
-		  	  ret = true;
-		  	}
-	  	}
-  	}
+    {
+      for (j = 0; j < CONFIG_GROUP_SIZE; j++)
+        {
+          if (!config->keyslots[i].group[j])
+            {
+              g_group[j] = false;
+            }
+          if (g_group[j])
+            {
+              ret = true;
+            }
+        }
+    }
   if (ret)
-  	{
+    {
       g_last_time = clock_systimer();
       g_check[i] = true;
-  	}
+    }
   return ret;
 }
 
-bool need_more_auth(void)
+bool auth_need_more(void)
 {
   int i, j;
   for (i = 0; i < CONFIG_GROUP_SIZE; i++)
-	{
+    {
       if (g_group[i])
         {
-          for (j = 0; j< CONFIG_GROUP_SIZE; j++)
-          	{
-		      if (g_check[j])
-		        {
-		          continue;
-		    	 }
-          	
-			  if (config.keyslots[j].group[i])
-			  	{
-				  return true;
-			  	}
-          	}
+          for (j = 0; j < CONFIG_GROUP_SIZE; j++)
+            {
+              if (g_check[j])
+                {
+                  continue;
+                }
+
+              if (config->keyslots[j].group[i])
+                {
+                  return true;
+                }
+            }
         }
     }
   return false;
 }
-
-
-
 
 static int scan_task(int argc, char *argv[])
 {
@@ -777,67 +467,78 @@ static int scan_task(int argc, char *argv[])
       usleep(USEC_PER_TICK);
       act_magnet_in_task();
       unlock_step_in_task();
-/*
-      shock_alert_in_task();
-      power_alert_in_task();
-      send_ok_in_task();
-      view_time_in_task();
-      view_sensor_in_task();
-      view_net_addr_in_task();
-      upload_pubkey_in_task();
-      heart_beat_in_task();
-      lock_check_sample();
-      download_firmware_ok_in_task();
-      crc32_firmware_in_task();
-      send_version_in_task();
-      lcd_delay_close_in_task();
-      check_heart_beat_in_task();
-      */
+
+      /*
+            shock_alert_in_task();
+            power_alert_in_task();
+            send_ok_in_task();
+            view_time_in_task();
+            view_sensor_in_task();
+            view_net_addr_in_task();
+            upload_pubkey_in_task();
+            heart_beat_in_task();
+            lock_check_sample();
+            download_firmware_ok_in_task();
+            crc32_firmware_in_task();
+            send_version_in_task();
+            lcd_delay_close_in_task();
+            check_heart_beat_in_task();
+            */
     }
 }
 
-bool authorize(char *pwd) {
+void act_unlock(unsigned char logflag)
+{
+  auth_init();
+  g_unlock_step = 1;
+  g_magnet_delay = CONFIG_MAGNET_DELAY;
+  g_log_flag |= logflag;
+  led1_op(INDC_ALWAYS, IND_GREEN, SEC2TICK(3), 0);
+}
+
+bool authorize(char *pwd)
+{
   int jksafekey_fd;
   PLUG_RV ret;
-  
+  uint8_t pubkey[CONFIG_PUBKEY_SIZE] = { 0 };
+
   jksafekey_fd = open(CONFIG_JKSAFEKEY_DEVNAME, O_RDWR);
   if (jksafekey_fd < 0)
     {
-      ilockdbg("authorize: opening device %s Failed: %d\n", CONFIG_JKSAFEKEY_DEVNAME, errno);
-	  buzzer_op(INDC_TWINKLE, IND_ON, SEC2TICK(1), MSEC2TICK(500));
-	  led1_op(INDC_TWINKLE, IND_BLUE, SEC2TICK(3), MSEC2TICK(500));
+      ilockdbg("authorize: opening device %s Failed: %d\n",
+               CONFIG_JKSAFEKEY_DEVNAME, errno);
+      buzzer_op(INDC_TWINKLE, IND_ON, SEC2TICK(1), MSEC2TICK(500));
+      led1_op(INDC_TWINKLE, IND_BLUE, SEC2TICK(3), MSEC2TICK(500));
       goto errclose;
     }
 
-  uint8_t pubkey[128] = {0};	
-
   ret = jksafekey_get_pubkey(jksafekey_fd, AT_SIGNATURE, pubkey);
   if (ret != RV_OK)
-  	 {
+    {
       ilockdbg("jksafekey_get_pubkey failed: %d\n", ret);
-	  buzzer_op(INDC_TWINKLE, IND_ON, SEC2TICK(1), MSEC2TICK(500));
-	  led1_op(INDC_TWINKLE, IND_RED, SEC2TICK(3), MSEC2TICK(500));
-	  led2_op(INDC_TWINKLE, IND_RED, SEC2TICK(3), MSEC2TICK(500));
+      buzzer_op(INDC_TWINKLE, IND_ON, SEC2TICK(1), MSEC2TICK(500));
+      led1_op(INDC_TWINKLE, IND_RED, SEC2TICK(3), MSEC2TICK(500));
+      led2_op(INDC_TWINKLE, IND_RED, SEC2TICK(3), MSEC2TICK(500));
       goto errclose;
-  	 }
+    }
 
   ret = jksafekey_verify_pin(jksafekey_fd, pwd);
   if (ret < 0)
-  	 {
+    {
       ilockdbg("authorize: jksafekey_verify_pin failed: %d\n", ret);
-//	        log_flag |= LOG_KEY_PASSWORD_ERROR;
-	  buzzer_op(INDC_TWINKLE, IND_ON, SEC2TICK(3), MSEC2TICK(500));
+      g_log_flag |= LOG_KEY_PASSWORD_ERROR;
+      buzzer_op(INDC_TWINKLE, IND_ON, SEC2TICK(3), MSEC2TICK(500));
       led3_op(INDC_ALWAYS, IND_RED, SEC2TICK(3), MSEC2TICK(500));
       goto errclose;
-  	 }
+    }
 
   close(jksafekey_fd);
 
   auth_time_out_check();
-  if (!this_time_auth())
+  if (!auth_this_time(pubkey))
     {
       auth_init();
-      if (!this_time_auth())
+      if (!auth_this_time(pubkey))
         {
           led1_op(INDC_TWINKLE, IND_RED, SEC2TICK(3), MSEC2TICK(500));
           led3_op(INDC_TWINKLE, IND_RED, SEC2TICK(3), MSEC2TICK(500));
@@ -845,20 +546,24 @@ bool authorize(char *pwd) {
           goto errout;
         }
     }
-  if (need_more_auth())
+  if (auth_need_more())
     {
-      //log_flag |= LOG_HALF_UNLOCK;
+      g_log_flag |= LOG_HALF_UNLOCK;
       led1_op(INDC_TWINKLE, IND_GREEN, SEC2TICK(3), MSEC2TICK(500));
       goto errout;
-  }
-  if (g_remote_auth) {
-      act_net_unlock(LOG_AUTH_UNLOCK);
-  } else {
-      act_net_unlock(LOG_UNLOCK);
-  }
+    }
+
+  if (g_remote_auth)
+    {
+      act_unlock(LOG_AUTH_UNLOCK);
+    }
+  else
+    {
+      act_unlock(LOG_UNLOCK);
+    }
 
   return true;
-	
+
 errclose:
   close(jksafekey_fd);
 errout:
@@ -869,275 +574,272 @@ static int unlock_task(int argc, char *argv[])
 {
   char keybuf[16];
   int ret;
-  while(true)
+  while (true)
     {
-    	ret = keypad_readln(keybuf, sizeof(keybuf), false);
-		if (ret < 0)
-		{
-			return ret;
-		}
-		if (keybuf[0]  == ':')
-		  {
-	        ret = keypad_readln(keybuf, sizeof(keybuf), false);
-		    if (ret < 0)
-		      {
-		        return ret;
-		      }
-		    switch(keybuf[0])
-		      {
-               case '0': //随机mac地址
-               	led1_op(INDC_ALWAYS, IND_GREEN, UINT32_MAX, 0);
-					led2_op(INDC_ALWAYS, IND_GREEN, UINT32_MAX, 0);
-					led3_op(INDC_ALWAYS, IND_GREEN, UINT32_MAX, 0);
-					netlib_genmacaddr(config.macaddr);
-					netlib_setmacaddr(CONFIG_ILOCK_IFNAME, config.macaddr);
-					save_config();				
-					ret = keypad_readln(keybuf, sizeof(keybuf), true);
-				   	if (ret < 0)
-				     {
-				       return ret;
-				     }
-               	led1_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
-					led2_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
-					led3_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
-                 	break;
-               case '1': //出厂复位网络参数
-               	led1_op(INDC_ALWAYS, IND_GREEN, UINT32_MAX, 0);
-					led2_op(INDC_ALWAYS, IND_GREEN, UINT32_MAX, 0);
-					led3_op(INDC_ALWAYS, IND_GREEN, UINT32_MAX, 0);
-					ret = keypad_readln(keybuf, sizeof(keybuf), false);
-				   	if (ret < 0)
-					  {
-				       return ret;
-					  }
-					if (strcmp(keybuf, CONFIG_ILOCK_SETTING_PIN) == 0) 
-					  {
-					    config.hostaddr.s_addr = inet_addr(CONFIG_HOSTADDR_DEF_VALUE);
-					    config.netmask.s_addr = inet_addr(CONFIG_NETMASK_DEF_VALUE);
-					    config.dripaddr.s_addr = inet_addr(CONFIG_DRIPADDR_DEF_VALUE);		
-					    config.svraddr.s_addr = inet_addr(CONFIG_SVRADDR_DEF_VALUE);		
+      ret = keypad_readln(keybuf, sizeof(keybuf), false);
+      if (ret < 0)
+        {
+          return ret;
+        }
+      if (keybuf[0] == ':')
+        {
+          ret = keypad_readln(keybuf, sizeof(keybuf), false);
+          if (ret < 0)
+            {
+              return ret;
+            }
+          switch (keybuf[0])
+            {
+              case '0':          // 随机mac地址
+                led1_op(INDC_ALWAYS, IND_GREEN, UINT32_MAX, 0);
+                led2_op(INDC_ALWAYS, IND_GREEN, UINT32_MAX, 0);
+                led3_op(INDC_ALWAYS, IND_GREEN, UINT32_MAX, 0);
+                netlib_genmacaddr(config->macaddr);
+                netlib_setmacaddr(CONFIG_ILOCK_IFNAME, config->macaddr);
+                save_config();
+                ret = keypad_readln(keybuf, sizeof(keybuf), true);
+                if (ret < 0)
+                  {
+                    return ret;
+                  }
+                led1_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
+                led2_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
+                led3_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
+                break;
+              case '1':          // 出厂复位网络参数
+                led1_op(INDC_ALWAYS, IND_GREEN, UINT32_MAX, 0);
+                led2_op(INDC_ALWAYS, IND_GREEN, UINT32_MAX, 0);
+                led3_op(INDC_ALWAYS, IND_GREEN, UINT32_MAX, 0);
+                ret = keypad_readln(keybuf, sizeof(keybuf), false);
+                if (ret < 0)
+                  {
+                    return ret;
+                  }
+                if (strcmp(keybuf, CONFIG_ILOCK_SETTING_PIN) == 0)
+                  {
+                    config->hostaddr.s_addr = inet_addr(CONFIG_HOSTADDR_DEF_VALUE);
+                    config->netmask.s_addr = inet_addr(CONFIG_NETMASK_DEF_VALUE);
+                    config->dripaddr.s_addr = inet_addr(CONFIG_DRIPADDR_DEF_VALUE);
+                    config->svraddr.s_addr = inet_addr(CONFIG_SVRADDR_DEF_VALUE);
 
-					    netlib_sethostaddr(CONFIG_ILOCK_IFNAME, &config.hostaddr);
-					    netlib_setnetmask(CONFIG_ILOCK_IFNAME, &config.netmask);
-					    netlib_setdraddr(CONFIG_ILOCK_IFNAME, &config.dripaddr);
+                    netlib_sethostaddr(CONFIG_ILOCK_IFNAME, &config->hostaddr);
+                    netlib_setnetmask(CONFIG_ILOCK_IFNAME, &config->netmask);
+                    netlib_setdraddr(CONFIG_ILOCK_IFNAME, &config->dripaddr);
 
-					    save_config();				
+                    save_config();
 
-					    ret = keypad_readln(keybuf, sizeof(keybuf), true);
-					    if (ret < 0)
-					      {
-					        return ret;
-					      }
-					  }
-               	led1_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
-					led2_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
-					led3_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
-                  break;
-              case '2': //震动阀值
-               	led1_op(INDC_ALWAYS, IND_GREEN, UINT32_MAX, 0);
-					led2_op(INDC_ALWAYS, IND_GREEN, UINT32_MAX, 0);
-					led3_op(INDC_ALWAYS, IND_GREEN, UINT32_MAX, 0);
-					ret = keypad_readln(keybuf, sizeof(keybuf), false);
-				   	if (ret < 0)
-					  {
-				       return ret;
-					  }
-					if (strcmp(keybuf, CONFIG_ILOCK_SETTING_PIN) == 0) 
-					  {
+                    ret = keypad_readln(keybuf, sizeof(keybuf), true);
+                    if (ret < 0)
+                      {
+                        return ret;
+                      }
+                  }
+                led1_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
+                led2_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
+                led3_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
+                break;
+              case '2':          // 震动阀值
+                led1_op(INDC_ALWAYS, IND_GREEN, UINT32_MAX, 0);
+                led2_op(INDC_ALWAYS, IND_GREEN, UINT32_MAX, 0);
+                led3_op(INDC_ALWAYS, IND_GREEN, UINT32_MAX, 0);
+                ret = keypad_readln(keybuf, sizeof(keybuf), false);
+                if (ret < 0)
+                  {
+                    return ret;
+                  }
+                if (strcmp(keybuf, CONFIG_ILOCK_SETTING_PIN) == 0)
+                  {
 //                      shock_alert_sampled = 1;
 
-					    ret = keypad_readln(keybuf, sizeof(keybuf), true);
-					    if (ret < 0)
-					      {
-					        return ret;
-					      }
-
+                    ret = keypad_readln(keybuf, sizeof(keybuf), true);
+                    if (ret < 0)
+                      {
+                        return ret;
+                      }
 //                      shock_alert_sampled = 0;
-					    config.shock_resistor_threshold = 0;
-					    save_config();				
-					  }
-               	led1_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
-					led2_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
-					led3_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
-                  break;
-              case '3': //上锁检测
-               	led1_op(INDC_ALWAYS, IND_GREEN, UINT32_MAX, 0);
-					led2_op(INDC_ALWAYS, IND_GREEN, UINT32_MAX, 0);
-					led3_op(INDC_ALWAYS, IND_GREEN, UINT32_MAX, 0);
-					ret = keypad_readln(keybuf, sizeof(keybuf), false);
-				   	if (ret < 0)
-					  {
-				       return ret;
-					  }
-					if (strcmp(keybuf, CONFIG_ILOCK_SETTING_PIN) == 0) 
-					  {
+                    config->shock_resistor_threshold = 0;
+                    save_config();
+                  }
+                led1_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
+                led2_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
+                led3_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
+                break;
+              case '3':          // 上锁检测
+                led1_op(INDC_ALWAYS, IND_GREEN, UINT32_MAX, 0);
+                led2_op(INDC_ALWAYS, IND_GREEN, UINT32_MAX, 0);
+                led3_op(INDC_ALWAYS, IND_GREEN, UINT32_MAX, 0);
+                ret = keypad_readln(keybuf, sizeof(keybuf), false);
+                if (ret < 0)
+                  {
+                    return ret;
+                  }
+                if (strcmp(keybuf, CONFIG_ILOCK_SETTING_PIN) == 0)
+                  {
 //                      P10_min_voltage = 0xff;
 //                      P10_max_voltage = 0x00;
 
 //                      lock_check_sampled = 1;
 
-					    ret = keypad_readln(keybuf, sizeof(keybuf), true);
-					    if (ret < 0)
-					      {
-					        return ret;
-					      }
-
+                    ret = keypad_readln(keybuf, sizeof(keybuf), true);
+                    if (ret < 0)
+                      {
+                        return ret;
+                      }
 //                      lock_check_sampled = 0;
 
 //                      P10_voltage = ((unsigned short) P10_min_voltage + (unsigned short) P10_max_voltage) / 2;
 
-					    config.infra_red_threshold = 0;
-					    save_config();				
-					  }
-               	led1_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
-					led2_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
-					led3_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
-                  break;
-              case '4': //光感阀值
-               	led1_op(INDC_ALWAYS, IND_GREEN, UINT32_MAX, 0);
-					led2_op(INDC_ALWAYS, IND_GREEN, UINT32_MAX, 0);
-					led3_op(INDC_ALWAYS, IND_GREEN, UINT32_MAX, 0);
-					ret = keypad_readln(keybuf, sizeof(keybuf), false);
-				   	if (ret < 0)
-					  {
-				       return ret;
-					  }
-					if (strcmp(keybuf, CONFIG_ILOCK_SETTING_PIN) == 0) 
-					  {
-					    ret = keypad_readln(keybuf, sizeof(keybuf), true);
-					    if (ret < 0)
-					      {
-					        return ret;
-					      }
-
+                    config->infra_red_threshold = 0;
+                    save_config();
+                  }
+                led1_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
+                led2_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
+                led3_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
+                break;
+              case '4':          // 光感阀值
+                led1_op(INDC_ALWAYS, IND_GREEN, UINT32_MAX, 0);
+                led2_op(INDC_ALWAYS, IND_GREEN, UINT32_MAX, 0);
+                led3_op(INDC_ALWAYS, IND_GREEN, UINT32_MAX, 0);
+                ret = keypad_readln(keybuf, sizeof(keybuf), false);
+                if (ret < 0)
+                  {
+                    return ret;
+                  }
+                if (strcmp(keybuf, CONFIG_ILOCK_SETTING_PIN) == 0)
+                  {
+                    ret = keypad_readln(keybuf, sizeof(keybuf), true);
+                    if (ret < 0)
+                      {
+                        return ret;
+                      }
 //                      P11_voltage = atoi(pwd);
-					    config.photo_resistor_threshold = 0;
-					    save_config();				
-					  }
-               	led1_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
-					led2_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
-					led3_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
-				   break;
-              case '5': //主机IP设置
-               	led1_op(INDC_ALWAYS, IND_GREEN, UINT32_MAX, 0);
-					led2_op(INDC_ALWAYS, IND_GREEN, UINT32_MAX, 0);
-					led3_op(INDC_ALWAYS, IND_GREEN, UINT32_MAX, 0);
-					ret = keypad_readln(keybuf, sizeof(keybuf), false);
-				   	if (ret < 0)
-					  {
-				       return ret;
-					  }
-					if (strcmp(keybuf, CONFIG_ILOCK_SETTING_PIN) == 0) 
-					  {
-					    ret = keypad_readln(keybuf, sizeof(keybuf), true);
-					    if (ret < 0)
-					      {
-					        return ret;
-					      }
+                    config->photo_resistor_threshold = 0;
+                    save_config();
+                  }
+                led1_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
+                led2_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
+                led3_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
+                break;
+              case '5':          // 主机IP设置
+                led1_op(INDC_ALWAYS, IND_GREEN, UINT32_MAX, 0);
+                led2_op(INDC_ALWAYS, IND_GREEN, UINT32_MAX, 0);
+                led3_op(INDC_ALWAYS, IND_GREEN, UINT32_MAX, 0);
+                ret = keypad_readln(keybuf, sizeof(keybuf), false);
+                if (ret < 0)
+                  {
+                    return ret;
+                  }
+                if (strcmp(keybuf, CONFIG_ILOCK_SETTING_PIN) == 0)
+                  {
+                    ret = keypad_readln(keybuf, sizeof(keybuf), true);
+                    if (ret < 0)
+                      {
+                        return ret;
+                      }
 
-					    config.hostaddr.s_addr = netlib_formataddr(keybuf);
-					    netlib_sethostaddr(CONFIG_ILOCK_IFNAME, &config.hostaddr);
-							
-					    save_config();				
-					  }
-               	led1_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
-					led2_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
-					led3_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
-                 break;
-              case '6': //网络掩码
-               	led1_op(INDC_ALWAYS, IND_GREEN, UINT32_MAX, 0);
-					led2_op(INDC_ALWAYS, IND_GREEN, UINT32_MAX, 0);
-					led3_op(INDC_ALWAYS, IND_GREEN, UINT32_MAX, 0);
-					ret = keypad_readln(keybuf, sizeof(keybuf), false);
-				   	if (ret < 0)
-					  {
-				       return ret;
-					  }
-					if (strcmp(keybuf, CONFIG_ILOCK_SETTING_PIN) == 0) 
-					  {
-					    ret = keypad_readln(keybuf, sizeof(keybuf), true);
-					    if (ret < 0)
-					      {
-					        return ret;
-					      }
+                    config->hostaddr.s_addr = netlib_formataddr(keybuf);
+                    netlib_sethostaddr(CONFIG_ILOCK_IFNAME, &config->hostaddr);
 
-					    config.netmask.s_addr = netlib_formataddr(keybuf);
-					    netlib_setnetmask(CONFIG_ILOCK_IFNAME, &config.netmask);
-							
-					    save_config();				
-					  }
-               	led1_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
-					led2_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
-					led3_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
-                  break;
-              case '7': //网关
-               	led1_op(INDC_ALWAYS, IND_GREEN, UINT32_MAX, 0);
-					led2_op(INDC_ALWAYS, IND_GREEN, UINT32_MAX, 0);
-					led3_op(INDC_ALWAYS, IND_GREEN, UINT32_MAX, 0);
-					ret = keypad_readln(keybuf, sizeof(keybuf), false);
-				   	if (ret < 0)
-					  {
-				       return ret;
-					  }
-					if (strcmp(keybuf, CONFIG_ILOCK_SETTING_PIN) == 0) 
-					  {
-					    ret = keypad_readln(keybuf, sizeof(keybuf), true);
-					    if (ret < 0)
-					      {
-					        return ret;
-					      }
+                    save_config();
+                  }
+                led1_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
+                led2_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
+                led3_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
+                break;
+              case '6':          // 网络掩码
+                led1_op(INDC_ALWAYS, IND_GREEN, UINT32_MAX, 0);
+                led2_op(INDC_ALWAYS, IND_GREEN, UINT32_MAX, 0);
+                led3_op(INDC_ALWAYS, IND_GREEN, UINT32_MAX, 0);
+                ret = keypad_readln(keybuf, sizeof(keybuf), false);
+                if (ret < 0)
+                  {
+                    return ret;
+                  }
+                if (strcmp(keybuf, CONFIG_ILOCK_SETTING_PIN) == 0)
+                  {
+                    ret = keypad_readln(keybuf, sizeof(keybuf), true);
+                    if (ret < 0)
+                      {
+                        return ret;
+                      }
 
-					    config.dripaddr.s_addr = netlib_formataddr(keybuf);
-					    netlib_setdraddr(CONFIG_ILOCK_IFNAME, &config.dripaddr);
-							
-					    save_config();				
-					  }
-               	led1_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
-					led2_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
-					led3_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
-                  break;
-              case '8': //服务器ip
-               	led1_op(INDC_ALWAYS, IND_GREEN, UINT32_MAX, 0);
-					led2_op(INDC_ALWAYS, IND_GREEN, UINT32_MAX, 0);
-					led3_op(INDC_ALWAYS, IND_GREEN, UINT32_MAX, 0);
-					ret = keypad_readln(keybuf, sizeof(keybuf), false);
-				   	if (ret < 0)
-					  {
-				       return ret;
-					  }
-					if (strcmp(keybuf, CONFIG_ILOCK_SETTING_PIN) == 0) 
-					  {
-					    ret = keypad_readln(keybuf, sizeof(keybuf), true);
-					    if (ret < 0)
-					      {
-					        return ret;
-					      }
+                    config->netmask.s_addr = netlib_formataddr(keybuf);
+                    netlib_setnetmask(CONFIG_ILOCK_IFNAME, &config->netmask);
 
-					    config.svraddr.s_addr = netlib_formataddr(keybuf);
-							
-					    save_config();				
-					  }
-               	led1_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
-					led2_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
-					led3_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
-                  break;
+                    save_config();
+                  }
+                led1_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
+                led2_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
+                led3_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
+                break;
+              case '7':          // 网关
+                led1_op(INDC_ALWAYS, IND_GREEN, UINT32_MAX, 0);
+                led2_op(INDC_ALWAYS, IND_GREEN, UINT32_MAX, 0);
+                led3_op(INDC_ALWAYS, IND_GREEN, UINT32_MAX, 0);
+                ret = keypad_readln(keybuf, sizeof(keybuf), false);
+                if (ret < 0)
+                  {
+                    return ret;
+                  }
+                if (strcmp(keybuf, CONFIG_ILOCK_SETTING_PIN) == 0)
+                  {
+                    ret = keypad_readln(keybuf, sizeof(keybuf), true);
+                    if (ret < 0)
+                      {
+                        return ret;
+                      }
+
+                    config->dripaddr.s_addr = netlib_formataddr(keybuf);
+                    netlib_setdraddr(CONFIG_ILOCK_IFNAME, &config->dripaddr);
+
+                    save_config();
+                  }
+                led1_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
+                led2_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
+                led3_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
+                break;
+              case '8':          // 服务器ip
+                led1_op(INDC_ALWAYS, IND_GREEN, UINT32_MAX, 0);
+                led2_op(INDC_ALWAYS, IND_GREEN, UINT32_MAX, 0);
+                led3_op(INDC_ALWAYS, IND_GREEN, UINT32_MAX, 0);
+                ret = keypad_readln(keybuf, sizeof(keybuf), false);
+                if (ret < 0)
+                  {
+                    return ret;
+                  }
+                if (strcmp(keybuf, CONFIG_ILOCK_SETTING_PIN) == 0)
+                  {
+                    ret = keypad_readln(keybuf, sizeof(keybuf), true);
+                    if (ret < 0)
+                      {
+                        return ret;
+                      }
+
+                    config->svraddr.s_addr = netlib_formataddr(keybuf);
+
+                    save_config();
+                  }
+                led1_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
+                led2_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
+                led3_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
+                break;
               case ':':
-                  up_systemreset();
-                  break;
-		      }
-		  }
-       else 
-		  {
-            if (unlock_step == 3) 
-			   {
-                need_authorize = 1;
-              }
-	        else 
-			   {
-                net_unlock_delay_count = UNLOCK_DELAY;
-              }
-         }
-     }
+                up_systemreset();
+                break;
+            }
+        }
+      else
+        {
+          if (g_unlock_step == 3)
+            {
+              authorize(keybuf);
+            }
+          else
+            {
+              g_magnet_delay = CONFIG_MAGNET_DELAY;
+            }
+        }
+    }
 }
 
 /****************************************************************************
@@ -1146,12 +848,64 @@ static int unlock_task(int argc, char *argv[])
 
 int ilock_main(int argc, char *argv[])
 {
-	led_init();
-	led1_op(INDC_TWINKLE, IND_RED, SEC2TICK(5), MSEC2TICK(500));
-	led2_op(INDC_TWINKLE, IND_GREEN, SEC2TICK(5), MSEC2TICK(500));
-	led3_op(INDC_TWINKLE, IND_BLUE, SEC2TICK(5), MSEC2TICK(500));
-	getchar();
-	led_deinit();
-	return OK;
-}
+  int ret;
+  pid_t scan_pid;
+  pid_t unlock_pid;
 
+  ret = led_init();
+  if (ret < 0)
+    {
+      return ret;
+    }
+  ret = buzzer_init();
+  if (ret < 0)
+    {
+      return ret;
+    }
+
+  led1_op(INDC_TWINKLE, IND_RED, SEC2TICK(5), MSEC2TICK(500));
+  led2_op(INDC_TWINKLE, IND_GREEN, SEC2TICK(5), MSEC2TICK(500));
+  led3_op(INDC_TWINKLE, IND_BLUE, SEC2TICK(5), MSEC2TICK(500));
+  buzzer_op(INDC_TWINKLE, IND_ON, SEC2TICK(5), MSEC2TICK(500));
+
+  ret = config_init();
+  if (ret < 0)
+    {
+      return ret;
+    }
+  load_config();
+
+  scan_pid =
+    task_create("iLockScan", 50, CONFIG_SCAN_TASK_STACKSIZE, scan_task, NULL);
+  if (scan_pid < 0)
+    {
+      printf("ilock_main: iLockScan task_create failed: %d\n", errno);
+    }
+
+  unlock_pid =
+    task_create("iLockUnlock", 50, CONFIG_UNLOCK_TASK_STACKSIZE, unlock_task,
+                NULL);
+  if (unlock_pid < 0)
+    {
+      printf("ilock_main: iLockUnlock task_create failed: %d\n", errno);
+    }
+
+  printf("Press any key to exit ......\n");
+  getchar();
+
+  if (scan_pid > 0)
+    {
+      task_delete(scan_pid);
+    }
+
+  if (unlock_pid > 0)
+    {
+      task_delete(unlock_pid);
+    }
+
+  config_deinit();
+
+  buzzer_deinit();
+  led_deinit();
+  return OK;
+}

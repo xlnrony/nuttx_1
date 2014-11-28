@@ -52,6 +52,7 @@
 #include <ctype.h>
 #include <assert.h>
 #include <errno.h>
+#include <nuttx/analog/adc.h>
 
 #include "adc_lib.h"
 
@@ -82,8 +83,8 @@ static int32_t adc_op(const char * path, unsigned long channel)
   int32_t ret;
   int fd;
   ssize_t n;
-  struct adc_msg_s sample;	
-	
+  struct adc_msg_s sample;
+
   fd = open(path, O_RDONLY);
   if (fd < 0)
     {

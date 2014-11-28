@@ -228,12 +228,12 @@ void stm32_usbhost_initialize(void)
       uvdbg("Start usbhost_waiter\n");
 
       pid = kernel_thread("usbhost_waiter", CONFIG_USBHOST_DEFPRIO,
-                        CONFIG_USBHOST_STACKSIZE,
-                        (main_t)usbhost_waiter, (FAR char * const *)NULL);
-	  if (pid < 0)
-	  	{
-	      udbg("Failed to create usbhost kernel thread\n");	
-	  	}
+                          CONFIG_USBHOST_STACKSIZE,
+                          (main_t)usbhost_waiter, (FAR char * const *)NULL);
+      if (pid < 0)
+        {
+          udbg("Failed to create usbhost kernel thread\n");
+        }
     }
 }
 #endif

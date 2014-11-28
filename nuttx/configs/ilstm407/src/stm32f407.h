@@ -108,12 +108,12 @@
 #    define SDIO_MINOR 0
 #  endif
 
-  /* SD card bringup does not work if performed on the IDLE thread because it
-   * will cause waiting.  Use either:
-   *
-   *  CONFIG_NSH_ARCHINIT=y, OR
-   *  CONFIG_BOARD_INITIALIZE=y && CONFIG_BOARD_INITTHREAD=y
-   */
+/* SD card bringup does not work if performed on the IDLE thread because it
+ * will cause waiting.  Use either:
+ *
+ *  CONFIG_NSH_ARCHINIT=y, OR
+ *  CONFIG_BOARD_INITIALIZE=y && CONFIG_BOARD_INITTHREAD=y
+ */
 
 #  if defined(CONFIG_BOARD_INITIALIZE) && !defined(CONFIG_BOARD_INITTHREAD)
 #    warning "SDIO initialization cannot be perfomed on the IDLE thread"
@@ -130,7 +130,7 @@
 				                            GPIO_OUTPUT_SET|GPIO_PORTE|GPIO_PIN3)
 #define GPIO_LED1_R       (GPIO_OUTPUT|GPIO_OPENDRAIN|GPIO_SPEED_2MHz|\
 				                            GPIO_OUTPUT_SET|GPIO_PORTE|GPIO_PIN4)
-				                            
+
 #define GPIO_LED2_B       (GPIO_OUTPUT|GPIO_OPENDRAIN|GPIO_SPEED_2MHz|\
 				                            GPIO_OUTPUT_SET|GPIO_PORTB|GPIO_PIN5)
 #define GPIO_LED2_G       (GPIO_OUTPUT|GPIO_OPENDRAIN|GPIO_SPEED_2MHz|\
@@ -159,7 +159,7 @@
 #define GPIO_KEY_A_OUT       (GPIO_OUTPUT|GPIO_OPENDRAIN|GPIO_SPEED_2MHz|\
 				                            		GPIO_OUTPUT_CLEAR|GPIO_PORTD|GPIO_PIN8)
 #define GPIO_KEY_A_IN 		  (GPIO_INPUT|GPIO_PULLUP|GPIO_PORTD|GPIO_PIN8)
-				                            
+
 #define GPIO_KEY_B_OUT       (GPIO_OUTPUT|GPIO_OPENDRAIN|GPIO_SPEED_2MHz|\
 				                            		GPIO_OUTPUT_CLEAR|GPIO_PORTD|GPIO_PIN9)
 #define GPIO_KEY_B_IN 		  (GPIO_INPUT|GPIO_PULLUP|GPIO_PORTD|GPIO_PIN9)
@@ -183,7 +183,7 @@
 #define GPIO_KEY_3_OUT       (GPIO_OUTPUT|GPIO_OPENDRAIN|GPIO_SPEED_2MHz|\
 				                            		GPIO_OUTPUT_CLEAR|GPIO_PORTD|GPIO_PIN14)
 #define GPIO_KEY_3_IN 		  (GPIO_INPUT|GPIO_PULLUP|GPIO_PORTD|GPIO_PIN14)
-				                    					  
+
 /* BUTTONS -- NOTE that all have EXTI interrupts configured */
 
 #define MIN_IRQBUTTON   BUTTON_USER

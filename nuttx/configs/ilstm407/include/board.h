@@ -197,7 +197,7 @@
 #    warning "CONFIG_STM32_MII_MCO1 required for Ethernet MII"
 #  else
 
-  /* Output HSE clock (25MHz) on MCO1 pin (PA8) to clock the PHY */
+/* Output HSE clock (25MHz) on MCO1 pin (PA8) to clock the PHY */
 
 #    define BOARD_CFGR_MC01_SOURCE  RCC_CFGR_MCO1_HSE
 #    define BOARD_CFGR_MC01_DIVIDER RCC_CFGR_MCO1PRE_NONE
@@ -222,11 +222,11 @@
  * - PA2  is ETH_MDIO
  * - PC1  is ETH_MDC
  * - PB5  is ETH_PPS_OUT
- * - PA0  is ETH_MII_CRS	
- * - PA3  is ETH_MII_COL	
- * - PB10 is ETH_MII_RX_ER	
- * - PB0  is ETH_MII_RXD2		
- * - PB1  is ETH_MII_RXD3		
+ * - PA0  is ETH_MII_CRS
+ * - PA3  is ETH_MII_COL
+ * - PB10 is ETH_MII_RX_ER
+ * - PB0  is ETH_MII_RXD2
+ * - PB1  is ETH_MII_RXD3
  * - PC3  is ETH_MII_TX_CLK
  * - PC2  is ETH_MII_TXD2
  * - PB8  is ETH_MII_TXD3
@@ -234,9 +234,9 @@
  * - PA7  is ETH_MII_RX_DV/ETH_RMII_CRS_DV
  * - PC4  is ETH_MII_RXD0/ETH_RMII_RXD0
  * - PC5  is ETH_MII_RXD1/ETH_RMII_RXD1
- * - PB11 is ETH_MII_TX_EN/ETH_RMII_TX_EN	
- * - PB12 is ETH_MII_TXD0/ETH_RMII_TXD0	
- * - PB13 is ETH_MII_TXD1/ETH_RMII_TXD1	
+ * - PB11 is ETH_MII_TX_EN/ETH_RMII_TX_EN
+ * - PB12 is ETH_MII_TXD0/ETH_RMII_TXD0
+ * - PB13 is ETH_MII_TXD1/ETH_RMII_TXD1
  */
 
 //#define GPIO_ETH_PPS_OUT    GPIO_ETH_PPS_OUT_1

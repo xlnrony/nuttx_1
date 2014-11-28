@@ -42,14 +42,14 @@
 
 #include <nuttx/config.h>
 #include <stdint.h>
-#include <nuttx/gpio/buzzer.h>
+#include <nuttx/gpio/indicator.h>
 
 #if defined(CONFIG_INDICATOR)
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
- 
+
 /****************************************************************************
  * Public Types
  ****************************************************************************/
@@ -69,9 +69,9 @@ extern "C"
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
-EXTERN void buzzer_op(int cmd, uint8_t color, uint32_t delay, uint32_t interval)
-EXTERN void buzzer_init(void)
-EXTERN void buzzer_deinit(void)
+EXTERN void buzzer_op(int cmd, uint8_t type, uint32_t delay, uint32_t interval);
+EXTERN int buzzer_init(void);
+EXTERN void buzzer_deinit(void);
 
 #undef EXTERN
 #ifdef __cplusplus

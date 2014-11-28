@@ -92,7 +92,7 @@ struct usbhid_epass3003report_s
 
   uint8_t blksizeh;	//  数据块长度-高字节
   uint8_t blksizel;	//  数据块长度-低字节
-  
+
   uint8_t buffer[58];	//  存放数据块。
 };
 
@@ -119,84 +119,84 @@ struct usbhid_epass3003report_s
 int epass3003_transmit_apdu(int fd, FAR uint8_t *txbuf, size_t txpktlen, FAR uint8_t *rxbuf, FAR size_t *rxlen)
 {
   struct usbhid_epass3003report_s rpt = {0};
-  
+
   int txpktsize = txpktlen;
   int txoffset = 0;
   int txsize = 0;
   int ret;
-  
+
   int rxpktsize = 0;
   int rxoffset = 0;
   int rxsize = 0;
-  
-  while(txpktlen)
-  {
-    //-------------------------------------------------------------------------------
-    //  prepare a data package
-    txsize = txpktlen > 58 ? 58 : txpktlen;
-    if(0 == txsize)
-    {
-      break;
-    }
-    rpt.pktsizeh = txpktsize >> 8;
-    rpt.pktsizel = txpktsize;
-    rpt.blkoffseth= txoffset >> 8;
-    rpt.blkoffsetl = txoffset;
-    rpt.blksizeh = txsize >> 8;
-    rpt.blksizel = txsize;
-    memmove(rpt.buffer, txbuf, txsize)   ;
-    txoffset += txsize;
-    txbuf += txsize;
-    txpktlen -= txsize;
-    //-------------------------------------------------------------------------------
-    //  send this package
-    ret = write(fd, &rpt, sizeof(struct usbhid_epass3003report_s));
-    if (ret < 0)
-    {
-      return ret;
-    }
-  }
-  while(1)
-  {
-    memset(&rpt, 0, sizeof(rpt));
 
-    ret = read(fd, &rpt, sizeof(struct usbhid_epass3003report_s));
-    if(ret < 0)
+  while(txpktlen)
     {
-      return ret;
-    }
-    else
-    {
-      if(0 == rpt.pktsizeh && 0 == rpt.pktsizel)
-      {
-        usleep(1000);
-      }
-      else
-      {
-        rxpktsize = (rpt.pktsizeh << 8) + rpt.pktsizel;
-        rxoffset = (rpt.blkoffseth << 8) +  rpt.blkoffsetl;
-        rxsize = (rpt.blksizeh << 8) + rpt.blksizel;
-        memmove(rxbuf + rxoffset, rpt.buffer, rxsize);
-        if(rxoffset + rxsize == rxpktsize)
+      //-------------------------------------------------------------------------------
+      //  prepare a data package
+      txsize = txpktlen > 58 ? 58 : txpktlen;
+      if(0 == txsize)
         {
-          *rxlen = rxpktsize;
           break;
         }
-      }
+      rpt.pktsizeh = txpktsize >> 8;
+      rpt.pktsizel = txpktsize;
+      rpt.blkoffseth= txoffset >> 8;
+      rpt.blkoffsetl = txoffset;
+      rpt.blksizeh = txsize >> 8;
+      rpt.blksizel = txsize;
+      memmove(rpt.buffer, txbuf, txsize)   ;
+      txoffset += txsize;
+      txbuf += txsize;
+      txpktlen -= txsize;
+      //-------------------------------------------------------------------------------
+      //  send this package
+      ret = write(fd, &rpt, sizeof(struct usbhid_epass3003report_s));
+      if (ret < 0)
+        {
+          return ret;
+        }
     }
-  }
-  
+  while(1)
+    {
+      memset(&rpt, 0, sizeof(rpt));
+
+      ret = read(fd, &rpt, sizeof(struct usbhid_epass3003report_s));
+      if(ret < 0)
+        {
+          return ret;
+        }
+      else
+        {
+          if(0 == rpt.pktsizeh && 0 == rpt.pktsizel)
+            {
+              usleep(1000);
+            }
+          else
+            {
+              rxpktsize = (rpt.pktsizeh << 8) + rpt.pktsizel;
+              rxoffset = (rpt.blkoffseth << 8) +  rpt.blkoffsetl;
+              rxsize = (rpt.blksizeh << 8) + rpt.blksizel;
+              memmove(rxbuf + rxoffset, rpt.buffer, rxsize);
+              if(rxoffset + rxsize == rxpktsize)
+                {
+                  *rxlen = rxpktsize;
+                  break;
+                }
+            }
+        }
+    }
+
   if(rxpktsize == 2)
     {
       if(rxbuf[0] == 0x61)
         {
-	   uint8_t getresp[32] =
-	     {
-		0x00,0xc0,0x00,0x00,0x00
-	     };
-	   getresp[4] = rxbuf[1];
-	   return epass3003_transmit_apdu(fd, getresp, 5, rxbuf, rxlen);
-  	 }
-    } 
+          uint8_t getresp[32] =
+          {
+            0x00,0xc0,0x00,0x00,0x00
+          };
+          getresp[4] = rxbuf[1];
+          return epass3003_transmit_apdu(fd, getresp, 5, rxbuf, rxlen);
+        }
+    }
   return 0;
 }
