@@ -55,6 +55,8 @@
 
 #include "led_lib.h"
 
+#if defined(CONFIG_INDICATOR)
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -156,5 +158,7 @@ void led_deinit(void)
       close(led3_fd);
     }
 }
+
+#endif
 
 

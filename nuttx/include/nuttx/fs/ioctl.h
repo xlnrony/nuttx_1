@@ -73,6 +73,9 @@
 #define _TCIOCBASE      (0x1400) /* Timer ioctl commands */
 #define _DJOYBASE       (0x1500) /* Discrete joystick ioctl commands */
 
+#define _GPIOCBASE      (0xa000) /* Gpio ioctl commands */
+#define _INDCBASE      (0xb000) /* Led ioctl commands */
+
 /* Macros used to manage ioctl commands */
 
 #define _IOC_MASK       (0x00ff)
@@ -300,6 +303,12 @@
 
 #define _DJOYIOCVALID(c)   (_IOC_TYPE(c)==_DJOYBASE)
 #define _DJOYIOC(nr)       _IOC(_DJOYBASE,nr)
+
+#define _GPIOCVALID(c)   (_IOC_TYPE(c)==_GPIOCBASE)
+#define _GPIOC(nr)         _IOC(_GPIOCBASE,nr)
+
+#define _INDCVALID(c)   (_IOC_TYPE(c)==_INDCBASE)
+#define _INDC(nr)         _IOC(_INDCBASE,nr)
 
 /****************************************************************************
  * Public Type Definitions

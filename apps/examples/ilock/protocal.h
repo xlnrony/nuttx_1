@@ -48,6 +48,15 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
+#define MAGIC_ONE 					'L'
+#define MAGIC_TWO 					'K'
+#define MAGIC_THREE					'0'
+#define MAGIC_FOUR 					'0'
+
+#define HEART_BEAT_CATEGORY 					0
+#define HEART_BEAT_CATEGORY 					0
+#define HEART_BEAT_CATEGORY 					0
+
 #define HEART_BEAT_CATEGORY 					0
 #define LOG_CATEGORY 							1
 #define DOWNLOAD_PUBKEY_CATEGORY 				2
@@ -68,9 +77,9 @@
 #define CONNECT_CATEGORY		 				17
 #define TIME_VIEW_CATEGORY		   				18
 #define SENSOR_VIEW_CATEGORY	   			   	19
-#define ASSIGN_SHOCK_CHECK_VOLTAGE_CATEGORY	   	20
-#define ASSIGN_LOCK_CHECK_VOLTAGE_CATEGORY	   	21
-#define ASSIGN_LIGHT_CHECK_VOLTAGE_CATEGORY	   	22
+#define ASSIGN_SHOCK_RESISTOR_THRESHOLD_CATEGORY	   	20
+#define ASSIGN_INFRA_RED_THRESHOLD_CATEGORY	   	21
+#define ASSIGN_PHOTO_RESISTOR_THRESHOLD_CATEGORY	   	22
 #define DOWNLOAD_FIRMWARE_CATEGORY				23
 #define CRC32_FIRMWARE_CATEGORY					24
 #define UPDATE_FIRMWARE_CATEGORY				25
@@ -101,66 +110,67 @@
 
 #define FIRMWARE_CACHE_SIZE			1280
 
-#define HEART_BEAT_CATEGORY_RECV_SIZE					(sizeof(((struct protocal *)NULL)->head))
-#define HEART_BEAT_CATEGORY_SEND_SIZE					(sizeof(((struct protocal *)NULL)->head))
-#define LOG_CATEGORY_RECV_SIZE 							(sizeof(((struct protocal *)NULL)->head))
-#define LOG_CATEGORY_SEND_SIZE 							(sizeof(((struct protocal *)NULL)->head)+sizeof(((struct protocal *)NULL)->body.log_category))
-#define DOWNLOAD_PUBKEY_CATEGORY_RECV_SIZE 				(sizeof(((struct protocal *)NULL)->head)+sizeof(((struct protocal *)NULL)->body.download_pubkey_category))
-#define DOWNLOAD_PUBKEY_CATEGORY_SEND_SIZE 				(sizeof(((struct protocal *)NULL)->head))
-#define CLEAR_PUBKEY_CATEGORY_RECV_SIZE 				(sizeof(((struct protocal *)NULL)->head)+sizeof(((struct protocal *)NULL)->body.clear_pubkey_category))
-#define CLEAR_PUBKEY_CATEGORY_SEND_SIZE 				(sizeof(((struct protocal *)NULL)->head))
-#define ASSIGN_SN_CATEGORY_RECV_SIZE 					(sizeof(((struct protocal *)NULL)->head)+sizeof(((struct protocal *)NULL)->body.assign_sn_category))
-#define ASSIGN_SN_CATEGORY_SEND_SIZE 					(sizeof(((struct protocal *)NULL)->head))
-#define ASSIGN_HOSTIP_CATEGORY_RECV_SIZE  				(sizeof(((struct protocal *)NULL)->head)+sizeof(((struct protocal *)NULL)->body.assign_hostip_category))
-#define ASSIGN_HOSTIP_CATEGORY_SEND_SIZE  				(sizeof(((struct protocal *)NULL)->head))
-#define ASSIGN_NETMASK_CATEGORY_RECV_SIZE  				(sizeof(((struct protocal *)NULL)->head)+sizeof(((struct protocal *)NULL)->body.assign_netmask_category))
-#define ASSIGN_NETMASK_CATEGORY_SEND_SIZE  				(sizeof(((struct protocal *)NULL)->head))
-#define ASSIGN_GATEWAY_CATEGORY_RECV_SIZE  				(sizeof(((struct protocal *)NULL)->head)+sizeof(((struct protocal *)NULL)->body.assign_gateway_cateory))
-#define ASSIGN_GATEWAY_CATEGORY_SEND_SIZE  				(sizeof(((struct protocal *)NULL)->head))
-#define ASSIGN_SERVERIP_CATEGORY_RECV_SIZE				(sizeof(((struct protocal *)NULL)->head)+sizeof(((struct protocal *)NULL)->body.assign_serverip_category))
-#define ASSIGN_SERVERIP_CATEGORY_SEND_SIZE				(sizeof(((struct protocal *)NULL)->head))
-#define ASSIGN_MAC_CATEGORY_RECV_SIZE 	   				(sizeof(((struct protocal *)NULL)->head)+sizeof(((struct protocal *)NULL)->body.assign_mac_category))
-#define ASSIGN_MAC_CATEGORY_SEND_SIZE 	   				(sizeof(((struct protocal *)NULL)->head))
-#define CLEAR_ALL_PUBKEY_CATEGORY_RECV_SIZE  			(sizeof(((struct protocal *)NULL)->head))
-#define CLEAR_ALL_PUBKEY_CATEGORY_SEND_SIZE  			(sizeof(((struct protocal *)NULL)->head))
-#define SOFT_RESET_CATEGORY_RECV_SIZE		   			(sizeof(((struct protocal *)NULL)->head))
-#define SOFT_RESET_CATEGORY_SEND_SIZE		   			(sizeof(((struct protocal *)NULL)->head))
-#define UNLOCK_CATEGORY_RECV_SIZE		   				(sizeof(((struct protocal *)NULL)->head)+sizeof(((struct protocal *)NULL)->body.unlock_category))
-#define UNLOCK_CATEGORY_SEND_SIZE		   				(sizeof(((struct protocal *)NULL)->head))
-#define UPLOAD_PUBKEY_CATEGORY_RECV_SIZE	   			(sizeof(((struct protocal *)NULL)->head))
-#define UPLOAD_PUBKEY_CATEGORY_SEND_SIZE	   			(sizeof(((struct protocal *)NULL)->head)+sizeof(((struct protocal *)NULL)->body.upload_pubkey_category))
-#define REMOTE_AUTHORIZE_CATEGORY_RECV_SIZE  			(sizeof(((struct protocal *)NULL)->head))
-#define REMOTE_AUTHORIZE_CATEGORY_SEND_SIZE  			(sizeof(((struct protocal *)NULL)->head))
-#define TIME_SYNC_CATEGORY_RECV_SIZE		   			(sizeof(((struct protocal *)NULL)->head)+sizeof(((struct protocal *)NULL)->body.time_sync_category))
-#define TIME_SYNC_CATEGORY_SEND_SIZE		   			(sizeof(((struct protocal *)NULL)->head))
-#define ALERT_CATEGORY_RECV_SIZE			   			(sizeof(((struct protocal *)NULL)->head))
-#define ALERT_CATEGORY_SEND_SIZE			   			(sizeof(((struct protocal *)NULL)->head)+sizeof(((struct protocal *)NULL)->body.alert_category))
-#define CONNECT_CATEGORY_RECV_SIZE		 				(sizeof(((struct protocal *)NULL)->head))
-#define CONNECT_CATEGORY_SEND_SIZE		 				(sizeof(((struct protocal *)NULL)->head)+sizeof(((struct protocal *)NULL)->body.connect_category))
-#define TIME_VIEW_CATEGORY_RECV_SIZE		   			(sizeof(((struct protocal *)NULL)->head))
-#define TIME_VIEW_CATEGORY_SEND_SIZE		   			(sizeof(((struct protocal *)NULL)->head)+sizeof(((struct protocal *)NULL)->body.time_view_category))
-#define SENSOR_VIEW_CATEGORY_RECV_SIZE	   				(sizeof(((struct protocal *)NULL)->head))
-#define SENSOR_VIEW_CATEGORY_SEND_SIZE	   				(sizeof(((struct protocal *)NULL)->head)+sizeof(((struct protocal *)NULL)->body.sensor_view_category))
-#define ASSIGN_SHOCK_CHECK_VOLTAGE_CATEGORY_RECV_SIZE	(sizeof(((struct protocal *)NULL)->head)+sizeof(((struct protocal *)NULL)->body.assign_shock_check_voltage_category))
-#define ASSIGN_SHOCK_CHECK_VOLTAGE_CATEGORY_SEND_SIZE	(sizeof(((struct protocal *)NULL)->head))
-#define ASSIGN_LOCK_CHECK_VOLTAGE_CATEGORY_RECV_SIZE	(sizeof(((struct protocal *)NULL)->head)+sizeof(((struct protocal *)NULL)->body.assign_lock_check_voltage_category))
-#define ASSIGN_LOCK_CHECK_VOLTAGE_CATEGORY_SEND_SIZE	(sizeof(((struct protocal *)NULL)->head))
-#define ASSIGN_LIGHT_CHECK_VOLTAGE_CATEGORY_RECV_SIZE	(sizeof(((struct protocal *)NULL)->head)+sizeof(((struct protocal *)NULL)->body.assign_light_check_voltage_category))
-#define ASSIGN_LIGHT_CHECK_VOLTAGE_CATEGORY_SEND_SIZE	(sizeof(((struct protocal *)NULL)->head))
-#define DOWNLOAD_FIRMWARE_CATEGORY_RECV_SIZE			(sizeof(((struct protocal *)NULL)->head)+sizeof(((struct protocal *)NULL)->body.download_firmware_category))
-#define DOWNLOAD_FIRMWARE_CATEGORY_SEND_SIZE			(sizeof(((struct protocal *)NULL)->head)+sizeof(((struct protocal *)NULL)->body.download_firmware_category)-sizeof(((struct protocal *)NULL)->body.download_firmware_category.firmware))
-#define CRC32_FIRMWARE_CATEGORY_RECV_SIZE				(sizeof(((struct protocal *)NULL)->head))
-#define CRC32_FIRMWARE_CATEGORY_SEND_SIZE				(sizeof(((struct protocal *)NULL)->head)+sizeof(((struct protocal *)NULL)->body.crc32_firmware_category))
-#define UPDATE_FIRMWARE_CATEGORY_RECV_SIZE				(sizeof(((struct protocal *)NULL)->head))
-#define UPDATE_FIRMWARE_CATEGORY_SEND_SIZE				(sizeof(((struct protocal *)NULL)->head))
-#define VIEW_NET_ADDR_CATEGORY_RECV_SIZE				(sizeof(((struct protocal *)NULL)->head))
-#define VIEW_NET_ADDR_CATEGORY_SEND_SIZE				(sizeof(((struct protocal *)NULL)->head)+sizeof(((struct protocal *)NULL)->body.view_net_addr_category))
-#define CLEAR_ALL_PUBKEY_IN_GROUP_CATEGORY_RECV_SIZE	(sizeof(((struct protocal *)NULL)->head)+sizeof(((struct protocal *)NULL)->body.clear_all_pubkey_in_group_category))
-#define CLEAR_ALL_PUBKEY_IN_GROUP_CATEGORY_SEND_SIZE	(sizeof(((struct protocal *)NULL)->head))
-#define VERSION_VIEW_CATEGORY_RECV_SIZE					(sizeof(((struct protocal *)NULL)->head))
-#define VERSION_VIEW_CATEGORY_SEND_SIZE					(sizeof(((struct protocal *)NULL)->head)+sizeof(((struct protocal *)NULL)->body.version_view_category))
-#define DEFINE_CONFIG_PASSWORD_CATEGORY_RECV_SIZE		(sizeof(((struct protocal *)NULL)->head)+sizeof(((struct protocal *)NULL)->body.define_config_password_category))
-#define DEFINE_CONFIG_PASSWORD_CATEGORY_SEND_SIZE		(sizeof(((struct protocal *)NULL)->head))
+#define PROTOCAL_HEAD_SIZE												(sizeof(((struct protocal_s *)NULL)->head))
+#define HEART_BEAT_CATEGORY_RECV_SIZE					(PROTOCAL_HEAD_SIZE)
+#define HEART_BEAT_CATEGORY_SEND_SIZE					(PROTOCAL_HEAD_SIZE)
+#define LOG_CATEGORY_RECV_SIZE 							(PROTOCAL_HEAD_SIZE)
+#define LOG_CATEGORY_SEND_SIZE 							(PROTOCAL_HEAD_SIZE+sizeof(((struct protocal_s *)NULL)->body.log_category))
+#define DOWNLOAD_PUBKEY_CATEGORY_RECV_SIZE 				(PROTOCAL_HEAD_SIZE+sizeof(((struct protocal_s *)NULL)->body.download_pubkey_category))
+#define DOWNLOAD_PUBKEY_CATEGORY_SEND_SIZE 				(PROTOCAL_HEAD_SIZE)
+#define CLEAR_PUBKEY_CATEGORY_RECV_SIZE 				(PROTOCAL_HEAD_SIZE+sizeof(((struct protocal_s *)NULL)->body.clear_pubkey_category))
+#define CLEAR_PUBKEY_CATEGORY_SEND_SIZE 				(PROTOCAL_HEAD_SIZE)
+#define ASSIGN_SN_CATEGORY_RECV_SIZE 					(PROTOCAL_HEAD_SIZE+sizeof(((struct protocal_s *)NULL)->body.assign_sn_category))
+#define ASSIGN_SN_CATEGORY_SEND_SIZE 					(PROTOCAL_HEAD_SIZE)
+#define ASSIGN_HOSTIP_CATEGORY_RECV_SIZE  				(PROTOCAL_HEAD_SIZE+sizeof(((struct protocal_s *)NULL)->body.assign_hostip_category))
+#define ASSIGN_HOSTIP_CATEGORY_SEND_SIZE  				(PROTOCAL_HEAD_SIZE)
+#define ASSIGN_NETMASK_CATEGORY_RECV_SIZE  				(PROTOCAL_HEAD_SIZE+sizeof(((struct protocal_s *)NULL)->body.assign_netmask_category))
+#define ASSIGN_NETMASK_CATEGORY_SEND_SIZE  				(PROTOCAL_HEAD_SIZE)
+#define ASSIGN_GATEWAY_CATEGORY_RECV_SIZE  				(PROTOCAL_HEAD_SIZE+sizeof(((struct protocal_s *)NULL)->body.assign_gateway_cateory))
+#define ASSIGN_GATEWAY_CATEGORY_SEND_SIZE  				(PROTOCAL_HEAD_SIZE)
+#define ASSIGN_SERVERIP_CATEGORY_RECV_SIZE				(PROTOCAL_HEAD_SIZE+sizeof(((struct protocal_s *)NULL)->body.assign_serverip_category))
+#define ASSIGN_SERVERIP_CATEGORY_SEND_SIZE				(PROTOCAL_HEAD_SIZE)
+#define ASSIGN_MAC_CATEGORY_RECV_SIZE 	   				(PROTOCAL_HEAD_SIZE+sizeof(((struct protocal_s *)NULL)->body.assign_mac_category))
+#define ASSIGN_MAC_CATEGORY_SEND_SIZE 	   				(PROTOCAL_HEAD_SIZE)
+#define CLEAR_ALL_PUBKEY_CATEGORY_RECV_SIZE  			(PROTOCAL_HEAD_SIZE)
+#define CLEAR_ALL_PUBKEY_CATEGORY_SEND_SIZE  			(PROTOCAL_HEAD_SIZE)
+#define SOFT_RESET_CATEGORY_RECV_SIZE		   			(PROTOCAL_HEAD_SIZE)
+#define SOFT_RESET_CATEGORY_SEND_SIZE		   			(PROTOCAL_HEAD_SIZE)
+#define UNLOCK_CATEGORY_RECV_SIZE		   				(PROTOCAL_HEAD_SIZE+sizeof(((struct protocal_s *)NULL)->body.unlock_category))
+#define UNLOCK_CATEGORY_SEND_SIZE		   				(PROTOCAL_HEAD_SIZE)
+#define UPLOAD_PUBKEY_CATEGORY_RECV_SIZE	   			(PROTOCAL_HEAD_SIZE)
+#define UPLOAD_PUBKEY_CATEGORY_SEND_SIZE	   			(PROTOCAL_HEAD_SIZE+sizeof(((struct protocal_s *)NULL)->body.upload_pubkey_category))
+#define REMOTE_AUTHORIZE_CATEGORY_RECV_SIZE  			(PROTOCAL_HEAD_SIZE)
+#define REMOTE_AUTHORIZE_CATEGORY_SEND_SIZE  			(PROTOCAL_HEAD_SIZE)
+#define TIME_SYNC_CATEGORY_RECV_SIZE		   			(PROTOCAL_HEAD_SIZE+sizeof(((struct protocal_s *)NULL)->body.time_sync_category))
+#define TIME_SYNC_CATEGORY_SEND_SIZE		   			(PROTOCAL_HEAD_SIZE)
+#define ALERT_CATEGORY_RECV_SIZE			   			(PROTOCAL_HEAD_SIZE)
+#define ALERT_CATEGORY_SEND_SIZE			   			(PROTOCAL_HEAD_SIZE+sizeof(((struct protocal_s *)NULL)->body.alert_category))
+#define CONNECT_CATEGORY_RECV_SIZE		 				(PROTOCAL_HEAD_SIZE)
+#define CONNECT_CATEGORY_SEND_SIZE		 				(PROTOCAL_HEAD_SIZE+sizeof(((struct protocal_s *)NULL)->body.connect_category))
+#define TIME_VIEW_CATEGORY_RECV_SIZE		   			(PROTOCAL_HEAD_SIZE)
+#define TIME_VIEW_CATEGORY_SEND_SIZE		   			(PROTOCAL_HEAD_SIZE+sizeof(((struct protocal_s *)NULL)->body.time_view_category))
+#define SENSOR_VIEW_CATEGORY_RECV_SIZE	   				(PROTOCAL_HEAD_SIZE)
+#define SENSOR_VIEW_CATEGORY_SEND_SIZE	   				(PROTOCAL_HEAD_SIZE+sizeof(((struct protocal_s *)NULL)->body.sensor_view_category))
+#define ASSIGN_SHOCK_CHECK_VOLTAGE_CATEGORY_RECV_SIZE	(PROTOCAL_HEAD_SIZE+sizeof(((struct protocal_s *)NULL)->body.assign_shock_check_voltage_category))
+#define ASSIGN_SHOCK_CHECK_VOLTAGE_CATEGORY_SEND_SIZE	(PROTOCAL_HEAD_SIZE)
+#define ASSIGN_LOCK_CHECK_VOLTAGE_CATEGORY_RECV_SIZE	(PROTOCAL_HEAD_SIZE+sizeof(((struct protocal_s *)NULL)->body.assign_lock_check_voltage_category))
+#define ASSIGN_LOCK_CHECK_VOLTAGE_CATEGORY_SEND_SIZE	(PROTOCAL_HEAD_SIZE)
+#define ASSIGN_LIGHT_CHECK_VOLTAGE_CATEGORY_RECV_SIZE	(PROTOCAL_HEAD_SIZE+sizeof(((struct protocal_s *)NULL)->body.assign_light_check_voltage_category))
+#define ASSIGN_LIGHT_CHECK_VOLTAGE_CATEGORY_SEND_SIZE	(PROTOCAL_HEAD_SIZE)
+#define DOWNLOAD_FIRMWARE_CATEGORY_RECV_SIZE			(PROTOCAL_HEAD_SIZE+sizeof(((struct protocal_s *)NULL)->body.download_firmware_category))
+#define DOWNLOAD_FIRMWARE_CATEGORY_SEND_SIZE			(PROTOCAL_HEAD_SIZE+sizeof(((struct protocal_s *)NULL)->body.download_firmware_category)-sizeof(((struct protocal_s *)NULL)->body.download_firmware_category.firmware))
+#define CRC32_FIRMWARE_CATEGORY_RECV_SIZE				(PROTOCAL_HEAD_SIZE)
+#define CRC32_FIRMWARE_CATEGORY_SEND_SIZE				(PROTOCAL_HEAD_SIZE+sizeof(((struct protocal_s *)NULL)->body.crc32_firmware_category))
+#define UPDATE_FIRMWARE_CATEGORY_RECV_SIZE				(PROTOCAL_HEAD_SIZE)
+#define UPDATE_FIRMWARE_CATEGORY_SEND_SIZE				(PROTOCAL_HEAD_SIZE)
+#define VIEW_NET_ADDR_CATEGORY_RECV_SIZE				(PROTOCAL_HEAD_SIZE)
+#define VIEW_NET_ADDR_CATEGORY_SEND_SIZE				(PROTOCAL_HEAD_SIZE+sizeof(((struct protocal_s *)NULL)->body.view_net_addr_category))
+#define CLEAR_ALL_PUBKEY_IN_GROUP_CATEGORY_RECV_SIZE	(PROTOCAL_HEAD_SIZE+sizeof(((struct protocal_s *)NULL)->body.clear_all_pubkey_in_group_category))
+#define CLEAR_ALL_PUBKEY_IN_GROUP_CATEGORY_SEND_SIZE	(PROTOCAL_HEAD_SIZE)
+#define VERSION_VIEW_CATEGORY_RECV_SIZE					(PROTOCAL_HEAD_SIZE)
+#define VERSION_VIEW_CATEGORY_SEND_SIZE					(PROTOCAL_HEAD_SIZE+sizeof(((struct protocal_s *)NULL)->body.version_view_category))
+#define DEFINE_CONFIG_PASSWORD_CATEGORY_RECV_SIZE		(PROTOCAL_HEAD_SIZE+sizeof(((struct protocal_s *)NULL)->body.define_config_password_category))
+#define DEFINE_CONFIG_PASSWORD_CATEGORY_SEND_SIZE		(PROTOCAL_HEAD_SIZE)
 
 /****************************************************************************
  * Public Types
@@ -260,11 +270,11 @@ struct protocal_s
 
     struct
     {
-      uint16_t view_shock_voltage;
-      uint16_t view_lock_voltage;
-      uint16_t view_light_voltage;
-      uint16_t view_bat_voltage;
-      uint16_t view_pow_voltage;
+      uint16_t view_shock_resistor_threshold;
+      uint16_t view_infra_red_threshold;
+      uint16_t view_photo_resistor_threshold;
+      uint16_t view_battery_voltage;
+      uint16_t view_power_voltage;
     } sensor_view_category;
 
     struct
