@@ -33,6 +33,17 @@
  *
  ****************************************************************************/
 
+/* This file provides a driver for a standard discrete joystick device.  A
+ * discrete joystick refers to a joystick that could be implemented entirely
+ * with GPIO input pins.  So up, down, left, and right are all discrete
+ * values like buttons (as opposed to integer values like you might obtain
+ * from an analog joystick).
+ *
+ * The discrete joystick driver exports a standard character driver
+ * interface. By convention, the discrete joystick is registered as an input
+ * device at /dev/djoyN where N uniquely identifies the driver instance.
+ */
+
 /****************************************************************************
  * Included Files
  ****************************************************************************/
@@ -190,7 +201,8 @@ static void djoy_enable(FAR struct djoy_upperhalf_s *priv)
 {
   FAR const struct djoy_lowerhalf_s *lower = priv->du_lower;
   FAR struct djoy_open_s *opriv;
-  djoy_buttonset_t intmask;
+  djoy_buttonset_t press;
+  djoy_buttonset_t release;
   irqstate_t flags;
 #ifndef CONFIG_DISABLE_POLL
   int i;
@@ -207,7 +219,9 @@ static void djoy_enable(FAR struct djoy_upperhalf_s *priv)
 
   /* Visit each opened reference to the device */
 
-  intmask = 0;
+  press   = 0;
+  release = 0;
+
   for (opriv = priv->du_open; opriv; opriv = opriv->do_flink)
     {
 #ifndef CONFIG_DISABLE_POLL
@@ -219,8 +233,8 @@ static void djoy_enable(FAR struct djoy_upperhalf_s *priv)
             {
               /* Yes.. OR in the poll event buttons */
 
-              intmask |= (opriv->do_pollevents.dp_press |
-                          opriv->do_pollevents.dp_release);
+              press   |= opriv->do_pollevents.dp_press;
+              release |= opriv->do_pollevents.dp_release;
               break;
             }
         }
@@ -229,24 +243,26 @@ static void djoy_enable(FAR struct djoy_upperhalf_s *priv)
 #ifndef CONFIG_DISABLE_SIGNALS
       /* OR in the signal events */
 
-      intmask |= (opriv->do_notify.dn_press | opriv->do_notify.dn_release);
+      press   |= opriv->do_notify.dn_press;
+      release |= opriv->do_notify.dn_release;
 #endif
     }
 
   /* Enable/disable button interrupts */
 
   DEBUGASSERT(lower->dl_enable);
-  if (intmask != 0)
+  if (press != 0 || release != 0)
     {
       /* Enable interrupts with the new button set */
 
-      lower->dl_enable(lower, intmask, (djoy_interrupt_t)djoy_interrupt, priv);
+      lower->dl_enable(lower, press, release,
+                       (djoy_interrupt_t)djoy_interrupt, priv);
     }
   else
     {
       /* Disable further interrupts */
 
-      lower->dl_enable(lower, 0, NULL, NULL);
+      lower->dl_enable(lower, 0, 0, NULL, NULL);
     }
 
   irqrestore(flags);
@@ -335,7 +351,7 @@ static void djoy_sample(FAR struct djoy_upperhalf_s *priv)
                   fds->revents |= (fds->events & POLLIN);
                   if (fds->revents != 0)
                     {
-                      ivdbg("Report events: %02x\n", fds->revents);
+                      illvdbg("Report events: %02x\n", fds->revents);
                       sem_post(fds->sem);
                     }
                 }
@@ -470,12 +486,9 @@ static int djoy_close(FAR struct file *filep)
 
   flags = irqsave();
   closing = opriv->do_closing;
-  if (!closing)
-    {
-      opriv->do_closing = true;
-    }
-
+  opriv->do_closing = true;
   irqrestore(flags);
+
   if (closing)
     {
       /* Another thread is doing the close */
@@ -524,8 +537,7 @@ static int djoy_close(FAR struct file *filep)
   /* Enable/disable interrupt handling */
 
   djoy_enable(priv);
-  djoy_givesem(&priv->du_exclsem);
-  return OK;
+  ret = OK;
 
 errout_with_exclsem:
   djoy_givesem(&priv->du_exclsem);
@@ -549,6 +561,16 @@ static ssize_t djoy_read(FAR struct file *filep, FAR char *buffer,
   DEBUGASSERT(inode->i_private);
   priv  = (FAR struct djoy_upperhalf_s *)inode->i_private;
 
+  /* Make sure that the buffer is sufficiently large to hold at least one
+   * complete sample.
+   */
+
+  if (len < sizeof(djoy_buttonset_t))
+    {
+      ivdbg("ERROR: buffer too small: %lu\n", (unsigned long)len);
+      return -EINVAL;
+    }
+
   /* Get exclusive access to the driver structure */
 
   ret = djoy_takesem(&priv->du_exclsem);
@@ -567,7 +589,7 @@ static ssize_t djoy_read(FAR struct file *filep, FAR char *buffer,
   ret = sizeof(djoy_buttonset_t);
 
   djoy_givesem(&priv->du_exclsem);
-  return ret;
+  return (ssize_t)ret;
 }
 
 /****************************************************************************
@@ -579,6 +601,7 @@ static int djoy_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
   FAR struct inode *inode;
   FAR struct djoy_upperhalf_s *priv;
   FAR struct djoy_open_s *opriv;
+  FAR const struct djoy_lowerhalf_s *lower;
   int ret;
 
   DEBUGASSERT(filep && filep->f_priv && filep->f_inode);
@@ -601,6 +624,29 @@ static int djoy_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
   ret = -EINVAL;
   switch (cmd)
     {
+    /* Command:     DJOYIOC_SUPPORTED
+     * Description: Report the set of button events supported by the hardware;
+     * Argument:    A pointer to writeable integer value in which to return the
+     *              set of supported buttons.
+     * Return:      Zero (OK) on success.  Minus one will be returned on failure
+     *              with the errno value set appropriately.
+     */
+
+    case DJOYIOC_SUPPORTED:
+      {
+        FAR int *supported = (FAR int *)((uintptr_t)arg);
+
+        if (supported)
+          {
+            lower = priv->du_lower;
+            DEBUGASSERT(lower && lower->dl_supported);
+
+            *supported = (int)lower->dl_supported(lower);
+            ret = OK;
+          }
+      }
+      break;
+
 #ifndef CONFIG_DISABLE_POLL
     /* Command:     DJOYIOC_POLLEVENTS
      * Description: Specify the set of button events that can cause a poll()
@@ -812,7 +858,7 @@ int djoy_register(FAR const char *devname,
   /* Make sure that all djoystick interrupts are disabled */
 
   DEBUGASSERT(lower->dl_enable);
-  lower->dl_enable(lower, (djoy_buttonset_t)0, NULL, NULL);
+  lower->dl_enable(lower, 0, 0, NULL, NULL);
 
   /* Initialize the new djoystick driver instance */
 
@@ -824,7 +870,7 @@ int djoy_register(FAR const char *devname,
 
   /* And register the djoystick driver */
 
-  ret = register_driver(devname, &djoy_fops, 0666, NULL);
+  ret = register_driver(devname, &djoy_fops, 0666, priv);
   if (ret < 0)
     {
       ivdbg("ERROR: register_driver failed: %d\n", ret);

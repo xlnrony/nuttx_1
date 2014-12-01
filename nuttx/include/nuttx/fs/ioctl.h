@@ -72,9 +72,7 @@
 #define _CFGDIOCBASE    (0x1300) /* Config Data device (app config) ioctl commands */
 #define _TCIOCBASE      (0x1400) /* Timer ioctl commands */
 #define _DJOYBASE       (0x1500) /* Discrete joystick ioctl commands */
-
-#define _GPIOCBASE      (0xa000) /* Gpio ioctl commands */
-#define _INDCBASE      (0xb000) /* Led ioctl commands */
+#define _AJOYBASE       (0x1600) /* Analog joystick ioctl commands */
 
 /* Macros used to manage ioctl commands */
 
@@ -298,17 +296,17 @@
 #define _TCIOCVALID(c)     (_IOC_TYPE(c)==_TCIOCBASE)
 #define _TCIOC(nr)         _IOC(_TCIOCBASE,nr)
 
-/* Application Config Data driver ioctl definitions *************************/
+/* Discrete joystick driver ioctl definitions *******************************/
 /* (see nuttx/include/input/djoystick.h */
 
 #define _DJOYIOCVALID(c)   (_IOC_TYPE(c)==_DJOYBASE)
 #define _DJOYIOC(nr)       _IOC(_DJOYBASE,nr)
 
-#define _GPIOCVALID(c)   (_IOC_TYPE(c)==_GPIOCBASE)
-#define _GPIOC(nr)         _IOC(_GPIOCBASE,nr)
+/* Analog joystick driver ioctl definitions *********************************/
+/* (see nuttx/include/input/ajoystick.h */
 
-#define _INDCVALID(c)   (_IOC_TYPE(c)==_INDCBASE)
-#define _INDC(nr)         _IOC(_INDCBASE,nr)
+#define _AJOYIOCVALID(c)   (_IOC_TYPE(c)==_AJOYBASE)
+#define _AJOYIOC(nr)       _IOC(_AJOYBASE,nr)
 
 /****************************************************************************
  * Public Type Definitions
