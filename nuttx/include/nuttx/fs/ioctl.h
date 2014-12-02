@@ -74,6 +74,9 @@
 #define _DJOYBASE       (0x1500) /* Discrete joystick ioctl commands */
 #define _AJOYBASE       (0x1600) /* Analog joystick ioctl commands */
 
+#define _GPIOCBASE      (0xa000) /* Gpio ioctl commands */
+#define _INDCBASE      (0xb000) /* Led ioctl commands */
+
 /* Macros used to manage ioctl commands */
 
 #define _IOC_MASK       (0x00ff)
@@ -307,6 +310,12 @@
 
 #define _AJOYIOCVALID(c)   (_IOC_TYPE(c)==_AJOYBASE)
 #define _AJOYIOC(nr)       _IOC(_AJOYBASE,nr)
+
+#define _GPIOCVALID(c)   (_IOC_TYPE(c)==_GPIOCBASE)
+#define _GPIOC(nr)         _IOC(_GPIOCBASE,nr)
+
+#define _INDCVALID(c)   (_IOC_TYPE(c)==_INDCBASE)
+#define _INDC(nr)         _IOC(_INDCBASE,nr)
 
 /****************************************************************************
  * Public Type Definitions

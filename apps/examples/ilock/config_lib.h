@@ -77,6 +77,8 @@ struct keyslot_s
 struct config_s
 {
   uint32_t serial_no;
+uint32_t  knl_version;
+uint32_t	app_version;
   uint8_t macaddr[IFHWADDRLEN];
   struct in_addr hostaddr;
   struct in_addr netmask;

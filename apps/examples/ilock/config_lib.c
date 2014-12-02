@@ -200,8 +200,9 @@ static int bin2hex(FAR char *dest, FAR const uint8_t * src, int nsrcbytes)
  * Private Functions
  ****************************************************************************/
 
-void load_config(void)
+int load_config(void)
 {
+  int ret = OK;
   INIHANDLE inifile;
   char *macaddr;
   char *hostaddr;
@@ -292,10 +293,17 @@ void load_config(void)
         }
       inifile_uninitialize(inifile);
     }
+  else
+    {
+      ret = -errno;
+      ilockdbg("load_config: inifile_initialize failed: %d\n", ret);
+    }
+  return ret;
 }
 
-void save_config(void)
+int save_config(void)
 {
+  int ret;
   FILE *stream;
   char pubkey[CONFIG_PUBKEY_SIZE * 2 + 1];
   int i, j;
@@ -348,6 +356,12 @@ void save_config(void)
         }
       fclose(stream);
     }
+  else
+    {
+      ret = -errno;
+      ilockdbg("save_config: fopen failed: %d\n", ret);
+    }
+  return ret;
 }
 
 int config_init(void)

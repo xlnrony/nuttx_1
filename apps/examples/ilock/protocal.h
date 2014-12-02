@@ -62,10 +62,10 @@
 #define DOWNLOAD_PUBKEY_CATEGORY 				2
 #define CLEAR_PUBKEY_CATEGORY 					3
 #define ASSIGN_SN_CATEGORY 						4
-#define ASSIGN_HOSTIP_CATEGORY  				5
+#define ASSIGN_HOSTADDR_CATEGORY  				5
 #define ASSIGN_NETMASK_CATEGORY  				6
-#define ASSIGN_GATEWAY_CATEGORY  				7
-#define ASSIGN_SERVERIP_CATEGORY				8
+#define ASSIGN_DRIPADDR_CATEGORY  				7
+#define ASSIGN_SVRADDR_CATEGORY				8
 #define ASSIGN_MAC_CATEGORY 	   				9
 #define CLEAR_ALL_PUBKEY_CATEGORY  				10
 #define SOFT_RESET_CATEGORY		   				11
@@ -245,23 +245,23 @@ struct protocal_s
 
     struct
     {
-      uint32_t hostip;
-    } assign_hostip_category;
+      in_addr_t hostaddr;
+    } assign_hostaddr_category;
 
     struct
     {
-      uint32_t netmask;
+      in_addr_t netmask;
     } assign_netmask_category;
 
     struct
     {
-      uint32_t gateway;
-    } assign_gateway_cateory;
+      in_addr_t dripaddr;
+    } assign_dripaddr_cateory;
 
     struct
     {
-      uint32_t serverip;
-    } assign_serverip_category;
+      in_addr_t svraddr;
+    } assign_svraddr_category;
 
     struct
     {
@@ -302,10 +302,10 @@ struct protocal_s
 
     struct
     {
-      uint32_t view_hostip;
+      uint32_t view_hostaddr;
       uint32_t view_netmask;
-      uint32_t view_gateway;
-      uint32_t view_serverip;
+      uint32_t view_dripaddr;
+      uint32_t view_svraddr;
       uint8_t view_macaddr[IFHWADDRLEN];
     } view_net_addr_category;
 
@@ -321,7 +321,7 @@ struct protocal_s
 
     struct
     {
-      uint32_t view_iap_version;
+      uint32_t view_knl_version;
       uint32_t view_app_version;
     } version_view_category;
 

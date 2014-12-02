@@ -101,6 +101,8 @@ static bool gpio_read(int fd)
     {
       gpiodbg("gpio_write: GPIOC_READ ioctl failed: %d\n", errno);
     }
+	
+  return value;
 }
 
 /****************************************************************************

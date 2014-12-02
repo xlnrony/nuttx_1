@@ -114,7 +114,7 @@ endif
 
 OBJEXT = .o
 LIBEXT = .a
-EXEEXT =
+EXEEXT = .elf
 
 # Linker flags
 
