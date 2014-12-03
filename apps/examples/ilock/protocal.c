@@ -539,7 +539,7 @@ int protocal_deal(int sockfd, struct protocal * protocal)
 {
   unsigned char i;
   unsigned char j;
-  unsigned char _pubkey[128];
+  unsigned char pubkey[CONFIG_PUBKEY_SIZE];
   unsigned long l;
   bool flag;
   unsigned char pos;
@@ -588,57 +588,60 @@ int protocal_deal(int sockfd, struct protocal * protocal)
             (void)protocal_send_ok(sockfd, TIME_SYNC_CATEGORY);
             break;
           case REMOTE_AUTHORIZE_CATEGORY:
-            memset(pubkey, 0, CONFIG_PUBKEY_SIZE);
-            group_no_time_out_check();
-            if (!find_pub_key())
+            pubkey = {0};
+//            memset(pubkey, 0, CONFIG_PUBKEY_SIZE);
+            auth_time_out_check();
+            if (!auth_this_time(pubkey) && (auth_init(), !auth_this_time(pubkey)))
               {
-                clear_check();
-                if (!find_pub_key())
-                  {
-                    act_PB2(0, 60, RED);
-                    act_PB3(0, 60, RED);
-                    act_P17(0, 20);
-                    send_ok_category[REMOTE_AUTHORIZE_CATEGORY]++;
-                    lcd_add_log(key_no_bind);
-                    return;
-                  }
+                led1_op(INDC_TWINKLE, IND_RED, SEC2TICK(3), MSEC2TICK(500));
+                led3_op(INDC_TWINKLE, IND_RED, SEC2TICK(3), MSEC2TICK(500));
+                buzzer_op(INDC_TWINKLE, IND_ON, SEC2TICK(1), MSEC2TICK(500));
               }
-            if (find_group_no())
+            else if (auth_need_more())
               {
-                remote_auth_unlock_flag = 1;
-                //last_group_no = group_no;
-                log_flag |= LOG_HALF_UNLOCK;
-                act_PB3(0, 60, GREEN);
-                send_ok_category[REMOTE_AUTHORIZE_CATEGORY]++;
-                lcd_add_log(key_half_unlock);
-                return;
+                auth_set_auth_unlock();
+                led1_op(INDC_TWINKLE, IND_GREEN, SEC2TICK(3), MSEC2TICK(500));
               }
-
-            act_net_unlock(LOG_AUTH_UNLOCK);
-            send_ok_category[REMOTE_AUTHORIZE_CATEGORY]++;
+            else
+              {
+                act_unlock(LOG_AUTH_UNLOCK);
+              }
+            (void)protocal_send_ok(sockfd, REMOTE_AUTHORIZE_CATEGORY);
             break;
-          case UNLOCK_CATEGORY:
-            memset(pubkey, 0, 128);
-            if (protocal->body.unlock_category.unlock_flag == NEED_CHECK_HALF_UNLOCK)
+          case REMOTE_AUTHORIZE_WITH_PUBKEY_CATEGORY_RECV_SIZE:
+            auth_time_out_check();
+            if (!auth_this_time(protocal->body.remote_authrize_with_pubkey_category.remote_authrize_pubkey) &&
+                (auth_init(), !auth_this_time(protocal->body.remote_authrize_with_pubkey_category.remote_authrize_pubkey)))
               {
-                group_no_time_out_check();
-                if (!check_half_unlock())
-                  {
-                    set_omnipotent_group_no();
-                    //last_group_no = group_no;
-                    log_flag |= LOG_HALF_UNLOCK;
-                    act_PB3(0, 60, GREEN);
-                    send_ok_category[UNLOCK_CATEGORY]++;
-                    lcd_add_log(key_half_unlock);
-                    return;
-                    //                        log_flag |= LOG_DENNY_UNLOCK;
-                    //                        act_PB2(0, 60, BLUE);
-                    //                        lcd_add_log("¾Ü¾ø¿ªËø");
-                  }
+                led1_op(INDC_TWINKLE, IND_RED, SEC2TICK(3), MSEC2TICK(500));
+                led3_op(INDC_TWINKLE, IND_RED, SEC2TICK(3), MSEC2TICK(500));
+                buzzer_op(INDC_TWINKLE, IND_ON, SEC2TICK(1), MSEC2TICK(500));
               }
-            act_net_unlock(LOG_TEMP_UNLOCK);
-            act_PB2(0, 60, BLUE);
-            send_ok_category[UNLOCK_CATEGORY]++;
+            else if (auth_need_more())
+              {
+                auth_set_auth_unlock();
+                led1_op(INDC_TWINKLE, IND_GREEN, SEC2TICK(3), MSEC2TICK(500));
+              }
+            else
+              {
+                act_unlock(LOG_AUTH_UNLOCK);
+              }
+            (void)protocal_send_ok(sockfd, REMOTE_AUTHORIZE_CATEGORY);
+          case UNLOCK_CATEGORY:
+            pubkey = {0};
+//			  memset(pubkey, 0, CONFIG_PUBKEY_SIZE);
+            if (protocal->body.unlock_category.unlock_flag == NEED_CHECK_HALF_UNLOCK && (auth_time_out_check(), !auth_half_unlock()))
+              {
+                auth_set_temp_unlock();
+                g_log_type |= LOG_HALF_UNLOCK;
+                led1_op(INDC_TWINKLE, IND_GREEN, SEC2TICK(3), MSEC2TICK(500));
+              }
+            else
+              {
+                act_unlock(LOG_TEMP_UNLOCK);
+                led3_op(INDC_TWINKLE, IND_BLUE, SEC2TICK(3), MSEC2TICK(500));
+              }
+            (void)protocal_send_ok(sockfd, UNLOCK_CATEGORY);
             break;
           case SOFT_RESET_CATEGORY:
             up_systemreset();
@@ -662,57 +665,33 @@ int protocal_deal(int sockfd, struct protocal * protocal)
             (void)protocal_send_ok(sockfd, ASSIGN_NETMASK_CATEGORY);
             break;
           case ASSIGN_DRIPADDR_CATEGORY:
-						
-            assign_gateway(
-              protocal->body.assign_gateway_cateory.gateway[3],
-              protocal->body.assign_gateway_cateory.gateway[2],
-              protocal->body.assign_gateway_cateory.gateway[1],
-              protocal->body.assign_gateway_cateory.gateway[0]
-            );
-            app_eprom_flush();
-            //                app_eprom_write(CONFIG_START_ADDR + 4, protocal->body.assign_gateway_cateory.gateway[3]);
-            //                app_eprom_write(CONFIG_START_ADDR + 5, protocal->body.assign_gateway_cateory.gateway[2]);
-            //                app_eprom_write(CONFIG_START_ADDR + 6, protocal->body.assign_gateway_cateory.gateway[1]);
-            //                app_eprom_write(CONFIG_START_ADDR + 7, protocal->body.assign_gateway_cateory.gateway[0]);
-            //                app_eprom_flush();
-            act_PB2(0, 60, BLUE);
-            send_ok_category[ASSIGN_GATEWAY_CATEGORY]++;
+            config.dripaddr = protocal->body.assign_dripaddr_cateory.dripaddr;
+            ret = save_config();
+            led3_op(INDC_TWINKLE, IND_BLUE, SEC2TICK(3), MSEC2TICK(500));
+            (void)protocal_send_ok(sockfd, ASSIGN_DRIPADDR_CATEGORY);
             break;
-          case ASSIGN_SERVERIP_CATEGORY:
-            assign_serverip(protocal->body.assign_serverip_category.serverip[3],
-                            protocal->body.assign_serverip_category.serverip[2],
-                            protocal->body.assign_serverip_category.serverip[1],
-                            protocal->body.assign_serverip_category.serverip[0]
-                           );
-            app_eprom_flush();
-            //                app_eprom_write(CONFIG_START_ADDR + 12, protocal->body.assign_server_ip_category.server_ip[3]);
-            //                app_eprom_write(CONFIG_START_ADDR + 13, protocal->body.assign_server_ip_category.server_ip[2]);
-            //                app_eprom_write(CONFIG_START_ADDR + 14, protocal->body.assign_server_ip_category.server_ip[1]);
-            //                app_eprom_write(CONFIG_START_ADDR + 15, protocal->body.assign_server_ip_category.server_ip[0]);
-            //                app_eprom_flush();
-            act_PB2(0, 60, BLUE);
-            send_ok_category[ASSIGN_SERVERIP_CATEGORY]++;
+          case ASSIGN_SVRADDR_CATEGORY:
+            config.svraddr = protocal->body.assign_svraddr_category.svraddr;
+            ret = save_config();
+            led3_op(INDC_TWINKLE, IND_BLUE, SEC2TICK(3), MSEC2TICK(500));
+            (void)protocal_send_ok(sockfd, ASSIGN_SVRADDR_CATEGORY);
             break;
           case ASSIGN_MAC_CATEGORY:
-            assign_macaddr(protocal->body.assign_mac_category.macaddr[0],
-                           protocal->body.assign_mac_category.macaddr[1],
-                           protocal->body.assign_mac_category.macaddr[2],
-                           protocal->body.assign_mac_category.macaddr[3],
-                           protocal->body.assign_mac_category.macaddr[4],
-                           protocal->body.assign_mac_category.macaddr[5]);
-            app_eprom_flush();
-            act_PB2(0, 60, BLUE);
-            send_ok_category[ASSIGN_MAC_CATEGORY]++;
+            memcpy(config.macaddr, protocal->body.assign_mac_category.macaddr,  IFHWADDRLEN);
+            ret = save_config();
+            led3_op(INDC_TWINKLE, IND_BLUE, SEC2TICK(3), MSEC2TICK(500));
+            (void)protocal_send_ok(sockfd, ASSIGN_SVRADDR_CATEGORY);
             break;
           case UPLOAD_PUBKEY_CATEGORY:
-            upload_pubkey_flag = 1;
-            act_PB2(0, 60, BLUE);
+//            ret = protocal_send_pubkey(sockfd, pubkey);
+            led3_op(INDC_TWINKLE, IND_BLUE, SEC2TICK(3), MSEC2TICK(500));
             break;
           case DOWNLOAD_PUBKEY_CATEGORY:
             pos = 0xff;
-            for (j = 0; j <= SIZEOFKEYSTORESPACE - 1; j++)
+            for (i = 0; i < CONFIG_GROUP_SIZE; i++)
               {
                 flag = 0;
+				  if (memcmp(config.keyslots[i]))
                 for (i = 0; i <= 127; i++)
                   {
                     _pubkey[i] = app_eprom_read(PUBKEY_START_ADDR + j * 129 + i + 1);

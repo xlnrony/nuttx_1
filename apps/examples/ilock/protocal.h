@@ -87,7 +87,8 @@
 #define CLEAR_ALL_PUBKEY_IN_GROUP_CATEGORY		27
 #define VERSION_VIEW_CATEGORY					28
 #define DEFINE_CONFIG_PASSWORD_CATEGORY			29
-#define LAST_CATEGORY							29
+#define REMOTE_AUTHORIZE_WITH_PUBKEY_CATEGORY  				30
+#define LAST_CATEGORY							30
 
 #define ALERT_SHOCK 				1
 #define ALERT_LIGHT 				2
@@ -141,6 +142,8 @@
 #define UPLOAD_PUBKEY_CATEGORY_SEND_SIZE	   			(PROTOCAL_HEAD_SIZE+sizeof(((struct protocal_s *)NULL)->body.upload_pubkey_category))
 #define REMOTE_AUTHORIZE_CATEGORY_RECV_SIZE  			(PROTOCAL_HEAD_SIZE)
 #define REMOTE_AUTHORIZE_CATEGORY_SEND_SIZE  			(PROTOCAL_HEAD_SIZE)
+#define REMOTE_AUTHORIZE_WITH_PUBKEY_CATEGORY_RECV_SIZE (PROTOCAL_HEAD_SIZE+sizeof(((struct protocal_s *)NULL)->body.remote_authorize_with_pubkey_category))
+#define REMOTE_AUTHORIZE_WITH_PUBKEY_CATEGORY_SEND_SIZE (PROTOCAL_HEAD_SIZE)
 #define TIME_SYNC_CATEGORY_RECV_SIZE		   			(PROTOCAL_HEAD_SIZE+sizeof(((struct protocal_s *)NULL)->body.time_sync_category))
 #define TIME_SYNC_CATEGORY_SEND_SIZE		   			(PROTOCAL_HEAD_SIZE)
 #define ALERT_CATEGORY_RECV_SIZE			   			(PROTOCAL_HEAD_SIZE)
@@ -232,6 +235,11 @@ struct protocal_s
     {
       uint8_t clear_pubkey[CONFIG_PUBKEY_SIZE];
     } clear_pubkey_category;
+
+    struct
+    {
+      uint8_t remote_authorize_pubkey[CONFIG_PUBKEY_SIZE];
+    } remote_authorize_with_pubkey_category;
 
     struct
     {

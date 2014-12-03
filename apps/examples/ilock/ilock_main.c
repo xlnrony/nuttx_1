@@ -189,13 +189,13 @@ static uint32_t g_last_time = 0;
 
 static bool g_group[CONFIG_GROUP_SIZE] = { true };
 static bool g_check[CONFIG_GROUP_SIZE] = { false };
+static uint8_t g_unlock_type = LOG_UNLOCK;
 
 /****************************************************************************
  * Public Data
  ****************************************************************************/
 
-bool g_remote_auth = false;
-uint8_t g_log_flag = 0;
+uint8_t g_log_type = 0;
 uint8_t g_alert_type = 0;
 
 /****************************************************************************
@@ -386,7 +386,7 @@ void act_magnet_in_task(void)
 void auth_init(void)
 {
   int i;
-  // remote_auth_unlock_flag = 0;
+  g_unlock_type = LOG_UNLOCK;
   for (i = 0; i < CONFIG_GROUP_SIZE; i++)
     {
       g_group[i] = true;
@@ -400,6 +400,18 @@ void auth_time_out_check(void)
     {
       auth_init();
     }
+}
+
+void auth_set_temp_unlock(void)
+{
+  g_unlock_type = LOG_TEMP_UNLOCK;
+  g_last_time = clock_systimer();
+}
+
+void auth_set_auth_unlock(void)
+{
+                g_unlock_type = LOG_AUTH_UNLOCK;
+                g_log_type |= LOG_HALF_UNLOCK;
 }
 
 bool auth_this_time(uint8_t pubkey[CONFIG_PUBKEY_SIZE])
@@ -435,9 +447,25 @@ bool auth_this_time(uint8_t pubkey[CONFIG_PUBKEY_SIZE])
   return ret;
 }
 
+bool auth_half_unlock(void)
+{
+  int i;
+  for (i = 0; i <= CONFIG_GROUP_SIZE - 1; i++)
+    {
+      if (g_check[i])
+        return true;
+    }
+  return false;
+}
+
 bool auth_need_more(void)
 {
   int i, j;
+
+  if (g_unlock_type == LOG_TEMP_UNLOCK)
+    {
+      return false;
+    }
   for (i = 0; i < CONFIG_GROUP_SIZE; i++)
     {
       if (g_group[i])
@@ -553,14 +581,7 @@ bool authorize(char *pwd)
       goto errout;
     }
 
-  if (g_remote_auth)
-    {
-      act_unlock(LOG_AUTH_UNLOCK);
-    }
-  else
-    {
-      act_unlock(LOG_UNLOCK);
-    }
+  act_unlock(g_unlock_type);
 
   return true;
 
