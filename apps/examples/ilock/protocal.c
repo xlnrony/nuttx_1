@@ -789,12 +789,6 @@ int protocal_deal(int sockfd, struct protocal * protocal)
     }
 }
 
-struct protocal_recv_state_s
-{
-  uint8_t recv_buf[sizeof(struct protocal_s)];
-  uint8_t * recv_ptr;
-};
-
 int protocal_recv(int sockfd)
 {
   int ret;
