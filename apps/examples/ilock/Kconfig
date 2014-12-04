@@ -60,10 +60,16 @@ config DRIPADDR_DEF_VALUE
 		iLock default dripaddr to be used. Default: "10.0.0.1"
 
 config SVRADDR_DEF_VALUE
-	string "iLock default svraddr"
+	string "iLock default server addr"
 	default "10.0.0.128"
 	---help---
 		iLock default svraddr to be used. Default: "10.0.0.128"
+
+config SVRPORT_DEF_VALUE
+	int "iLock default server port"
+	default 6699
+	---help---
+		iLock default server port to be used. Default 6699
 		
 config SHOCK_RESISTOR_DEF_VALUE
 	int "Shock resistor default value"

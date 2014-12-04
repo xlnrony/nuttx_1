@@ -690,132 +690,98 @@ int protocal_deal(int sockfd, struct protocal * protocal)
             pos = 0xff;
             for (i = 0; i < CONFIG_GROUP_SIZE; i++)
               {
-                flag = 0;
-				  if (memcmp(config.keyslots[i]))
-                for (i = 0; i <= 127; i++)
+                if (memcmp(config.keyslots[i].pubkey, CONFIG_PUBKEY_DEF_VALUE, CONFIG_PUBKEY_SIZE) == 0)
                   {
-                    _pubkey[i] = app_eprom_read(PUBKEY_START_ADDR + j * 129 + i + 1);
-                    if (_pubkey[i] != 0xff && flag == 0) flag = 1;
-                  }
-                if (flag)
-                  {
-                    for (i = 0; i <= 127; i++)
-                      {
-                        if (_pubkey[i] != protocal->body.download_pubkey_category.download_pubkey[i])
-                          {
-                            break;
-                          }
-                      }
-                    if (i > 127)
-                      {
-                        pos = j;
-                      }
+                    if (pos > i)
+                      pos = i;
 
                   }
-                else
+                else if (memcmp(config.keyslots[i].pubkey, protocal->body.download_pubkey_category.download_pubkey, CONFIG_PUBKEY_SIZE) == 0)
                   {
-                    if (pos > j)
-                      pos = j;
+                    pos = i;
                   }
               }
             if (pos == 0xff)
               pos = 0;
-            app_eprom_write(PUBKEY_START_ADDR + pos * 129, protocal->body.download_pubkey_category.download_group_no);
-            for (i = 0; i <= 127; i++)
-              {
-                app_eprom_write(PUBKEY_START_ADDR + pos * 129 + i + 1, protocal->body.download_pubkey_category.download_pubkey[i]);
-              }
-            app_eprom_flush();
-            act_PB2(0, 60, BLUE);
-            send_ok_category[DOWNLOAD_PUBKEY_CATEGORY]++;
+
+            config->keyslots[pos].group[protocal->body.download_pubkey_category.download_group_no] = true;
+            memcpy(config->keyslots[pos].pubkey, protocal->body.download_pubkey_category.download_pubkey, CONFIG_PUBKEY_SIZE);
+            ret = save_config();
+            led3_op(INDC_TWINKLE, IND_BLUE, SEC2TICK(3), MSEC2TICK(500));
+            (void)protocal_send_ok(sockfd, DOWNLOAD_PUBKEY_CATEGORY);
             break;
           case CLEAR_PUBKEY_CATEGORY:
-            for (j = 0; j <= SIZEOFKEYSTORESPACE - 1; j++)
+            for (i = 0; i < CONFIG_GROUP_SIZE; i++)
               {
-                for (i = 0; i <= 127; i++)
+                if (memcmp(config->keyslots[i].pubkey, protocal->body.clear_pubkey_category.clear_pubkey, CONFIG_PUBKEY_SIZE) == 0)
                   {
-                    if (app_eprom_read(PUBKEY_START_ADDR + j * 129 + i + 1) != protocal->body.clear_pubkey_category.clear_pubkey[i])
-                      {
-                        break;
-                      }
-                  }
-                if (i > 127)
-                  {
-                    for (i = 0; i <= 128; i++)
-                      {
-                        app_eprom_write(PUBKEY_START_ADDR + j * 129 + i, 0xff);
-                      }
+                    memset(config->keyslots[i].pubkey, 0xff, sizeof(config->keyslots[i].pubkey));
+                    memset(config->keyslots[i].group, 0, sizeof(config->keyslots[i].group));
                   }
               }
-            app_eprom_flush();
-            act_PB2(0, 60, BLUE);
-            send_ok_category[CLEAR_PUBKEY_CATEGORY]++;
+            ret = save_config();
+            led3_op(INDC_TWINKLE, IND_BLUE, SEC2TICK(3), MSEC2TICK(500));
+            (void)protocal_send_ok(sockfd, CLEAR_PUBKEY_CATEGORY);
             break;
           case CLEAR_ALL_PUBKEY_CATEGORY:
-            for (j = 0; j <= SIZEOFKEYSTORESPACE - 1; j++)
+            for (i = 0; i < CONFIG_GROUP_SIZE; i++)
               {
-                for (i = 0; i <= 128; i++)
-                  {
-                    app_eprom_write(PUBKEY_START_ADDR + j * 129 + i, 0xff);
-                  }
+                memset(config->keyslots[i].pubkey, 0xff, sizeof(config->keyslots[i].pubkey));
+                memset(config->keyslots[i].group, false, sizeof(config->keyslots[i].group));
               }
-            app_eprom_flush();
-            act_PB2(0, 60, BLUE);
-            send_ok_category[CLEAR_ALL_PUBKEY_CATEGORY]++;
+            ret = save_config();
+            led3_op(INDC_TWINKLE, IND_BLUE, SEC2TICK(3), MSEC2TICK(500));
+            (void)protocal_send_ok(sockfd, CLEAR_ALL_PUBKEY_CATEGORY);
             break;
           case DOWNLOAD_FIRMWARE_CATEGORY:
-            ET0 = 0;
-            firmware_crc32 = SWAP32(protocal->body.download_firmware_category.firmware_crc32);
-            firmware_len = SWAP32(protocal->body.download_firmware_category.firmware_len);
-            firmware_pos = SWAP32(protocal->body.download_firmware_category.firmware_pos);
-            l = firmware_len - firmware_pos;
-            if (l > FIRMWARE_CACHE_SIZE)
-              {
-                memcpy(firmware_cache, protocal->body.download_firmware_category.firmware, FIRMWARE_CACHE_SIZE);
-                firmware_cache_len = FIRMWARE_CACHE_SIZE;
-              }
-            else
-              {
-                memcpy(firmware_cache, protocal->body.download_firmware_category.firmware, l);
-                firmware_cache_len = l;
-                download_firmware_completed = 1;
-              }
-            ET0 = 1;
-            act_PB2(0, 60, BLUE);
+            /*            ET0 = 0;
+                        firmware_crc32 = SWAP32(protocal->body.download_firmware_category.firmware_crc32);
+                        firmware_len = SWAP32(protocal->body.download_firmware_category.firmware_len);
+                        firmware_pos = SWAP32(protocal->body.download_firmware_category.firmware_pos);
+                        l = firmware_len - firmware_pos;
+                        if (l > FIRMWARE_CACHE_SIZE)
+                          {
+                            memcpy(firmware_cache, protocal->body.download_firmware_category.firmware, FIRMWARE_CACHE_SIZE);
+                            firmware_cache_len = FIRMWARE_CACHE_SIZE;
+                          }
+                        else
+                          {
+                            memcpy(firmware_cache, protocal->body.download_firmware_category.firmware, l);
+                            firmware_cache_len = l;
+                            download_firmware_completed = 1;
+                          }
+                        ET0 = 1;
+                        act_PB2(0, 60, BLUE);*/
             break;
           case UPDATE_FIRMWARE_CATEGORY:
-            update_firmware_flag = 1;
+//            update_firmware_flag = 1;
             break;
           case VIEW_NET_ADDR_CATEGORY:
-            view_net_addr_flag = 1;
-            act_PB2(0, 60, BLUE);
+            ret =	protocal_send_net_addr_view();
+            led3_op(INDC_TWINKLE, IND_BLUE, SEC2TICK(3), MSEC2TICK(500));
             break;
           case CLEAR_ALL_PUBKEY_IN_GROUP_CATEGORY:
-            for (j = 0; j <= SIZEOFKEYSTORESPACE - 1; j++)
+            for (i = 0; i <= CONFIG_GROUP_SIZE; i++)
               {
-                if (app_eprom_read(PUBKEY_START_ADDR + j * 129) == protocal->body.clear_all_pubkey_in_group_category.clear_group_no)
+                if (config->keyslots[i].group[protocal->body.clear_all_pubkey_in_group_category.clear_group_no])
                   {
-                    for (i = 0; i <= 128; i++)
-                      {
-                        app_eprom_write(PUBKEY_START_ADDR + j * 129 + i, 0xff);
-                      }
+                    memset(config->keyslots[i].pubkey, 0xff, sizeof(config->keyslots[i].pubkey));
+                    memset(config->keyslots[i].group, false, sizeof(config->keyslots[i].group));
                   }
               }
-            app_eprom_flush();
-            act_PB2(0, 60, BLUE);
-            send_ok_category[CLEAR_ALL_PUBKEY_IN_GROUP_CATEGORY]++;
+            ret = save_config();
+            led3_op(INDC_TWINKLE, IND_BLUE, SEC2TICK(3), MSEC2TICK(500));
+            (void)protocal_send_ok(sockfd, CLEAR_ALL_PUBKEY_IN_GROUP_CATEGORY);
             break;
           case VERSION_VIEW_CATEGORY:
-            send_version_flag = 1;
+            ret = protocal_send_version();
+            led3_op(INDC_TWINKLE, IND_BLUE, SEC2TICK(3), MSEC2TICK(500));
             break;
           case DEFINE_CONFIG_PASSWORD_CATEGORY:
-            for (j = 0; j <= 5; j++)
-              {
-                app_eprom_write(CONFIG_START_ADDR + 29 + j, protocal->body.define_config_password_category.config_password[j]);
-              }
-            app_eprom_flush();
-            act_PB2(0, 60, BLUE);
-            send_ok_category[DEFINE_CONFIG_PASSWORD_CATEGORY]++;
+            memcpy(config.config_password, protocal->body.define_config_password_category.config_password, 6);
+            ret = save_config();
+            led3_op(INDC_TWINKLE, IND_BLUE, SEC2TICK(3), MSEC2TICK(500));
+            (void)protocal_send_ok(sockfd, DEFINE_CONFIG_PASSWORD_CATEGORY);
             break;
           default:
             break;
@@ -823,71 +789,64 @@ int protocal_deal(int sockfd, struct protocal * protocal)
     }
 }
 
-void protocal_newdata(struct protocal_state *s, unsigned char *dat, unsigned short len)
+struct protocal_recv_state_s
 {
-  unsigned short l;
-  if (s->recv_dat != NULL && s->recv_dat > s->temp_recv_protocal)
+  uint8_t recv_buf[sizeof(struct protocal_s)];
+  uint8_t * recv_ptr;
+};
+
+int protocal_recv(int sockfd)
+{
+  int ret;
+  uint8_t recv_buf[sizeof(struct protocal_s)];
+  ssize_t recv_pos, recv_len;
+  size_t recv_size;
+
+  recv_pos = 0;
+  while (recv_pos < PROTOCAL_HEAD_SIZE)
     {
-      l = s->recv_dat - s->temp_recv_protocal;
-      if (l >= sizeof (((struct protocal_s *) NULL)->head))
+      recv_len = recv(sockfd, &recv_buf[recv_pos], PROTOCAL_HEAD_SIZE - recv_pos, 0);
+
+      if (recv_len < 0)
         {
-          l = protocal_size[((struct protocal_s *) (s->temp_recv_protocal))->head.category] - l;
-          if (len >= l)
-            {
-              memcpy(s->recv_dat, dat, l);
-              s->recv_dat = NULL;
-              protocal_deal((struct protocal_s *) s->temp_recv_protocal);
-              dat += l;
-              len -= l;
-            }
-          else
-            {
-              memcpy(s->recv_dat, dat, len);
-              s->recv_dat += len;
-              return;
-            }
+          ret = -errno;
+          ilockdbg("protocal_recv: protocal head recv failed: %d\n", ret);
+          goto errout;
         }
-      else
+      else if (recv_len == 0)
         {
-          l = sizeof (((struct protocal_s *) NULL)->head) - l;
-          if (len >= l)
-            {
-              memcpy(s->recv_dat, dat, l);
-              s->recv_dat += l;
-              dat += l;
-              len -= l;
-              l = protocal_size[((struct protocal_s *) (s->temp_recv_protocal))->head.category] - sizeof (((struct protocal *) NULL)->head);
-              if (len >= l)
-                {
-                  memcpy(s->recv_dat, dat, l);
-                  s->recv_dat = NULL;
-                  protocal_deal((struct protocal_s *) s->temp_recv_protocal);
-                  dat += l;
-                  len -= l;
-                }
-              else
-                {
-                  memcpy(s->recv_dat, dat, len);
-                  s->recv_dat += len;
-                  return;
-                }
-            }
-          else
-            {
-              memcpy(s->recv_dat, dat, len);
-              s->recv_dat += len;
-              return;
-            }
+          ret = -EHOSTDOWN;
+          ilockdbg("protocal_recv: in protocal head recv, the server closed the connection\n");
+          goto errout;
         }
+      recv_pos += recv_len;
     }
-  while (len >= sizeof (((struct protocal_s *) NULL)->head) && len >= (l = protocal_size[((struct protocal_s *) (dat))->head.category]))
+
+  recv_size = protocal_size[((struct protocal_s *)recv_buf)->head.category];
+
+  recv_pos = PROTOCAL_HEAD_SIZE;
+  while (recv_pos < recv_size)
     {
-      protocal_deal((struct protocal_s *) dat);
-      dat += l;
-      len -= l;
-    }
-  memcpy(s->temp_recv_protocal, dat, len);
-  s->recv_dat = s->temp_recv_protocal + len;
+      recv_len = recv(sockfd, &recv_buf[recv_pos], recv_size - recv_pos, 0);
+
+      if (recv_len < 0)
+        {
+          ret = -errno;
+          ilockdbg("protocal_recv: protocal body recv failed: %d\n", ret);
+          goto errout;
+        }
+      else if (recv_len == 0)
+        {
+          ret = -EHOSTDOWN;
+          ilockdbg("protocal_recv: in protocal body recv, the server closed the connection\n");
+          goto errout;
+        }
+      recv_pos += recv_len;
+    };
+
+  ret = protocal_deal((struct protocal_s *) recv_buf);
+errout:
+  return ret;
 }
 
 

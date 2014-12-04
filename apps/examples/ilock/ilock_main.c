@@ -520,7 +520,7 @@ void act_unlock(unsigned char logflag)
   auth_init();
   g_unlock_step = 1;
   g_magnet_delay = CONFIG_MAGNET_DELAY;
-  g_log_flag |= logflag;
+  g_log_type |= logflag;
   led1_op(INDC_ALWAYS, IND_GREEN, SEC2TICK(3), 0);
 }
 
@@ -554,7 +554,7 @@ bool authorize(char *pwd)
   if (ret < 0)
     {
       ilockdbg("authorize: jksafekey_verify_pin failed: %d\n", ret);
-      g_log_flag |= LOG_KEY_PASSWORD_ERROR;
+      g_log_type |= LOG_KEY_PASSWORD_ERROR;
       buzzer_op(INDC_TWINKLE, IND_ON, SEC2TICK(3), MSEC2TICK(500));
       led3_op(INDC_ALWAYS, IND_RED, SEC2TICK(3), MSEC2TICK(500));
       goto errclose;
@@ -576,7 +576,7 @@ bool authorize(char *pwd)
     }
   if (auth_need_more())
     {
-      g_log_flag |= LOG_HALF_UNLOCK;
+      g_log_type |= LOG_HALF_UNLOCK;
       led1_op(INDC_TWINKLE, IND_GREEN, SEC2TICK(3), MSEC2TICK(500));
       goto errout;
     }
@@ -861,6 +861,40 @@ static int unlock_task(int argc, char *argv[])
             }
         }
     }
+}
+
+static int net_task(int argc, char *argv[])
+{
+  int ret;
+  int sockfd;
+  struct sockaddr_in svraddr;
+	
+  sockfd = socket(PF_INET, SOCK_STREAM, 0);
+  if (sockfd < 0)
+    {
+      ret = -errno;
+      ilockdbg("net_task: socket failure %d\n", ret);
+      goto errout;
+    }
+
+  svraddr.sin_family      = AF_INET;
+  svraddr.sin_port        = HTONS(CONFIG_SVRPORT_DEF_VALUE);
+  svraddr.sin_addr.s_addr = inet_addr(CONFIG_SVRADDR_DEF_VALUE);
+
+  ret = connect( sockfd, (struct sockaddr*)&svraddr, sizeof(struct sockaddr_in));
+  if (ret < 0)
+    {
+      ret = -errno;
+      ilockdbg("net_task: connect failure: %d\n", ret);
+      goto errout_with_socket;
+    }
+
+	
+	
+errout_with_socket:
+  close(sockfd);
+errout:
+  return ret;	
 }
 
 /****************************************************************************
