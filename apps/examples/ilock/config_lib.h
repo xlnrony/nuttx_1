@@ -109,8 +109,8 @@ EXTERN struct config_s *config;
  * Public Function Prototypes
  ****************************************************************************/
 
-EXTERN void load_config(void);
-EXTERN void save_config(void);
+EXTERN int load_config(void);
+EXTERN int save_config(void);
 EXTERN int config_init(void);
 EXTERN void config_deinit(void);
 

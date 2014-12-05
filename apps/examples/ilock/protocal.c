@@ -69,9 +69,9 @@
 
 const size_t protocal_size[LAST_CATEGORY + 1] = {HEART_BEAT_CATEGORY_RECV_SIZE, LOG_CATEGORY_RECV_SIZE,
                                                  DOWNLOAD_PUBKEY_CATEGORY_RECV_SIZE, CLEAR_PUBKEY_CATEGORY_RECV_SIZE,
-                                                 ASSIGN_SN_CATEGORY_RECV_SIZE, ASSIGN_HOSTIP_CATEGORY_RECV_SIZE,
-                                                 ASSIGN_NETMASK_CATEGORY_RECV_SIZE, ASSIGN_GATEWAY_CATEGORY_RECV_SIZE,
-                                                 ASSIGN_SERVERIP_CATEGORY_RECV_SIZE, ASSIGN_MAC_CATEGORY_RECV_SIZE,
+                                                 ASSIGN_SN_CATEGORY_RECV_SIZE, ASSIGN_HOSTADDR_CATEGORY_RECV_SIZE,
+                                                 ASSIGN_NETMASK_CATEGORY_RECV_SIZE, ASSIGN_DRIPADDR_CATEGORY_RECV_SIZE,
+                                                 ASSIGN_SVRADDR_CATEGORY_RECV_SIZE, ASSIGN_MACADDR_CATEGORY_RECV_SIZE,
                                                  CLEAR_ALL_PUBKEY_CATEGORY_RECV_SIZE, SOFT_RESET_CATEGORY_RECV_SIZE,
                                                  UNLOCK_CATEGORY_RECV_SIZE, UPLOAD_PUBKEY_CATEGORY_RECV_SIZE,
                                                  REMOTE_AUTHORIZE_CATEGORY_RECV_SIZE, TIME_SYNC_CATEGORY_RECV_SIZE,

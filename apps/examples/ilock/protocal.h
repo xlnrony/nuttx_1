@@ -43,6 +43,8 @@
 
 #include <nuttx/config.h>
 #include <stdint.h>
+#include <net/if.h>
+#include <netinet/in.h>
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -122,16 +124,16 @@
 #define CLEAR_PUBKEY_CATEGORY_SEND_SIZE 				(PROTOCAL_HEAD_SIZE)
 #define ASSIGN_SN_CATEGORY_RECV_SIZE 					(PROTOCAL_HEAD_SIZE+sizeof(((struct protocal_s *)NULL)->body.assign_sn_category))
 #define ASSIGN_SN_CATEGORY_SEND_SIZE 					(PROTOCAL_HEAD_SIZE)
-#define ASSIGN_HOSTIP_CATEGORY_RECV_SIZE  				(PROTOCAL_HEAD_SIZE+sizeof(((struct protocal_s *)NULL)->body.assign_hostip_category))
-#define ASSIGN_HOSTIP_CATEGORY_SEND_SIZE  				(PROTOCAL_HEAD_SIZE)
+#define ASSIGN_HOSTADDR_CATEGORY_RECV_SIZE  				(PROTOCAL_HEAD_SIZE+sizeof(((struct protocal_s *)NULL)->body.assign_hostaddr_category))
+#define ASSIGN_HOSTADDR_CATEGORY_SEND_SIZE  				(PROTOCAL_HEAD_SIZE)
 #define ASSIGN_NETMASK_CATEGORY_RECV_SIZE  				(PROTOCAL_HEAD_SIZE+sizeof(((struct protocal_s *)NULL)->body.assign_netmask_category))
 #define ASSIGN_NETMASK_CATEGORY_SEND_SIZE  				(PROTOCAL_HEAD_SIZE)
-#define ASSIGN_GATEWAY_CATEGORY_RECV_SIZE  				(PROTOCAL_HEAD_SIZE+sizeof(((struct protocal_s *)NULL)->body.assign_gateway_cateory))
-#define ASSIGN_GATEWAY_CATEGORY_SEND_SIZE  				(PROTOCAL_HEAD_SIZE)
-#define ASSIGN_SERVERIP_CATEGORY_RECV_SIZE				(PROTOCAL_HEAD_SIZE+sizeof(((struct protocal_s *)NULL)->body.assign_serverip_category))
-#define ASSIGN_SERVERIP_CATEGORY_SEND_SIZE				(PROTOCAL_HEAD_SIZE)
-#define ASSIGN_MAC_CATEGORY_RECV_SIZE 	   				(PROTOCAL_HEAD_SIZE+sizeof(((struct protocal_s *)NULL)->body.assign_mac_category))
-#define ASSIGN_MAC_CATEGORY_SEND_SIZE 	   				(PROTOCAL_HEAD_SIZE)
+#define ASSIGN_DRIPADDR_CATEGORY_RECV_SIZE  				(PROTOCAL_HEAD_SIZE+sizeof(((struct protocal_s *)NULL)->body.assign_dripaddr_cateory))
+#define ASSIGN_DRIPADDR_CATEGORY_SEND_SIZE  				(PROTOCAL_HEAD_SIZE)
+#define ASSIGN_SVRADDR_CATEGORY_RECV_SIZE				(PROTOCAL_HEAD_SIZE+sizeof(((struct protocal_s *)NULL)->body.assign_svraddr_category))
+#define ASSIGN_SVRADDR_CATEGORY_SEND_SIZE				(PROTOCAL_HEAD_SIZE)
+#define ASSIGN_MACADDR_CATEGORY_RECV_SIZE 	   				(PROTOCAL_HEAD_SIZE+sizeof(((struct protocal_s *)NULL)->body.assign_macaddr_category))
+#define ASSIGN_MACADDR_CATEGORY_SEND_SIZE 	   				(PROTOCAL_HEAD_SIZE)
 #define CLEAR_ALL_PUBKEY_CATEGORY_RECV_SIZE  			(PROTOCAL_HEAD_SIZE)
 #define CLEAR_ALL_PUBKEY_CATEGORY_SEND_SIZE  			(PROTOCAL_HEAD_SIZE)
 #define SOFT_RESET_CATEGORY_RECV_SIZE		   			(PROTOCAL_HEAD_SIZE)
@@ -154,11 +156,11 @@
 #define TIME_VIEW_CATEGORY_SEND_SIZE		   			(PROTOCAL_HEAD_SIZE+sizeof(((struct protocal_s *)NULL)->body.time_view_category))
 #define SENSOR_VIEW_CATEGORY_RECV_SIZE	   				(PROTOCAL_HEAD_SIZE)
 #define SENSOR_VIEW_CATEGORY_SEND_SIZE	   				(PROTOCAL_HEAD_SIZE+sizeof(((struct protocal_s *)NULL)->body.sensor_view_category))
-#define ASSIGN_SHOCK_CHECK_VOLTAGE_CATEGORY_RECV_SIZE	(PROTOCAL_HEAD_SIZE+sizeof(((struct protocal_s *)NULL)->body.assign_shock_check_voltage_category))
-#define ASSIGN_SHOCK_CHECK_VOLTAGE_CATEGORY_SEND_SIZE	(PROTOCAL_HEAD_SIZE)
-#define ASSIGN_LOCK_CHECK_VOLTAGE_CATEGORY_RECV_SIZE	(PROTOCAL_HEAD_SIZE+sizeof(((struct protocal_s *)NULL)->body.assign_lock_check_voltage_category))
+#define ASSIGN_SHOCK_RESISTOR_THRESHOLD_CATEGORY_RECV_SIZE	(PROTOCAL_HEAD_SIZE+sizeof(((struct protocal_s *)NULL)->body.assign_shock_resistor_threshold_category))
+#define ASSIGN_SHOCK_RESISTOR_THRESHOLD_CATEGORY_SEND_SIZE	(PROTOCAL_HEAD_SIZE)
+#define ASSIGN_LOCK_CHECK_VOLTAGE_CATEGORY_RECV_SIZE	(PROTOCAL_HEAD_SIZE+sizeof(((struct protocal_s *)NULL)->body.assign_infra_red_threshold_category))
 #define ASSIGN_LOCK_CHECK_VOLTAGE_CATEGORY_SEND_SIZE	(PROTOCAL_HEAD_SIZE)
-#define ASSIGN_LIGHT_CHECK_VOLTAGE_CATEGORY_RECV_SIZE	(PROTOCAL_HEAD_SIZE+sizeof(((struct protocal_s *)NULL)->body.assign_light_check_voltage_category))
+#define ASSIGN_LIGHT_CHECK_VOLTAGE_CATEGORY_RECV_SIZE	(PROTOCAL_HEAD_SIZE+sizeof(((struct protocal_s *)NULL)->body.assign_photo_resistor_threshold_category))
 #define ASSIGN_LIGHT_CHECK_VOLTAGE_CATEGORY_SEND_SIZE	(PROTOCAL_HEAD_SIZE)
 #define DOWNLOAD_FIRMWARE_CATEGORY_RECV_SIZE			(PROTOCAL_HEAD_SIZE+sizeof(((struct protocal_s *)NULL)->body.download_firmware_category))
 #define DOWNLOAD_FIRMWARE_CATEGORY_SEND_SIZE			(PROTOCAL_HEAD_SIZE+sizeof(((struct protocal_s *)NULL)->body.download_firmware_category)-sizeof(((struct protocal_s *)NULL)->body.download_firmware_category.firmware))
@@ -244,7 +246,7 @@ struct protocal_s
     struct
     {
       uint8_t macaddr[IFHWADDRLEN];
-    } assign_mac_category;
+    } assign_macaddr_category;
 
     struct
     {
