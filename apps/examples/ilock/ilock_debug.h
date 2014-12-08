@@ -1,5 +1,5 @@
 /****************************************************************************
- * examples/ilock/led_lib.h
+ * examples/ilock/adc_lib.h
  *
  *   Copyright (C) 2011, 2013-2014 xlnrony. All rights reserved.
  *   Author: xlnrony <xlnrony@gmail.com>
@@ -33,8 +33,8 @@
  *
  ****************************************************************************/
 
-#ifndef __APPS_INCLUDE_CONFIG_LIB_H
-#define __APPS_INCLUDE_CONFIG_LIB_H
+#ifndef __APPS_INCLUDE_ILOCK_DEBUG_H
+#define __APPS_INCLUDE_ILOCK_DEBUG_H
 
 /****************************************************************************
  * Included Files
@@ -42,82 +42,53 @@
 
 #include <nuttx/config.h>
 #include <stdint.h>
-#include <net/if.h>
-#include <netinet/in.h>
+#include <debug.h>
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
 
-#define CONFIG_MACADDR_DEF_VALUE 	"FC:FC:FC:AB:AB:AB"
-#define CONFIG_HOSTADDR_DEF_VALUE 	"10.0.0.2"
-#define CONFIG_NETMASK_DEF_VALUE 		"255.255.255.0"
-#define CONFIG_DRIPADDR_DEF_VALUE 	"10.0.0.1"
-#define CONFIG_SVRADDR_DEF_VALUE 		"10.0.0.128"
+#ifdef CONFIG_CPP_HAVE_VARARGS
 
-#define CONFIG_SHOCK_RESISTOR_DEF_VALUE 			0
-#define CONFIG_INFRA_RED_DEF_VALUE 						400
-#define CONFIG_PHOTO_RESISTOR_DEF_VALUE 			512
+/* C-99 style variadic macros are supported */
 
-#define CONFIG_PUBKEY_DEF_VALUE 		"FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"
-#define CONFIG_PUBKEY_SIZE						128
+#  ifdef CONFIG_DEBUG_ILOCK
+#    define ilockdbg(format, ...)    dbg(format, ##__VA_ARGS__)
+#    define ilocklldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
+#    define ilockvdbg(format, ...)   vdbg(format, ##__VA_ARGS__)
+#    define ilockllvdbg(format, ...) llvdbg(format, ##__VA_ARGS__)
+#  else
+#    define ilockdbg(x...)
+#    define ilocklldbg(x...)
+#    define ilockvdbg(x...)
+#    define ilockllvdbg(x...)
+#  endif
 
-#define CONFIG_GROUP_DEF_VALUE 			0
-#define CONFIG_GROUP_SIZE 						32
+#else                                  /* CONFIG_CPP_HAVE_VARARGS */
+
+/* Variadic macros NOT supported */
+
+#  ifdef CONFIG_DEBUG_ILOCK
+#    define ilockdbg     dbg
+#    define ilockvdbg   vdbg
+#    define ilocklldbg   lldbg
+#    define ilockllvdbg llvdbg
+#  else
+#    define ilockdbg 		(void)
+#    define ilockvdbg		(void)
+#    define ilocklldbg		(void)
+#    define ilockllvdbg	(void)
+#  endif
+
+#endif                                 /* CONFIG_CPP_HAVE_VARARGS */
 
 /****************************************************************************
  * Public Types
  ****************************************************************************/
-struct keyslot_s
-{
-  uint8_t pubkey[CONFIG_PUBKEY_SIZE];
-  bool group[CONFIG_GROUP_SIZE];
-};
-
-struct config_s
-{
-  uint32_t serial_no;
-  uint32_t knl_version;
-  uint32_t	 app_version;
-  uint8_t macaddr[IFHWADDRLEN];
-  struct in_addr hostaddr;
-  struct in_addr netmask;
-  struct in_addr dripaddr;
-  struct in_addr svraddr;
-  int32_t shock_resistor_threshold;
-  int32_t infra_red_threshold;
-  int32_t photo_resistor_threshold;
-  uint8_t config_password[6];
-  struct keyslot_s keyslots[CONFIG_GROUP_SIZE];
-};
 
 /****************************************************************************
  * Public Data
  ****************************************************************************/
 
-#ifdef __cplusplus
-#define EXTERN extern "C"
-extern "C"
-{
-#else
-#define EXTERN extern
-#endif
-
-EXTERN struct config_s *config;
-
-/****************************************************************************
- * Public Function Prototypes
- ****************************************************************************/
-
-EXTERN int load_config(void);
-EXTERN int save_config(void);
-EXTERN int config_init(void);
-EXTERN void config_deinit(void);
-
-#undef EXTERN
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* __APPS_INCLUDE_CONFIG_LIB_H */
+#endif /* __APPS_INCLUDE_ILOCK_DEBUG_H */
 

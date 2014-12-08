@@ -53,7 +53,17 @@
 #include <assert.h>
 #include <errno.h>
 
-#include "protocal.h"
+#include <nuttx/systemreset.h>
+#include <nuttx/clock.h>
+#include <nuttx/gpio/indicator.h>
+
+#include "ilock_debug.h"
+#include "ilock_protocal.h"
+#include "ilock_authorize.h"
+
+#include "config_lib.h"
+#include "led_lib.h"
+#include "buzzer_lib.h"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -77,9 +87,9 @@ const size_t protocal_size[LAST_CATEGORY + 1] = {HEART_BEAT_CATEGORY_RECV_SIZE, 
                                                  REMOTE_AUTHORIZE_CATEGORY_RECV_SIZE, TIME_SYNC_CATEGORY_RECV_SIZE,
                                                  ALERT_CATEGORY_RECV_SIZE, CONNECT_CATEGORY_RECV_SIZE,
                                                  TIME_VIEW_CATEGORY_RECV_SIZE, SENSOR_VIEW_CATEGORY_RECV_SIZE,
-                                                 ASSIGN_SHOCK_CHECK_VOLTAGE_CATEGORY_RECV_SIZE,
-                                                 ASSIGN_LOCK_CHECK_VOLTAGE_CATEGORY_RECV_SIZE,
-                                                 ASSIGN_LIGHT_CHECK_VOLTAGE_CATEGORY_RECV_SIZE,
+                                                 ASSIGN_SHOCK_RESISTOR_THRESHOLD_CATEGORY_RECV_SIZE,
+                                                 ASSIGN_INFRA_RED_THRESHOLD_CATEGORY_RECV_SIZE,
+                                                 ASSIGN_PHOTO_RESISTOR_THRESHOLD_CATEGORY_RECV_SIZE,
                                                  DOWNLOAD_FIRMWARE_CATEGORY_RECV_SIZE,
                                                  CRC32_FIRMWARE_CATEGORY_RECV_SIZE, UPDATE_FIRMWARE_CATEGORY_RECV_SIZE,
                                                  VIEW_NET_ADDR_CATEGORY_RECV_SIZE,
@@ -107,7 +117,7 @@ int protocal_send_heart_beat(int sockfd)
 {
   int ret;
   ssize_t nsent;
-  struct protocal_s p = {0};
+  struct protocal_s p;
 
   protocal_make_magic(&p);
 
@@ -137,15 +147,15 @@ int protocal_send_connect(int sockfd)
 {
   int ret;
   ssize_t nsent;
-  struct protocal_s p = {0};
+  struct protocal_s p;
 
   protocal_make_magic(&p);
 
   p.head.category = CONNECT_CATEGORY;
   p.head.serial_no = config->serial_no;
 
-  p.body.connect_category.connet_knl_version = config.knl_version;
-  p.body.connect_category.connect_app_version = config.app_version;
+  p.body.connect_category.connect_knl_version = config->knl_version;
+  p.body.connect_category.connect_app_version = config->app_version;
 
   nsent = send(sockfd, &p, CONNECT_CATEGORY_SEND_SIZE, 0);
   if (nsent < 0)
@@ -166,19 +176,19 @@ errout:
   return ret;
 }
 
-int protocal_send_alert(int sockfd, unsigned long serial_no, unsigned char alert_type, unsigned char time[6])
+int protocal_send_alert(int sockfd, unsigned long serial_no, unsigned char alert_type, unsigned char tm[6])
 {
   int ret;
   ssize_t nsent;
-  struct protocal_s p = {0};
+  struct protocal_s p;
 
   protocal_make_magic(&p);
 
   p.head.category = ALERT_CATEGORY;
-  p.head.serial_no = SWAP32(serial_no);
+  p.head.serial_no = config->serial_no;
 
   p.body.alert_category.alert_type = alert_type;
-  memcpy(p.body.alert_category.alert_time, time, 6);
+  memcpy(p.body.alert_category.alert_time, tm, 6);
 
   nsent = send(sockfd, &p, ALERT_CATEGORY_SEND_SIZE, 0);
   if (nsent < 0)
@@ -199,21 +209,21 @@ errout:
   return ret;
 }
 
-int protocal_send_log(int sockfd, unsigned long serial_no, unsigned char log_group_no, unsigned char *log_pubkey, unsigned char flag, unsigned char time[6])
+int protocal_send_log(int sockfd, unsigned long serial_no, unsigned char log_group_no, unsigned char *log_pubkey, unsigned char flag, unsigned char tm[6])
 {
   int ret = -ENODATA;
   ssize_t nsent;
-  struct protocal_s p = {0};
+  struct protocal_s p;
 
   protocal_make_magic(&p);
 
   p.head.category = LOG_CATEGORY;
-  p.head.serial_no = SWAP32(serial_no);
+  p.head.serial_no = config->serial_no;
 
   p.body.log_category.log_group_no = log_group_no;
   memcpy(p.body.log_category.log_pubkey, log_pubkey, 128);
   p.body.log_category.flag = flag;
-  memcpy(p.body.log_category.log_time, time, 6);
+  memcpy(p.body.log_category.log_time, tm, 6);
 
   nsent = send(sockfd, &p, LOG_CATEGORY_SEND_SIZE, 0);
   if (nsent < 0)
@@ -241,22 +251,22 @@ int protocal_send_time_view(int sockfd)
   struct timespec ts;
   struct tm *tm;
 
-  struct protocal_s p = {0};
+  struct protocal_s p;
 
   protocal_make_magic(&p);
 
   p.head.category = TIME_VIEW_CATEGORY;
-  p.head.serial_no = config.serial_no;
+  p.head.serial_no = config->serial_no;
 
   clock_gettime(CLOCK_REALTIME, &ts);
-  tm = gmtime(ts.tv_sec);
+  tm = gmtime(&ts.tv_sec);
 
-  p.body.time_view_category.view_time[0] = tm.tm_year;
-  p.body.time_view_category.view_time[1] = tm.tm_mon;
-  p.body.time_view_category.view_time[2] = tm.tm_mday;
-  p.body.time_view_category.view_time[3] = tm.tm_hour;
-  p.body.time_view_category.view_time[4] = tm.tm_min;
-  p.body.time_view_category.view_time[5] = tm.tm_sec;
+  p.body.time_view_category.view_time[0] = tm->tm_year;
+  p.body.time_view_category.view_time[1] = tm->tm_mon;
+  p.body.time_view_category.view_time[2] = tm->tm_mday;
+  p.body.time_view_category.view_time[3] = tm->tm_hour;
+  p.body.time_view_category.view_time[4] = tm->tm_min;
+  p.body.time_view_category.view_time[5] = tm->tm_sec;
 
   nsent = send(sockfd, &p, TIME_VIEW_CATEGORY_SEND_SIZE, 0);
   if (nsent < 0)
@@ -281,16 +291,16 @@ int protocal_send_sensor_view(int sockfd)
 {
   int ret = -ENODATA;
   ssize_t nsent;
-  struct protocal_s p = {0};
+  struct protocal_s p;
 
   protocal_make_magic(&p);
 
   p.head.category = SENSOR_VIEW_CATEGORY;
-  p.head.serial_no = config.serial_no;
+  p.head.serial_no = config->serial_no;
 
-  p.body.sensor_view_category.view_shock_resistor_threshold = config.shock_resistor_threshold;
-  p.body.sensor_view_category.view_infra_red_threshold = config.infra_red_threshold;
-  p.body.sensor_view_category.view_photo_resistor_threshold = config.photo_resistor_threshold;
+  p.body.sensor_view_category.view_shock_resistor_threshold = config->shock_resistor_threshold;
+  p.body.sensor_view_category.view_infra_red_threshold = config->infra_red_threshold;
+  p.body.sensor_view_category.view_photo_resistor_threshold = config->photo_resistor_threshold;
   p.body.sensor_view_category.view_battery_voltage = 0;
   p.body.sensor_view_category.view_power_voltage = 0;
 
@@ -317,18 +327,18 @@ int protocal_send_net_addr_view(int sockfd)
 {
   int ret = -ENODATA;
   ssize_t nsent;
-  struct protocal_s p = {0};
+  struct protocal_s p;
 
   protocal_make_magic(&p);
 
   p.head.category = VIEW_NET_ADDR_CATEGORY;
-  p.head.serial_no = config.serial_no;
+  p.head.serial_no = config->serial_no;
 
-  p.body.view_net_addr_category.view_hostaddr = config.hostaddr.s_addr;
-  p.body.view_net_addr_category.view_netmask = config.netmask.s_addr;
-  p.body.view_net_addr_category.view_dripaddr = config.dripaddr.s_addr;
-  p.body.view_net_addr_category.view_svraddr = config.svraddr.s_addr;
-  memcpy(p.body.view_net_addr_category.view_macaddr, config.macaddr, IFHWADDRLEN);
+  p.body.view_net_addr_category.view_hostaddr = config->hostaddr.s_addr;
+  p.body.view_net_addr_category.view_netmask = config->netmask.s_addr;
+  p.body.view_net_addr_category.view_dripaddr = config->dripaddr.s_addr;
+  p.body.view_net_addr_category.view_svraddr = config->svraddr.s_addr;
+  memcpy(p.body.view_net_addr_category.view_macaddr, config->macaddr, IFHWADDRLEN);
 
   nsent = send(sockfd, &p, VIEW_NET_ADDR_CATEGORY_SEND_SIZE, 0);
   if (nsent < 0)
@@ -353,14 +363,14 @@ int protocal_send_pubkey(int sockfd, uint8_t pubkey[CONFIG_PUBKEY_SIZE])
 {
   int ret = -ENODATA;
   ssize_t nsent;
-  struct protocal_s p = {0};
+  struct protocal_s p;
 
   protocal_make_magic(&p);
 
-  p->head.category = UPLOAD_PUBKEY_CATEGORY;
+  p.head.category = UPLOAD_PUBKEY_CATEGORY;
 
-  p->head.serial_no = config.serial_no;
-  memcpy(p->body.upload_pubkey_category.upload_pubkey, pubkey, CONFIG_PUBKEY_SIZE);
+  p.head.serial_no = config->serial_no;
+  memcpy(p.body.upload_pubkey_category.upload_pubkey, pubkey, CONFIG_PUBKEY_SIZE);
 
   nsent = send(sockfd, &p, UPLOAD_PUBKEY_CATEGORY_SEND_SIZE, 0);
   if (nsent < 0)
@@ -385,12 +395,12 @@ int protocal_send_ok(int sockfd, uint8_t category)
 {
   int ret = -ENODATA;
   ssize_t nsent;
-  struct protocal_s p = {0};
+  struct protocal_s p;
 
   protocal_make_magic(&p);
 
   p.head.category = category;
-  p.head.serial_no = SWAP32(serial_no);
+  p.head.serial_no = config->serial_no;
 
   nsent = send(sockfd, &p, PROTOCAL_HEAD_SIZE, 0);
   if (nsent < 0)
@@ -411,16 +421,16 @@ errout:
   return ret;
 }
 
-int protocal_send_download_firmware_ok(void)
+int protocal_send_download_firmware_ok(int sockfd)
 {
   int ret = -ENODATA;
   ssize_t nsent;
-  struct protocal_s p = {0};
+  struct protocal_s p;
 
   protocal_make_magic(&p);
 
   p.head.category = DOWNLOAD_FIRMWARE_CATEGORY;
-  p.head.serial_no = config.serial_no;
+  p.head.serial_no = config->serial_no;
 
 //  p.body.download_firmware_category.firmware_crc32 = SWAP32(firmware_crc32);
 //  p.body.download_firmware_category.firmware_len = SWAP32(firmware_len);
@@ -449,12 +459,12 @@ int protocal_send_crc32_firmware(int sockfd)
 {
   int ret = -ENODATA;
   ssize_t nsent;
-  struct protocal_s p = {0};
+  struct protocal_s p;
 
   protocal_make_magic(&p);
 
   p.head.category = CRC32_FIRMWARE_CATEGORY;
-  p.head.serial_no = config.serial_no;
+  p.head.serial_no = config->serial_no;
 //  p.body.crc32_firmware_category.crc32_success = crc32_firmware_success;
 
   nsent = send(sockfd, &p, CRC32_FIRMWARE_CATEGORY_SEND_SIZE, 0);
@@ -480,15 +490,15 @@ int protocal_send_version(int sockfd)
 {
   int ret = -ENODATA;
   ssize_t nsent;
-  struct protocal_s p = {0};
+  struct protocal_s p;
 
   protocal_make_magic(&p);
 
   p.head.category = VERSION_VIEW_CATEGORY;
-  p.head.serial_no = config.serial_no;
+  p.head.serial_no = config->serial_no;
 
-  p.body.version_view_category.view_knl_version = config.knl_version;
-  p.body.version_view_category.view_app_version = config.app_version;
+  p.body.version_view_category.view_knl_version = config->knl_version;
+  p.body.version_view_category.view_app_version = config->app_version;
 
   nsent = send(sockfd, &p, VERSION_VIEW_CATEGORY_SEND_SIZE, 0);
   if (nsent < 0)
@@ -509,11 +519,11 @@ errout:
   return ret;
 }
 
-int protocal_set_time(struct protocal * protocal)
+int protocal_set_time(struct protocal_s * protocal)
 {
   int ret = OK;
   struct timespec ts;
-  struct tm *tm;
+  struct tm tm;
 
   tm.tm_year = protocal->body.time_view_category.view_time[0];
   tm.tm_mon = protocal->body.time_view_category.view_time[1];
@@ -530,18 +540,16 @@ int protocal_set_time(struct protocal * protocal)
     {
       ret = -errno;
       ilockdbg("protocal_set_time: clock_settime failed: %d\n", ret);
-    }*/
+    }
 
   return ret;
 }
 
-int protocal_deal(int sockfd, struct protocal * protocal)
+int protocal_deal(int sockfd, struct protocal_s * protocal)
 {
-  unsigned char i;
-  unsigned char j;
-  unsigned char pubkey[CONFIG_PUBKEY_SIZE];
-  unsigned long l;
-  bool flag;
+  int ret;
+  int i;
+  uint8_t pubkey[CONFIG_PUBKEY_SIZE];
   unsigned char pos;
 
   if (protocal->head.magic[0] == MAGIC_ONE &&
@@ -588,8 +596,7 @@ int protocal_deal(int sockfd, struct protocal * protocal)
             (void)protocal_send_ok(sockfd, TIME_SYNC_CATEGORY);
             break;
           case REMOTE_AUTHORIZE_CATEGORY:
-            pubkey = {0};
-//            memset(pubkey, 0, CONFIG_PUBKEY_SIZE);
+            memset(pubkey, 0, CONFIG_PUBKEY_SIZE);
             auth_time_out_check();
             if (!auth_this_time(pubkey) && (auth_init(), !auth_this_time(pubkey)))
               {
@@ -610,8 +617,8 @@ int protocal_deal(int sockfd, struct protocal * protocal)
             break;
           case REMOTE_AUTHORIZE_WITH_PUBKEY_CATEGORY_RECV_SIZE:
             auth_time_out_check();
-            if (!auth_this_time(protocal->body.remote_authrize_with_pubkey_category.remote_authrize_pubkey) &&
-                (auth_init(), !auth_this_time(protocal->body.remote_authrize_with_pubkey_category.remote_authrize_pubkey)))
+            if (!auth_this_time(protocal->body.remote_authorize_with_pubkey_category.remote_authorize_pubkey) &&
+                (auth_init(), !auth_this_time(protocal->body.remote_authorize_with_pubkey_category.remote_authorize_pubkey)))
               {
                 led1_op(INDC_TWINKLE, IND_RED, SEC2TICK(3), MSEC2TICK(500));
                 led3_op(INDC_TWINKLE, IND_RED, SEC2TICK(3), MSEC2TICK(500));
@@ -628,17 +635,16 @@ int protocal_deal(int sockfd, struct protocal * protocal)
               }
             (void)protocal_send_ok(sockfd, REMOTE_AUTHORIZE_CATEGORY);
           case UNLOCK_CATEGORY:
-            pubkey = {0};
-//			  memset(pubkey, 0, CONFIG_PUBKEY_SIZE);
-            if (protocal->body.unlock_category.unlock_flag == NEED_CHECK_HALF_UNLOCK && (auth_time_out_check(), !auth_half_unlock()))
+            memset(pubkey, 0, CONFIG_PUBKEY_SIZE);
+            if (protocal->body.unlock_category.unlock_flag == NEED_CHECK_HALF_UNLOCK && (auth_time_out_check(), !auth_if_half_unlock()))
               {
                 auth_set_temp_unlock();
-                g_log_type |= LOG_HALF_UNLOCK;
                 led1_op(INDC_TWINKLE, IND_GREEN, SEC2TICK(3), MSEC2TICK(500));
               }
             else
               {
-                act_unlock(LOG_TEMP_UNLOCK);
+                auth_set_log_type(LOG_TEMP_UNLOCK);
+                act_unlock();
                 led3_op(INDC_TWINKLE, IND_BLUE, SEC2TICK(3), MSEC2TICK(500));
               }
             (void)protocal_send_ok(sockfd, UNLOCK_CATEGORY);
@@ -647,37 +653,37 @@ int protocal_deal(int sockfd, struct protocal * protocal)
             up_systemreset();
             break;
           case ASSIGN_SN_CATEGORY:
-            config.serial_no = protocal->body.assign_sn_category.assigned_sn;
+            config->serial_no = protocal->body.assign_sn_category.assigned_sn;
             ret = save_config();
             led3_op(INDC_TWINKLE, IND_BLUE, SEC2TICK(3), MSEC2TICK(500));
             (void)protocal_send_ok(sockfd, ASSIGN_SN_CATEGORY);
             break;
           case ASSIGN_HOSTADDR_CATEGORY:
-            config.hostaddr = protocal->body.assign_hostaddr_category.hostaddr;
+            config->hostaddr.s_addr = protocal->body.assign_hostaddr_category.hostaddr;
             ret = save_config();
             led3_op(INDC_TWINKLE, IND_BLUE, SEC2TICK(3), MSEC2TICK(500));
             (void)protocal_send_ok(sockfd, ASSIGN_HOSTADDR_CATEGORY);
             break;
           case ASSIGN_NETMASK_CATEGORY:
-            config.netmask = protocal->body.assign_netmask_category.netmask;
+            config->netmask.s_addr = protocal->body.assign_netmask_category.netmask;
             ret = save_config();
             led3_op(INDC_TWINKLE, IND_BLUE, SEC2TICK(3), MSEC2TICK(500));
             (void)protocal_send_ok(sockfd, ASSIGN_NETMASK_CATEGORY);
             break;
           case ASSIGN_DRIPADDR_CATEGORY:
-            config.dripaddr = protocal->body.assign_dripaddr_cateory.dripaddr;
+            config->dripaddr.s_addr = protocal->body.assign_dripaddr_cateory.dripaddr;
             ret = save_config();
             led3_op(INDC_TWINKLE, IND_BLUE, SEC2TICK(3), MSEC2TICK(500));
             (void)protocal_send_ok(sockfd, ASSIGN_DRIPADDR_CATEGORY);
             break;
           case ASSIGN_SVRADDR_CATEGORY:
-            config.svraddr = protocal->body.assign_svraddr_category.svraddr;
+            config->svraddr.s_addr = protocal->body.assign_svraddr_category.svraddr;
             ret = save_config();
             led3_op(INDC_TWINKLE, IND_BLUE, SEC2TICK(3), MSEC2TICK(500));
             (void)protocal_send_ok(sockfd, ASSIGN_SVRADDR_CATEGORY);
             break;
           case ASSIGN_MAC_CATEGORY:
-            memcpy(config.macaddr, protocal->body.assign_mac_category.macaddr,  IFHWADDRLEN);
+            memcpy(config->macaddr, protocal->body.assign_macaddr_category.macaddr,  IFHWADDRLEN);
             ret = save_config();
             led3_op(INDC_TWINKLE, IND_BLUE, SEC2TICK(3), MSEC2TICK(500));
             (void)protocal_send_ok(sockfd, ASSIGN_SVRADDR_CATEGORY);
@@ -690,13 +696,13 @@ int protocal_deal(int sockfd, struct protocal * protocal)
             pos = 0xff;
             for (i = 0; i < CONFIG_GROUP_SIZE; i++)
               {
-                if (memcmp(config.keyslots[i].pubkey, CONFIG_PUBKEY_DEF_VALUE, CONFIG_PUBKEY_SIZE) == 0)
+                if (memcmp(config->keyslots[i].pubkey, CONFIG_PUBKEY_DEF_VALUE, CONFIG_PUBKEY_SIZE) == 0)
                   {
                     if (pos > i)
                       pos = i;
 
                   }
-                else if (memcmp(config.keyslots[i].pubkey, protocal->body.download_pubkey_category.download_pubkey, CONFIG_PUBKEY_SIZE) == 0)
+                else if (memcmp(config->keyslots[i].pubkey, protocal->body.download_pubkey_category.download_pubkey, CONFIG_PUBKEY_SIZE) == 0)
                   {
                     pos = i;
                   }
@@ -757,7 +763,7 @@ int protocal_deal(int sockfd, struct protocal * protocal)
 //            update_firmware_flag = 1;
             break;
           case VIEW_NET_ADDR_CATEGORY:
-            ret =	protocal_send_net_addr_view();
+            ret =	protocal_send_net_addr_view(sockfd);
             led3_op(INDC_TWINKLE, IND_BLUE, SEC2TICK(3), MSEC2TICK(500));
             break;
           case CLEAR_ALL_PUBKEY_IN_GROUP_CATEGORY:
@@ -774,19 +780,25 @@ int protocal_deal(int sockfd, struct protocal * protocal)
             (void)protocal_send_ok(sockfd, CLEAR_ALL_PUBKEY_IN_GROUP_CATEGORY);
             break;
           case VERSION_VIEW_CATEGORY:
-            ret = protocal_send_version();
+            ret = protocal_send_version(sockfd);
             led3_op(INDC_TWINKLE, IND_BLUE, SEC2TICK(3), MSEC2TICK(500));
             break;
           case DEFINE_CONFIG_PASSWORD_CATEGORY:
-            memcpy(config.config_password, protocal->body.define_config_password_category.config_password, 6);
+            memcpy(config->config_password, protocal->body.define_config_password_category.config_password, 6);
             ret = save_config();
             led3_op(INDC_TWINKLE, IND_BLUE, SEC2TICK(3), MSEC2TICK(500));
             (void)protocal_send_ok(sockfd, DEFINE_CONFIG_PASSWORD_CATEGORY);
             break;
           default:
+            ret = -EBADMSG;
             break;
         }
     }
+  else
+    {
+      ret = -EBADMSG;
+    }
+  return ret;
 }
 
 int protocal_recv(int sockfd)
@@ -838,7 +850,11 @@ int protocal_recv(int sockfd)
       recv_pos += recv_len;
     };
 
-  ret = protocal_deal((struct protocal_s *) recv_buf);
+  ret = protocal_deal(sockfd, (struct protocal_s *) recv_buf);
+  if (ret < 0)
+    {
+      ilockdbg("protocal_recv: protocal deal failed: %d\n", ret);
+    }
 errout:
   return ret;
 }

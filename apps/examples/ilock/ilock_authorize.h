@@ -1,5 +1,5 @@
 /****************************************************************************
- * examples/ilock/led_lib.c
+ * examples/ilock/ilock_authorize.h
  *
  *   Copyright (C) 2011, 2013-2014 xlnrony. All rights reserved.
  *   Author: xlnrony <xlnrony@gmail.com>
@@ -33,133 +33,56 @@
  *
  ****************************************************************************/
 
+#ifndef __APPS_INCLUDE_ILOCK_AUTHORIZE_H
+#define __APPS_INCLUDE_ILOCK_AUTHORIZE_H
+
 /****************************************************************************
  * Included Files
  ****************************************************************************/
 
 #include <nuttx/config.h>
-
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/ioctl.h>
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <sched.h>
-#include <string.h>
-#include <ctype.h>
-#include <assert.h>
-#include <errno.h>
-#include <debug.h>
-
-#include "led_lib.h"
-
-#if defined(CONFIG_INDICATOR)
+#include <stdint.h>
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
+ 
+#define ABS(a)   (a < 0 ? -a : a)
 
 /****************************************************************************
- * Private Types
+ * Public Types
  ****************************************************************************/
 
 /****************************************************************************
- * Private Data
+ * Public Data
  ****************************************************************************/
-static int led1_fd;
-static int led2_fd;
-static int led3_fd;
+
+#ifdef __cplusplus
+#define EXTERN extern "C"
+extern "C"
+{
+#else
+#define EXTERN extern
+#endif
 
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
 
-/****************************************************************************
- * Private Functions
- ****************************************************************************/
+EXTERN void auth_init(void);
+EXTERN void auth_time_out_check(void);
+EXTERN void auth_set_temp_unlock(void);
+EXTERN void auth_set_auth_unlock(void);
+EXTERN bool auth_this_time(uint8_t pubkey[CONFIG_PUBKEY_SIZE]);
+EXTERN bool auth_need_more(void);
+EXTERN void auth_set_log_type(uint8_t log_type);
+EXTERN void auth_set_log_type_by_unlock_type(void);
+EXTERN bool auth_if_half_unlock(void);
 
-static void led_op(int fd, int cmd, uint8_t type, uint32_t delay, uint32_t interval)
-{
-  int ret;
-  struct ind_ctl_s indctl;
-
-  indctl.type = type;
-  indctl.delay = delay;
-  indctl.interval =interval;
-
-  ret = ioctl(fd, cmd, (unsigned long)&indctl);
-  if (ret < 0)
-    {
-      inddbg("led_op: ioctl failed: %d\n", errno);
-    }
+#undef EXTERN
+#ifdef __cplusplus
 }
-
-/****************************************************************************
- * Public Functions
- ****************************************************************************/
-
-inline void led1_op(int cmd, uint8_t type, uint32_t delay, uint32_t interval)
-{
-  led_op(led1_fd, cmd, type, delay, interval);
-}
-
-inline void led2_op(int cmd, uint8_t type, uint32_t delay, uint32_t interval)
-{
-  led_op(led2_fd, cmd, type, delay, interval);
-}
-
-inline void led3_op(int cmd, uint8_t type, uint32_t delay, uint32_t interval)
-{
-  led_op(led3_fd, cmd, type, delay, interval);
-}
-
-int led_init(void)
-{
-  int ret;
-  led1_fd = open(CONFIG_LED1_DEVNAME, 0);
-  if (led1_fd < 0)
-    {
-      ret = -errno;
-      inddbg("led_init: open %s failed: %d\n", CONFIG_LED1_DEVNAME, ret);
-      return ret;
-    }
-
-  led2_fd = open(CONFIG_LED2_DEVNAME, 0);
-  if (led2_fd < 0)
-    {
-      inddbg("led_init: open %s failed: %d\n", CONFIG_LED2_DEVNAME, errno);
-      return ret;
-    }
-
-  led3_fd = open(CONFIG_LED3_DEVNAME, 0);
-  if (led3_fd < 0)
-    {
-      inddbg("led_init: open %s failed: %d\n", CONFIG_LED3_DEVNAME, errno);
-      return ret;
-    }
-
-  return OK;
-}
-
-void led_deinit(void)
-{
-  if (led1_fd > 0)
-    {
-      close(led1_fd);
-    }
-  if (led2_fd > 0)
-    {
-      close(led2_fd);
-    }
-  if (led3_fd > 0)
-    {
-      close(led3_fd);
-    }
-}
-
 #endif
 
+#endif /* __APPS_INCLUDE_ILOCK_AUTHORIZE_H */
 

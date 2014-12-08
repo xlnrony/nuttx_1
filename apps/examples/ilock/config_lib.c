@@ -57,6 +57,7 @@
 #include <apps/inifile.h>
 #include <apps/netutils/netlib.h>
 
+#include "ilock_debug.h"
 #include "config_lib.h"
 
 /****************************************************************************

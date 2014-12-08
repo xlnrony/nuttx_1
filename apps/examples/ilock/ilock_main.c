@@ -64,6 +64,10 @@
 
 #include <apps/netutils/netlib.h>
 
+#include "ilock_debug.h"
+#include "ilock_protocal.h"
+#include "ilock_authorize.h"
+
 #include "epass3003_lib.h"
 #include "jksafekey_lib.h"
 #include "keypad_lib.h"
@@ -72,12 +76,10 @@
 #include "config_lib.h"
 #include "gpio_lib.h"
 #include "buzzer_lib.h"
-#include "protocal.h"
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-#define ABS(a)   (a < 0 ? -a : a)
 
 /* Configuration ************************************************************/
 
@@ -141,40 +143,6 @@
 #  define CONFIG_UNLOCK_TASK_STACKSIZE 2048
 #endif
 
-#ifdef CONFIG_CPP_HAVE_VARARGS
-
-/* C-99 style variadic macros are supported */
-
-#  ifdef CONFIG_DEBUG_ILOCK
-#    define ilockdbg(format, ...)    dbg(format, ##__VA_ARGS__)
-#    define ilocklldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
-#    define ilockvdbg(format, ...)   vdbg(format, ##__VA_ARGS__)
-#    define ilockllvdbg(format, ...) llvdbg(format, ##__VA_ARGS__)
-#  else
-#    define ilockdbg(x...)
-#    define ilocklldbg(x...)
-#    define ilockvdbg(x...)
-#    define ilockllvdbg(x...)
-#  endif
-
-#else                                  /* CONFIG_CPP_HAVE_VARARGS */
-
-/* Variadic macros NOT supported */
-
-#  ifdef CONFIG_DEBUG_ILOCK
-#    define ilockdbg     dbg
-#    define ilockvdbg   vdbg
-#    define ilocklldbg   lldbg
-#    define ilockllvdbg llvdbg
-#  else
-#    define ilockdbg 		(void)
-#    define ilockvdbg		(void)
-#    define ilocklldbg		(void)
-#    define ilockllvdbg	(void)
-#  endif
-
-#endif                                 /* CONFIG_CPP_HAVE_VARARGS */
-
 /****************************************************************************
  * Private Types
  ****************************************************************************/
@@ -185,17 +153,11 @@
 
 static uint8_t g_unlock_step = 3;
 static uint32_t g_magnet_delay = 0;
-static uint32_t g_last_time = 0;
-
-static bool g_group[CONFIG_GROUP_SIZE] = { true };
-static bool g_check[CONFIG_GROUP_SIZE] = { false };
-static uint8_t g_unlock_type = LOG_UNLOCK;
 
 /****************************************************************************
  * Public Data
  ****************************************************************************/
 
-uint8_t g_log_type = 0;
 uint8_t g_alert_type = 0;
 
 /****************************************************************************
@@ -383,110 +345,6 @@ void act_magnet_in_task(void)
     }
 }
 
-void auth_init(void)
-{
-  int i;
-  g_unlock_type = LOG_UNLOCK;
-  for (i = 0; i < CONFIG_GROUP_SIZE; i++)
-    {
-      g_group[i] = true;
-      g_check[i] = false;
-    }
-}
-
-void auth_time_out_check(void)
-{
-  if (ABS(clock_systimer() - g_last_time) > SEC2TICK(600))
-    {
-      auth_init();
-    }
-}
-
-void auth_set_temp_unlock(void)
-{
-  g_unlock_type = LOG_TEMP_UNLOCK;
-  g_last_time = clock_systimer();
-}
-
-void auth_set_auth_unlock(void)
-{
-                g_unlock_type = LOG_AUTH_UNLOCK;
-                g_log_type |= LOG_HALF_UNLOCK;
-}
-
-bool auth_this_time(uint8_t pubkey[CONFIG_PUBKEY_SIZE])
-{
-  int i, j;
-  bool ret = false;
-  for (i = 0; i < CONFIG_GROUP_SIZE; i++)
-    {
-      if (memcmp(config->keyslots[i].pubkey, pubkey, CONFIG_PUBKEY_SIZE) == 0)
-        {
-          break;
-        }
-    }
-  if (i < CONFIG_GROUP_SIZE)
-    {
-      for (j = 0; j < CONFIG_GROUP_SIZE; j++)
-        {
-          if (!config->keyslots[i].group[j])
-            {
-              g_group[j] = false;
-            }
-          if (g_group[j])
-            {
-              ret = true;
-            }
-        }
-    }
-  if (ret)
-    {
-      g_last_time = clock_systimer();
-      g_check[i] = true;
-    }
-  return ret;
-}
-
-bool auth_half_unlock(void)
-{
-  int i;
-  for (i = 0; i <= CONFIG_GROUP_SIZE - 1; i++)
-    {
-      if (g_check[i])
-        return true;
-    }
-  return false;
-}
-
-bool auth_need_more(void)
-{
-  int i, j;
-
-  if (g_unlock_type == LOG_TEMP_UNLOCK)
-    {
-      return false;
-    }
-  for (i = 0; i < CONFIG_GROUP_SIZE; i++)
-    {
-      if (g_group[i])
-        {
-          for (j = 0; j < CONFIG_GROUP_SIZE; j++)
-            {
-              if (g_check[j])
-                {
-                  continue;
-                }
-
-              if (config->keyslots[j].group[i])
-                {
-                  return true;
-                }
-            }
-        }
-    }
-  return false;
-}
-
 static int scan_task(int argc, char *argv[])
 {
 
@@ -515,12 +373,11 @@ static int scan_task(int argc, char *argv[])
     }
 }
 
-void act_unlock(unsigned char logflag)
+void act_unlock(void)
 {
   auth_init();
   g_unlock_step = 1;
   g_magnet_delay = CONFIG_MAGNET_DELAY;
-  g_log_type |= logflag;
   led1_op(INDC_ALWAYS, IND_GREEN, SEC2TICK(3), 0);
 }
 
@@ -554,7 +411,7 @@ bool authorize(char *pwd)
   if (ret < 0)
     {
       ilockdbg("authorize: jksafekey_verify_pin failed: %d\n", ret);
-      g_log_type |= LOG_KEY_PASSWORD_ERROR;
+      auth_set_log_type(LOG_KEY_PASSWORD_ERROR);
       buzzer_op(INDC_TWINKLE, IND_ON, SEC2TICK(3), MSEC2TICK(500));
       led3_op(INDC_ALWAYS, IND_RED, SEC2TICK(3), MSEC2TICK(500));
       goto errclose;
@@ -576,12 +433,13 @@ bool authorize(char *pwd)
     }
   if (auth_need_more())
     {
-      g_log_type |= LOG_HALF_UNLOCK;
+      auth_set_log_type(LOG_HALF_UNLOCK);
       led1_op(INDC_TWINKLE, IND_GREEN, SEC2TICK(3), MSEC2TICK(500));
       goto errout;
     }
 
-  act_unlock(g_unlock_type);
+  auth_set_log_type_by_unlock_type();
+  act_unlock();
 
   return true;
 
@@ -868,7 +726,7 @@ static int net_task(int argc, char *argv[])
   int ret;
   int sockfd;
   struct sockaddr_in svraddr;
-	
+
   sockfd = socket(PF_INET, SOCK_STREAM, 0);
   if (sockfd < 0)
     {
@@ -889,12 +747,12 @@ static int net_task(int argc, char *argv[])
       goto errout_with_socket;
     }
 
-	
-	
+
+
 errout_with_socket:
   close(sockfd);
 errout:
-  return ret;	
+  return ret;
 }
 
 /****************************************************************************

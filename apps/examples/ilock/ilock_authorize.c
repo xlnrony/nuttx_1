@@ -1,5 +1,5 @@
 /****************************************************************************
- * examples/ilock/led_lib.c
+ * examples/ilock/ilock_authorize.c
  *
  *   Copyright (C) 2011, 2013-2014 xlnrony. All rights reserved.
  *   Author: xlnrony <xlnrony@gmail.com>
@@ -38,30 +38,20 @@
  ****************************************************************************/
 
 #include <nuttx/config.h>
-
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/ioctl.h>
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <sched.h>
+#include <stdint.h>
+#include <stdbool.h>
 #include <string.h>
-#include <ctype.h>
-#include <assert.h>
-#include <errno.h>
-#include <debug.h>
+#include <nuttx/clock.h>
 
-#include "led_lib.h"
+#include "ilock_protocal.h"
+#include "ilock_authorize.h"
 
-#if defined(CONFIG_INDICATOR)
+#include "config_lib.h"
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-
+ 
 /****************************************************************************
  * Private Types
  ****************************************************************************/
@@ -69,9 +59,13 @@
 /****************************************************************************
  * Private Data
  ****************************************************************************/
-static int led1_fd;
-static int led2_fd;
-static int led3_fd;
+
+static uint32_t g_last_time = 0;
+static bool g_group[CONFIG_GROUP_SIZE] = { true };
+static bool g_check[CONFIG_GROUP_SIZE] = { false };
+
+static uint8_t g_unlock_type = LOG_UNLOCK;
+static uint8_t g_log_type = 0;
 
 /****************************************************************************
  * Public Function Prototypes
@@ -81,85 +75,122 @@ static int led3_fd;
  * Private Functions
  ****************************************************************************/
 
-static void led_op(int fd, int cmd, uint8_t type, uint32_t delay, uint32_t interval)
-{
-  int ret;
-  struct ind_ctl_s indctl;
-
-  indctl.type = type;
-  indctl.delay = delay;
-  indctl.interval =interval;
-
-  ret = ioctl(fd, cmd, (unsigned long)&indctl);
-  if (ret < 0)
-    {
-      inddbg("led_op: ioctl failed: %d\n", errno);
-    }
-}
-
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
-
-inline void led1_op(int cmd, uint8_t type, uint32_t delay, uint32_t interval)
+ 
+void auth_set_log_type(uint8_t log_type)
 {
-  led_op(led1_fd, cmd, type, delay, interval);
+  g_log_type |= log_type;
 }
 
-inline void led2_op(int cmd, uint8_t type, uint32_t delay, uint32_t interval)
+void auth_set_log_type_by_unlock_type(void)
 {
-  led_op(led2_fd, cmd, type, delay, interval);
+	auth_set_log_type(g_unlock_type);
 }
 
-inline void led3_op(int cmd, uint8_t type, uint32_t delay, uint32_t interval)
+void auth_init(void)
 {
-  led_op(led3_fd, cmd, type, delay, interval);
-}
-
-int led_init(void)
-{
-  int ret;
-  led1_fd = open(CONFIG_LED1_DEVNAME, 0);
-  if (led1_fd < 0)
+  int i;
+  g_unlock_type = LOG_UNLOCK;
+  for (i = 0; i < CONFIG_GROUP_SIZE; i++)
     {
-      ret = -errno;
-      inddbg("led_init: open %s failed: %d\n", CONFIG_LED1_DEVNAME, ret);
-      return ret;
-    }
-
-  led2_fd = open(CONFIG_LED2_DEVNAME, 0);
-  if (led2_fd < 0)
-    {
-      inddbg("led_init: open %s failed: %d\n", CONFIG_LED2_DEVNAME, errno);
-      return ret;
-    }
-
-  led3_fd = open(CONFIG_LED3_DEVNAME, 0);
-  if (led3_fd < 0)
-    {
-      inddbg("led_init: open %s failed: %d\n", CONFIG_LED3_DEVNAME, errno);
-      return ret;
-    }
-
-  return OK;
-}
-
-void led_deinit(void)
-{
-  if (led1_fd > 0)
-    {
-      close(led1_fd);
-    }
-  if (led2_fd > 0)
-    {
-      close(led2_fd);
-    }
-  if (led3_fd > 0)
-    {
-      close(led3_fd);
+      g_group[i] = true;
+      g_check[i] = false;
     }
 }
 
-#endif
+void auth_time_out_check(void)
+{
+  if (ABS(clock_systimer() - g_last_time) > SEC2TICK(600))
+    {
+      auth_init();
+    }
+}
 
+void auth_set_temp_unlock(void)
+{
+  g_unlock_type = LOG_TEMP_UNLOCK;
+  g_log_type |= LOG_HALF_UNLOCK;
+  g_last_time = clock_systimer();
+}
+
+void auth_set_auth_unlock(void)
+{
+  g_unlock_type = LOG_AUTH_UNLOCK;
+  g_log_type |= LOG_HALF_UNLOCK;
+}
+
+bool auth_this_time(uint8_t pubkey[CONFIG_PUBKEY_SIZE])
+{
+  int i, j;
+  bool ret = false;
+  for (i = 0; i < CONFIG_GROUP_SIZE; i++)
+    {
+      if (memcmp(config->keyslots[i].pubkey, pubkey, CONFIG_PUBKEY_SIZE) == 0)
+        {
+          break;
+        }
+    }
+  if (i < CONFIG_GROUP_SIZE)
+    {
+      for (j = 0; j < CONFIG_GROUP_SIZE; j++)
+        {
+          if (!config->keyslots[i].group[j])
+            {
+              g_group[j] = false;
+            }
+          if (g_group[j])
+            {
+              ret = true;
+            }
+        }
+    }
+  if (ret)
+    {
+      g_last_time = clock_systimer();
+      g_check[i] = true;
+    }
+  return ret;
+}
+
+bool auth_if_half_unlock(void)
+{
+  int i;
+  for (i = 0; i <= CONFIG_GROUP_SIZE - 1; i++)
+    {
+      if (g_check[i])
+        return true;
+    }
+  return false;
+}
+
+bool auth_need_more(void)
+{
+  int i, j;
+
+  if (g_unlock_type == LOG_TEMP_UNLOCK)
+    {
+      return false;
+    }
+  for (i = 0; i < CONFIG_GROUP_SIZE; i++)
+    {
+      if (g_group[i])
+        {
+          for (j = 0; j < CONFIG_GROUP_SIZE; j++)
+            {
+              if (g_check[j])
+                {
+                  continue;
+                }
+
+              if (config->keyslots[j].group[i])
+                {
+                  return true;
+                }
+            }
+        }
+    }
+  return false;
+}
 
