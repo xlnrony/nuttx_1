@@ -83,20 +83,6 @@
 
 /* Configuration ************************************************************/
 
-/* Sanity checking */
-
-#ifndef CONFIG_USBHOST
-#  error "CONFIG_USBHOST is not defined"
-#endif
-
-#ifdef CONFIG_USBHOST_INT_DISABLE
-#  error "Interrupt endpoints are disabled (CONFIG_USBHOST_INT_DISABLE)"
-#endif
-
-#ifndef CONFIG_NFILE_DESCRIPTORS
-#  error "CONFIG_NFILE_DESCRIPTORS > 0 needed"
-#endif
-
 /* Provide some default values for other configuration settings */
 
 #ifndef CONFIG_EXAMPLES_ILOCK_DEFPRIO
@@ -143,6 +129,10 @@
 #  define CONFIG_UNLOCK_TASK_STACKSIZE 2048
 #endif
 
+#ifndef CONFIG_NET_TASK_STACKSIZE
+#  define CONFIG_NET_TASK_STACKSIZE 2048
+#endif
+
 /****************************************************************************
  * Private Types
  ****************************************************************************/
@@ -153,6 +143,10 @@
 
 static uint8_t g_unlock_step = 3;
 static uint32_t g_magnet_delay = 0;
+static bool g_shock_resistor_sampled = false;
+static bool g_infra_red_sampled = false;
+static int32_t g_min_infra_red;
+static int32_t g_max_infra_red;
 
 /****************************************************************************
  * Public Data
@@ -198,7 +192,7 @@ bool illegal_unlock_timeout(void)
 {
   static uint32_t last_illegal_unlock_tick = 0;
 
-  if (ABS(clock_systimer() - last_illegal_unlock_tick) > SEC2TICK(100))
+  if (ABS(clock_systimer() - last_illegal_unlock_tick) > SEC2TICK(20))
     {
       last_illegal_unlock_tick = clock_systimer();
       return true;
@@ -211,14 +205,11 @@ bool illegal_unlock_timeout(void)
 
 void unlock_step_in_task(void)
 {
-  bool b;
+  bool flag;
   static uint32_t check_infra_red_delay0 = 0;
   static uint32_t check_infra_red_delay1 = 0;
   static uint32_t check_unlock_delay0 = 0;
   static uint32_t unlock_time_out = 0;
-  static bool closesw_last;
-  static bool photo_resistor_last;
-  static bool infra_red_last;
 
   if (g_unlock_step == 1)
     {
@@ -310,26 +301,74 @@ void unlock_step_in_task(void)
     }
   else if (g_unlock_step == 3)
     {
-      b = !closesw_read();
-      if (b && (!closesw_last || illegal_unlock_timeout()))
+      if (illegal_unlock_timeout())
         {
-          // illegal_unlock("门开报警");
+          flag = !closesw_read();
+          if (flag)
+            {
+              g_alert_type |= ALERT_CLOSE_SWITCH;
+              led1_op(INDC_TWINKLE, IND_RED, SEC2TICK(3), MSEC2TICK(500));
+              buzzer_op(INDC_TWINKLE, IND_ON, SEC2TICK(3), MSEC2TICK(500));
+            }
         }
-      closesw_last = b;
 
-      b = adc_photo_resistor_op() < config->photo_resistor_threshold;
-      if (b && (!photo_resistor_last || illegal_unlock_timeout()))
+      if (illegal_unlock_timeout())
         {
-          // illegal_unlock("光感报警");
+          flag = adc_photo_resistor_op() < config->photo_resistor_threshold;
+          if (flag)
+            {
+              g_alert_type |= ALERT_PHOTO_RESISTOR;
+              led1_op(INDC_TWINKLE, IND_RED, SEC2TICK(3), MSEC2TICK(500));
+              buzzer_op(INDC_TWINKLE, IND_ON, SEC2TICK(3), MSEC2TICK(500));
+            }
         }
-      photo_resistor_last = b;
 
-      b = adc_infra_red_op() > config->infra_red_threshold;
-      if (b && (!infra_red_last || illegal_unlock_timeout()))
+      if (illegal_unlock_timeout())
         {
-          // illegal_unlock("上锁报警");
+          flag = adc_infra_red_op() > config->infra_red_threshold;
+          if (flag)
+            {
+              g_alert_type |= ALERT_INFRA_RED;
+              led1_op(INDC_TWINKLE, IND_RED, SEC2TICK(3), MSEC2TICK(500));
+              buzzer_op(INDC_TWINKLE, IND_ON, SEC2TICK(3), MSEC2TICK(500));
+            }
         }
-      infra_red_last = b;
+
+      if (illegal_unlock_timeout())
+        {
+          flag = adc_shock_resistor_op() > config->shock_resistor_threshold;
+          if (flag)
+            {
+              g_alert_type |= ALERT_SHOCK_RESISTOR;
+              led3_op(INDC_TWINKLE, IND_RED, SEC2TICK(5), MSEC2TICK(500));
+              buzzer_op(INDC_TWINKLE, IND_ON, SEC2TICK(5), MSEC2TICK(500));
+            }
+        }
+    }
+}
+
+void threshold_sample_in_task(void)
+{
+  int32_t t;
+  if (g_shock_resistor_sampled)
+    {
+      t = adc_shock_resistor_op();
+      if (t > config->shock_resistor_threshold)
+        {
+          config->shock_resistor_threshold = t;
+        }
+    } ;
+  if (g_infra_red_sampled)
+    {
+      t = adc_infra_red_op();
+      if (t < g_min_infra_red)
+        {
+          g_min_infra_red = t;
+        }
+      if (t > g_max_infra_red)
+        {
+          g_max_infra_red = t;
+        }
     }
 }
 
@@ -345,6 +384,16 @@ void act_magnet_in_task(void)
     }
 }
 
+void heart_beat_in_task(void)
+{
+  static uint32_t last_heart_beat_tick = 0;
+  if (ABS(clock_systimer() - last_heart_beat_tick) > SEC2TICK(10))
+    {
+      last_heart_beat_tick = clock_systimer();
+      (void)protocal_send_heart_beat();
+    }
+}
+
 static int scan_task(int argc, char *argv[])
 {
 
@@ -354,22 +403,12 @@ static int scan_task(int argc, char *argv[])
       act_magnet_in_task();
       unlock_step_in_task();
 
+      heart_beat_in_task();
       /*
-            shock_alert_in_task();
-            power_alert_in_task();
-            send_ok_in_task();
-            view_time_in_task();
-            view_sensor_in_task();
-            view_net_addr_in_task();
-            upload_pubkey_in_task();
-            heart_beat_in_task();
-            lock_check_sample();
-            download_firmware_ok_in_task();
-            crc32_firmware_in_task();
-            send_version_in_task();
-            lcd_delay_close_in_task();
-            check_heart_beat_in_task();
-            */
+      			lock_check_sample();
+                 download_firmware_ok_in_task();
+                 crc32_firmware_in_task();
+                 */
     }
 }
 
@@ -453,6 +492,7 @@ static int unlock_task(int argc, char *argv[])
 {
   char keybuf[16];
   int ret;
+
   while (true)
     {
       ret = keypad_readln(keybuf, sizeof(keybuf), false);
@@ -475,7 +515,9 @@ static int unlock_task(int argc, char *argv[])
                 led3_op(INDC_ALWAYS, IND_GREEN, UINT32_MAX, 0);
                 netlib_genmacaddr(config->macaddr);
                 netlib_setmacaddr(CONFIG_ILOCK_IFNAME, config->macaddr);
-                save_config();
+
+                (void)save_config();
+
                 ret = keypad_readln(keybuf, sizeof(keybuf), true);
                 if (ret < 0)
                   {
@@ -505,7 +547,7 @@ static int unlock_task(int argc, char *argv[])
                     netlib_setnetmask(CONFIG_ILOCK_IFNAME, &config->netmask);
                     netlib_setdraddr(CONFIG_ILOCK_IFNAME, &config->dripaddr);
 
-                    save_config();
+                    (void)save_config();
 
                     ret = keypad_readln(keybuf, sizeof(keybuf), true);
                     if (ret < 0)
@@ -528,16 +570,16 @@ static int unlock_task(int argc, char *argv[])
                   }
                 if (strcmp(keybuf, CONFIG_ILOCK_SETTING_PIN) == 0)
                   {
-//                      shock_alert_sampled = 1;
+                    g_shock_resistor_sampled = true;
 
                     ret = keypad_readln(keybuf, sizeof(keybuf), true);
                     if (ret < 0)
                       {
                         return ret;
                       }
-//                      shock_alert_sampled = 0;
-                    config->shock_resistor_threshold = 0;
-                    save_config();
+                    g_shock_resistor_sampled = false;
+
+                    (void)save_config();
                   }
                 led1_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
                 led2_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
@@ -554,22 +596,21 @@ static int unlock_task(int argc, char *argv[])
                   }
                 if (strcmp(keybuf, CONFIG_ILOCK_SETTING_PIN) == 0)
                   {
-//                      P10_min_voltage = 0xff;
-//                      P10_max_voltage = 0x00;
+                    g_min_infra_red = INT32_MAX;
+                    g_max_infra_red = 0;
 
-//                      lock_check_sampled = 1;
+                    g_infra_red_sampled = 1;
 
                     ret = keypad_readln(keybuf, sizeof(keybuf), true);
                     if (ret < 0)
                       {
                         return ret;
                       }
-//                      lock_check_sampled = 0;
+										
+                    g_infra_red_sampled = 0;
 
-//                      P10_voltage = ((unsigned short) P10_min_voltage + (unsigned short) P10_max_voltage) / 2;
-
-                    config->infra_red_threshold = 0;
-                    save_config();
+                    config->infra_red_threshold = (g_min_infra_red + g_max_infra_red) / 2;
+                    (void)save_config();
                   }
                 led1_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
                 led2_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
@@ -593,7 +634,8 @@ static int unlock_task(int argc, char *argv[])
                       }
 //                      P11_voltage = atoi(pwd);
                     config->photo_resistor_threshold = 0;
-                    save_config();
+
+                    (void)save_config();
                   }
                 led1_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
                 led2_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
@@ -619,7 +661,7 @@ static int unlock_task(int argc, char *argv[])
                     config->hostaddr.s_addr = netlib_formataddr(keybuf);
                     netlib_sethostaddr(CONFIG_ILOCK_IFNAME, &config->hostaddr);
 
-                    save_config();
+                    (void)save_config();
                   }
                 led1_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
                 led2_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
@@ -645,7 +687,7 @@ static int unlock_task(int argc, char *argv[])
                     config->netmask.s_addr = netlib_formataddr(keybuf);
                     netlib_setnetmask(CONFIG_ILOCK_IFNAME, &config->netmask);
 
-                    save_config();
+                    (void)save_config();
                   }
                 led1_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
                 led2_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
@@ -671,7 +713,7 @@ static int unlock_task(int argc, char *argv[])
                     config->dripaddr.s_addr = netlib_formataddr(keybuf);
                     netlib_setdraddr(CONFIG_ILOCK_IFNAME, &config->dripaddr);
 
-                    save_config();
+                    (void)save_config();
                   }
                 led1_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
                 led2_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
@@ -696,7 +738,7 @@ static int unlock_task(int argc, char *argv[])
 
                     config->svraddr.s_addr = netlib_formataddr(keybuf);
 
-                    save_config();
+                    (void)save_config();
                   }
                 led1_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
                 led2_op(INDC_ALWAYS, IND_NONE, UINT32_MAX, 0);
@@ -727,30 +769,33 @@ static int net_task(int argc, char *argv[])
   int sockfd;
   struct sockaddr_in svraddr;
 
-  sockfd = socket(PF_INET, SOCK_STREAM, 0);
-  if (sockfd < 0)
+  while(true)
     {
-      ret = -errno;
-      ilockdbg("net_task: socket failure %d\n", ret);
-      goto errout;
-    }
+      sockfd = socket(PF_INET, SOCK_STREAM, 0);
+      if (sockfd < 0)
+        {
+          ret = -errno;
+          ilockdbg("net_task: socket failure %d\n", ret);
+          goto errout;
+        }
 
-  svraddr.sin_family      = AF_INET;
-  svraddr.sin_port        = HTONS(CONFIG_SVRPORT_DEF_VALUE);
-  svraddr.sin_addr.s_addr = inet_addr(CONFIG_SVRADDR_DEF_VALUE);
+      svraddr.sin_family      = AF_INET;
+      svraddr.sin_port        = HTONS(config->svrport);
+      svraddr.sin_addr.s_addr = config->svraddr.s_addr;
 
-  ret = connect( sockfd, (struct sockaddr*)&svraddr, sizeof(struct sockaddr_in));
-  if (ret < 0)
-    {
-      ret = -errno;
-      ilockdbg("net_task: connect failure: %d\n", ret);
-      goto errout_with_socket;
-    }
+      ret = connect( sockfd, (struct sockaddr*)&svraddr, sizeof(struct sockaddr_in));
+      if (ret < 0)
+        {
+          ret = -errno;
+          ilockdbg("net_task: connect failure: %d\n", ret);
+          goto errout_with_socket;
+        }
 
-
+      while(protocal_recv(sockfd) == OK);
 
 errout_with_socket:
-  close(sockfd);
+      close(sockfd);
+    }
 errout:
   return ret;
 }
@@ -764,6 +809,7 @@ int ilock_main(int argc, char *argv[])
   int ret;
   pid_t scan_pid;
   pid_t unlock_pid;
+  pid_t net_pid;
 
   ret = led_init();
   if (ret < 0)
@@ -786,21 +832,28 @@ int ilock_main(int argc, char *argv[])
     {
       return ret;
     }
-  load_config();
-
-  scan_pid =
-    task_create("iLockScan", 50, CONFIG_SCAN_TASK_STACKSIZE, scan_task, NULL);
-  if (scan_pid < 0)
+  ret = load_config();
+  if (ret <0)
     {
-      printf("ilock_main: iLockScan task_create failed: %d\n", errno);
+      return ret;
     }
 
-  unlock_pid =
-    task_create("iLockUnlock", 50, CONFIG_UNLOCK_TASK_STACKSIZE, unlock_task,
-                NULL);
+  scan_pid = task_create("iLockScan", 50, CONFIG_SCAN_TASK_STACKSIZE, scan_task, NULL);
+  if (scan_pid < 0)
+    {
+      ilockdbg("ilock_main: iLockScan task_create failed: %d\n", errno);
+    }
+
+  unlock_pid = task_create("iLockUnlock", 50, CONFIG_UNLOCK_TASK_STACKSIZE, unlock_task, NULL);
   if (unlock_pid < 0)
     {
-      printf("ilock_main: iLockUnlock task_create failed: %d\n", errno);
+      ilockdbg("ilock_main: iLockUnlock task_create failed: %d\n", errno);
+    }
+
+  net_pid = task_create("iLockNet", 50, CONFIG_NET_TASK_STACKSIZE, net_task, NULL);
+  if (net_pid < 0)
+    {
+      ilockdbg("ilock_main: iLockUnlock task_create failed: %d\n", errno);
     }
 
   printf("Press any key to exit ......\n");

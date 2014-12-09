@@ -99,8 +99,6 @@ int keypad_readln(char *buf, size_t buflen, bool postip)
       return ret;
     }
 
-  keypaddbg("keypad_readln: Device %s opened\n", CONFIG_KEYPAD_DEVNAME);
-
   /* Loop until there is a read failure */
 
   i = 0;

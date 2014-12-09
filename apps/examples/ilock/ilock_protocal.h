@@ -92,14 +92,14 @@
 #define REMOTE_AUTHORIZE_WITH_PUBKEY_CATEGORY  		30
 #define LAST_CATEGORY																	30
 
-#define ALERT_SHOCK 								1
-#define ALERT_LIGHT 									2
-//#define ALERT_NET_DISCONNECT          4
-#define ALERT_POWER 								8
-#define ALERT_LOCK									16
-#define ALERT_NOLOCK_TIME_OUT			32
-//#define ALERT_LOW_POWER                  64
-//#define ALERT_NET_CONNECT               128
+#define ALERT_SHOCK_RESISTOR														1
+#define ALERT_CLOSE_SWITCH															2
+//#define ALERT_NET_DISCONNECT          										4
+#define ALERT_INFRA_RED																8
+#define ALERT_LOCK																			16
+#define ALERT_NOLOCK_TIME_OUT													32
+#define ALERT_PHOTO_RESISTOR           										64
+//#define ALERT_NET_CONNECT               											128
 
 #define LOG_HALF_UNLOCK						1
 #define LOG_UNLOCK									2
@@ -357,6 +357,8 @@ extern "C"
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
+
+EXTERN int protocal_recv(int sockfd);
 
 #undef EXTERN
 #ifdef __cplusplus

@@ -65,22 +65,25 @@
  ****************************************************************************/
 
 #ifndef CONFIG_SETTING_FILE_PATH
-#define CONFIG_SETTING_FILE_PATH "/mnt/sd/config.ini"
+#define CONFIG_SETTING_FILE_PATH 							"/mnt/sd/config.ini"
 #endif
 
-#define CONFIG_NET_SECTION_NAME 			"NET"
-#define CONFIG_SENSOR_SECTION_NAME 	"SENSOR"
-#define CONFIG_KEYSLOT_SECTION_NAME 	"SLOT"
+#define CONFIG_SN_SECTION_NAME 								"SN"
+#define CONFIG_NET_SECTION_NAME 							"NET"
+#define CONFIG_SENSOR_SECTION_NAME 					"SENSOR"
+#define CONFIG_KEYSLOT_SECTION_NAME 					"SLOT"
 
-#define CONFIG_MACADDR_VAR_NAME 		"MACADDR"
+#define CONFIG_SERIALNO_VAR_NAME 							"SERIALNO"
 
-#define CONFIG_HOSTADDR_VAR_NAME 	"HOSTADDR"
-#define CONFIG_NETMASK_VAR_NAME 		"NETMASK"
-#define CONFIG_DRIPADDR_VAR_NAME 	"DRIPADDR"
-#define CONFIG_SVRADDR_VAR_NAME		"SVRADDR"
+#define CONFIG_MACADDR_VAR_NAME 							"MACADDR"
+#define CONFIG_HOSTADDR_VAR_NAME 						"HOSTADDR"
+#define CONFIG_NETMASK_VAR_NAME 							"NETMASK"
+#define CONFIG_DRIPADDR_VAR_NAME 						"DRIPADDR"
+#define CONFIG_SVRADDR_VAR_NAME							"SVRADDR"
+#define CONFIG_SVRPORT_VAR_NAME							"SVRPORT"
 
-#define CONFIG_PUBKEY_VAR_NAME		    "PUBKEY"
-#define CONFIG_GROUP_VAR_NAME		    "GROUP"
+#define CONFIG_PUBKEY_VAR_NAME		    					"PUBKEY"
+#define CONFIG_GROUP_VAR_NAME		    					"GROUP"
 
 #define CONFIG_SHOCK_RESISTOR_VAR_NAME			"SHOCK_RESISTOR"
 #define CONFIG_INFRA_RED_VAR_NAME						"INFRA_RED"
@@ -218,6 +221,10 @@ int load_config(void)
   inifile = inifile_initialize(CONFIG_SETTING_FILE_PATH);
   if (inifile != NULL)
     {
+      config->serial_no = inifile_read_integer(inifile, CONFIG_SN_SECTION_NAME,
+                          CONFIG_SERIALNO_VAR_NAME,
+                          CONFIG_SERIALNO_DEF_VALUE);
+
       macaddr = inifile_read_string(inifile, CONFIG_NET_SECTION_NAME,
                                     CONFIG_MACADDR_VAR_NAME,
                                     CONFIG_MACADDR_DEF_VALUE);
@@ -255,6 +262,10 @@ int load_config(void)
                                     CONFIG_SVRADDR_DEF_VALUE);
       config->svraddr.s_addr = inet_addr(svraddr);
       inifile_free_string(svraddr);
+
+      config->svrport = inifile_read_integer(inifile, CONFIG_NET_SECTION_NAME,
+                                             CONFIG_SVRPORT_VAR_NAME,
+                                             CONFIG_SVRPORT_DEF_VALUE);
 
       config->shock_resistor_threshold =
         inifile_read_integer(inifile, CONFIG_NET_SECTION_NAME,
@@ -314,8 +325,11 @@ int save_config(void)
     {
       fprintf(stream, "; iLock Setting\n");
 
-      fprintf(stream, "[%s]\n", CONFIG_NET_SECTION_NAME);
+      fprintf(stream, "[%s]\n", CONFIG_SN_SECTION_NAME);
+      fprintf(stream, "  %s=%d\n", CONFIG_SERIALNO_VAR_NAME,
+              config->serial_no);
 
+      fprintf(stream, "[%s]\n", CONFIG_NET_SECTION_NAME);
       fprintf(stream, "  %s=%0.2X:%0.2X:%0.2X:%0.2X:%0.2X:%0.2X\n",
               CONFIG_MACADDR_VAR_NAME, config->macaddr[0],
               config->macaddr[1], config->macaddr[2], config->macaddr[3],
@@ -328,9 +342,10 @@ int save_config(void)
               inet_ntoa(config->dripaddr));
       fprintf(stream, "  %s=%s\n", CONFIG_SVRADDR_VAR_NAME,
               inet_ntoa(config->svraddr));
+      fprintf(stream, "  %s=%d\n", CONFIG_SVRPORT_VAR_NAME,
+              config->svrport);
 
       fprintf(stream, "[%s]\n", CONFIG_SENSOR_SECTION_NAME);
-
       fprintf(stream, "  %s=%d\n", CONFIG_SHOCK_RESISTOR_VAR_NAME,
               config->shock_resistor_threshold);
       fprintf(stream, "  %s=%d\n", CONFIG_INFRA_RED_VAR_NAME,
@@ -340,19 +355,14 @@ int save_config(void)
 
       for (i = 0; i < CONFIG_GROUP_SIZE; i++)
         {
-          fprintf(stream, "[" CONFIG_KEYSLOT_SECTION_NAME "%d]\n",
-                  i);
+          fprintf(stream, "[" CONFIG_KEYSLOT_SECTION_NAME "%d]\n", i);
 
-          bin2hex(pubkey, config->keyslots[i].pubkey,
-                  CONFIG_PUBKEY_SIZE);
-          fprintf(stream, "  %s=%d\n", CONFIG_PUBKEY_VAR_NAME,
-                  pubkey);
+          bin2hex(pubkey, config->keyslots[i].pubkey, CONFIG_PUBKEY_SIZE);
+          fprintf(stream, "  %s=%d\n", CONFIG_PUBKEY_VAR_NAME, pubkey);
 
           for (j = 0; j < CONFIG_GROUP_SIZE; j++)
             {
-              fprintf(stream,
-                      "  " CONFIG_GROUP_VAR_NAME "%d=%d\n", j,
-                      config->keyslots[i].group[j]);
+              fprintf(stream, "  " CONFIG_GROUP_VAR_NAME "%d=%d\n", j, config->keyslots[i].group[j]);
             }
         }
       fclose(stream);

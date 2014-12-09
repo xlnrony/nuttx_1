@@ -49,6 +49,8 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
+#define CONFIG_SERIALNO_DEF_VALUE    INT32_MAX
+
 #define CONFIG_MACADDR_DEF_VALUE 	"FC:FC:FC:AB:AB:AB"
 #define CONFIG_HOSTADDR_DEF_VALUE 	"10.0.0.2"
 #define CONFIG_NETMASK_DEF_VALUE 		"255.255.255.0"
@@ -76,7 +78,7 @@ struct keyslot_s
 
 struct config_s
 {
-  uint32_t serial_no;
+  int32_t serial_no;
   uint32_t knl_version;
   uint32_t	 app_version;
   uint8_t macaddr[IFHWADDRLEN];
@@ -84,6 +86,7 @@ struct config_s
   struct in_addr netmask;
   struct in_addr dripaddr;
   struct in_addr svraddr;
+  int16_t svrport;
   int32_t shock_resistor_threshold;
   int32_t infra_red_threshold;
   int32_t photo_resistor_threshold;

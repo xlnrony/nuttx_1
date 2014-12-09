@@ -60,6 +60,7 @@
 #include "ilock_debug.h"
 #include "ilock_protocal.h"
 #include "ilock_authorize.h"
+#include "ilock_main.h"
 
 #include "config_lib.h"
 #include "led_lib.h"
@@ -359,6 +360,7 @@ errout:
   return ret;
 }
 
+/*
 int protocal_send_pubkey(int sockfd, uint8_t pubkey[CONFIG_PUBKEY_SIZE])
 {
   int ret = -ENODATA;
@@ -390,6 +392,7 @@ int protocal_send_pubkey(int sockfd, uint8_t pubkey[CONFIG_PUBKEY_SIZE])
 errout:
   return ret;
 }
+*/
 
 int protocal_send_ok(int sockfd, uint8_t category)
 {
@@ -545,9 +548,9 @@ int protocal_set_time(struct protocal_s * protocal)
   return ret;
 }
 
-int protocal_deal(int sockfd, struct protocal_s * protocal)
+static int protocal_deal(int sockfd, struct protocal_s * protocal)
 {
-  int ret;
+  int ret = OK;
   int i;
   uint8_t pubkey[CONFIG_PUBKEY_SIZE];
   unsigned char pos;
@@ -611,7 +614,8 @@ int protocal_deal(int sockfd, struct protocal_s * protocal)
               }
             else
               {
-                act_unlock(LOG_AUTH_UNLOCK);
+                auth_set_log_type(LOG_AUTH_UNLOCK);
+                act_unlock();
               }
             (void)protocal_send_ok(sockfd, REMOTE_AUTHORIZE_CATEGORY);
             break;
@@ -631,7 +635,8 @@ int protocal_deal(int sockfd, struct protocal_s * protocal)
               }
             else
               {
-                act_unlock(LOG_AUTH_UNLOCK);
+                auth_set_log_type(LOG_AUTH_UNLOCK);              
+                act_unlock();
               }
             (void)protocal_send_ok(sockfd, REMOTE_AUTHORIZE_CATEGORY);
           case UNLOCK_CATEGORY:
@@ -689,7 +694,8 @@ int protocal_deal(int sockfd, struct protocal_s * protocal)
             (void)protocal_send_ok(sockfd, ASSIGN_SVRADDR_CATEGORY);
             break;
           case UPLOAD_PUBKEY_CATEGORY:
-//            ret = protocal_send_pubkey(sockfd, pubkey);
+//		  cancelled
+//         ret = protocal_send_pubkey(sockfd, pubkey);
             led3_op(INDC_TWINKLE, IND_BLUE, SEC2TICK(3), MSEC2TICK(500));
             break;
           case DOWNLOAD_PUBKEY_CATEGORY:

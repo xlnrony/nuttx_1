@@ -89,8 +89,8 @@ MEMORY
     /* 1024Kb FLASH */
 
     kflash (rx)      : ORIGIN = 0x08000000, LENGTH = 384K
-    uflash (rx)      : ORIGIN = 0x08060000, LENGTH = 128K
-    xflash (rx)      : ORIGIN = 0x08080000, LENGTH = 512K
+    uflash (rx)      : ORIGIN = 0x08060000, LENGTH = 640K
+    xflash (rx)      : ORIGIN = 0x08100000, LENGTH = 0K
 
     /* 112Kb of contiguous SRAM */
 
