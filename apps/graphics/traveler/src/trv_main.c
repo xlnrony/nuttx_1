@@ -56,21 +56,28 @@
 #include "trv_debug.h"
 #include "trv_main.h"
 
-#if CONFIG_GRAPHICS_TRAVELER_PERFMON
+#if defined(CONFIG_GRAPHICS_TRAVELER_PERFMON) || \
+    defined(CONFIG_GRAPHICS_TRAVELER_LIMITFPS)
 #  include <sys/types.h>
 #  include <sys/time.h>
-#  include <unistd.h>
 #endif
 
 /****************************************************************************
- * Private Function Prototypes
+ * Pre-processor Definitions
  ****************************************************************************/
+/* Configuration ************************************************************/
 
-static void trv_exit(int exitCode);
-static void trv_usage(char *execname);
-#if CONFIG_GRAPHICS_TRAVELER_PERFMON
-static double trv_current_time(void);
+#ifndef CONFIG_GRAPHICS_TRAVELER_DEFPATH
+#  define CONFIG_GRAPHICS_TRAVELER_DEFPATH "/mnt/world"
 #endif
+
+/* Frame rate governer */
+
+#ifdef CONFIG_GRAPHICS_TRAVELER_MAXFPS
+#  define CONFIG_GRAPHICS_TRAVELER_MAXFPS 30
+#endif
+
+#define MIN_FRAME_TIME (1.0 / (double)CONFIG_GRAPHICS_TRAVELER_MAXFPS)
 
 /****************************************************************************
  * Public Data
@@ -79,20 +86,11 @@ static double trv_current_time(void);
 bool g_trv_terminate;
 
 /****************************************************************************
- * Private Function Prototypes
- ****************************************************************************/
-
-static void trv_exit(int exitcode) noreturn_function;
-static void trv_usage(char *execname);
-#ifdef CONFIG_GRAPHICS_TRAVELER_PERFMON
-static double trv_current_time(void);
-#endif
-
-/****************************************************************************
  * Private Data
  *************************************************************************/
 
 static const char g_default_worldfile[] = "transfrm.wld";
+static const char g_default_worldpath[] = CONFIG_GRAPHICS_TRAVELER_DEFPATH;
 static FAR struct trv_graphics_info_s g_trv_ginfo;
 
 /****************************************************************************
@@ -105,6 +103,7 @@ static FAR struct trv_graphics_info_s g_trv_ginfo;
  * Description:
  ****************************************************************************/
 
+static void trv_exit(int exitcode) noreturn_function;
 static void trv_exit(int exitcode)
 {
   /* Release memory held by the ray casting engine */
@@ -140,7 +139,8 @@ static void trv_usage(char *execname)
  * Description:
  ****************************************************************************/
 
-#ifdef CONFIG_GRAPHICS_TRAVELER_PERFMON
+#if defined(CONFIG_GRAPHICS_TRAVELER_PERFMON) || \
+    defined(CONFIG_GRAPHICS_TRAVELER_LIMITFPS)
 static double trv_current_time(void)
 {
   struct timeval tv;
@@ -166,18 +166,30 @@ int main(int argc, FAR char *argv[])
 int traveler_main(int argc, char *argv[])
 #endif
 {
-  FAR const char *world_filename;
+  FAR const char *wldpath;
+  FAR const char *wldfile;
+#if defined(CONFIG_GRAPHICS_TRAVELER_PERFMON) || \
+    defined(CONFIG_GRAPHICS_TRAVELER_LIMITFPS)
 #ifdef CONFIG_GRAPHICS_TRAVELER_PERFMON
   int32_t frame_count = 0;
-  double elapsed_time = 0.0;
   double start_time;
+  double now;
+#endif
+#ifdef CONFIG_GRAPHICS_TRAVELER_LIMITFPS
+  double frame_start;
+#endif
+  double elapsed;
 #endif
   int ret;
   int i;
 
+  /* Defaults */
+
+  wldpath = g_default_worldpath;
+  wldfile = g_default_worldfile;
+
   /* Check for command line arguments */
 
-  world_filename = g_default_worldfile;
   for (i = 1; i < argc; i++)
     {
       FAR char *ptr = argv[i];
@@ -187,13 +199,7 @@ int traveler_main(int argc, char *argv[])
           switch (*ptr)
             {
             case 'p' :
-              ptr++;
-              printf("World data path = %s\n", ptr);
-              if (chdir(ptr))
-                {
-                  fprintf(stderr, "Bad path name\n");
-                  trv_usage(argv[0]);
-                }
+			  wldpath = ptr++;
               break;
 
             default:
@@ -204,11 +210,12 @@ int traveler_main(int argc, char *argv[])
         }
       else
         {
-          world_filename = ptr;
+          wldfile = ptr;
         }
     }
 
-  trv_debug("World data file = %s\n", world_filename);
+  trv_debug("World data file: %s\n", wldfile);
+  trv_debug("World data path: %s\n", wldpath);
 
   /* Initialize the graphics interface */
 
@@ -216,11 +223,11 @@ int traveler_main(int argc, char *argv[])
 
   /* Load the word data structures */
 
-  ret = trv_world_create(world_filename);
+  ret = trv_world_create(wldpath, wldfile);
   if (ret < 0)
     {
       trv_abort("ERROR: Failed to load world file %s: %d\n",
-                world_filename, ret);
+                wldfile, ret);
     }
 
   /* Release color mapping tables */
@@ -239,12 +246,21 @@ int traveler_main(int argc, char *argv[])
 
   trv_input_initialize();
 
+#ifdef CONFIG_GRAPHICS_TRAVELER_PERFMON
+  /* Get the start time for performance monitoring */
+
+  start_time = trv_current_time();
+#endif
+
   g_trv_terminate = false;
   while (!g_trv_terminate)
     {
-#ifdef CONFIG_GRAPHICS_TRAVELER_PERFMON
-      start_time = trv_current_time();
+#ifdef CONFIG_GRAPHICS_TRAVELER_LIMITFPS
+      /* Get the start time from frame rate limiting */
+
+      frame_start = trv_current_time();
 #endif
+
       trv_input_read();
 
       /* Select the POV to use on this viewing cycle */
@@ -266,14 +282,32 @@ int traveler_main(int argc, char *argv[])
       /* Display the world. */
 
       trv_display_update(&g_trv_ginfo);
-#ifdef CONFIG_GRAPHICS_TRAVELER_PERFMON
-      frame_count++;
-      elapsed_time += trv_current_time() - start_time;
-      if (frame_count == 100)
+
+#ifdef CONFIG_GRAPHICS_TRAVELER_LIMITFPS
+       /* In the unlikely event that we are running "too" fast, we can delay
+        * here to enforce a maixmum frame rate.
+        */
+
+      elapsed = trv_current_time() - frame_start;
+      if (elapsed < MIN_FRAME_TIME)
         {
-          fprintf(stderr, "fps = %3.2f\n", (double) frame_count / elapsed_time);
+           usleep(1000000 * (elapsed - MIN_FRAME_TIME));
+        }
+#endif
+
+#ifdef CONFIG_GRAPHICS_TRAVELER_PERFMON
+      /* Show the realized frame rate */
+
+      frame_count++;
+      if (frame_count >= 100)
+        {
+          now     = trv_current_time();
+          elapsed = now - start_time;
+
+          fprintf(stderr, "fps = %3.2f\n", (double)frame_count / elapsed);
+
           frame_count = 0;
-          elapsed_time = 0.0;
+          start_time  = now;
         }
 #endif
     }

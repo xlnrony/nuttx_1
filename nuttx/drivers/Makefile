@@ -72,10 +72,10 @@ include wireless$(DELIM)Make.defs
 include gpio$(DELIM)Make.defs
 
 ifneq ($(CONFIG_NFILE_DESCRIPTORS),0)
-  CSRCS += dev_null.c dev_zero.c loop.c
+  CSRCS += dev_null.c dev_zero.c
 
 ifneq ($(CONFIG_DISABLE_MOUNTPOINT),y)
-  CSRCS += ramdisk.c
+  CSRCS += ramdisk.c loop.c
 ifeq ($(CONFIG_DRVR_WRITEBUFFER),y)
   CSRCS += rwbuffer.c
 else
