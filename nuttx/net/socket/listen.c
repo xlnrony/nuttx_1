@@ -143,7 +143,7 @@ int listen(int sockfd, int backlog)
   return OK;
 
 errout:
-  errno = err;
+  set_errno(err);
   return ERROR;
 }
 

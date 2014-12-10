@@ -460,7 +460,7 @@ errout_with_socket:
   sockfd_release(newfd);
 
 errout:
-  errno = err;
+  set_errno(err);
   return ERROR;
 }
 

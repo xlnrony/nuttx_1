@@ -529,7 +529,7 @@ int psock_connect(FAR struct socket *psock, FAR const struct sockaddr *addr,
   return OK;
 
 errout:
-   errno = err;
+	set_errno(err);
   return ERROR;
 }
 

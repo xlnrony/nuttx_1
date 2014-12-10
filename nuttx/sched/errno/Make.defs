@@ -35,9 +35,7 @@
 
 CSRCS += errno_getptr.c
 
-ifeq ($(CONFIG_LIB_SYSCALL),y)
 CSRCS += errno_get.c errno_set.c
-endif
 
 # Include errno build support
 

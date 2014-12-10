@@ -1,8 +1,8 @@
 /****************************************************************************
- * net/socket/net_dupsd2.c
+ * examples/ilock/ilock_authorize.h
  *
- *   Copyright (C) 2009, 2011 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ *   Copyright (C) 2011, 2013-2014 xlnrony. All rights reserved.
+ *   Author: xlnrony <xlnrony@gmail.com>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -14,7 +14,7 @@
  *    notice, this list of conditions and the following disclaimer in
  *    the documentation and/or other materials provided with the
  *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
+ * 3. Neither the name Gregory Nutt nor the names of its contributors may be
  *    used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -33,93 +33,46 @@
  *
  ****************************************************************************/
 
+#ifndef __APPS_INCLUDE_ILOCK_MAIN_H
+#define __APPS_INCLUDE_ILOCK_MAIN_H
+
 /****************************************************************************
  * Included Files
  ****************************************************************************/
 
 #include <nuttx/config.h>
-
-#include <sys/socket.h>
-#include <sched.h>
-#include <errno.h>
-#include <debug.h>
-
-#include "socket/socket.h"
-
-#if defined(CONFIG_NET) && CONFIG_NSOCKET_DESCRIPTORS > 0
+#include <stdint.h>
 
 /****************************************************************************
- * Global Functions
+ * Pre-processor Definitions
+ ****************************************************************************/
+ 
+/****************************************************************************
+ * Public Types
  ****************************************************************************/
 
 /****************************************************************************
- * Function: net_dupsd2
- *
- * Description:
- *   Clone a socket descriptor to an arbitray descriptor number.  If file
- *   descriptors are implemented, then this is called by dup2() for the case
- *   of socket file descriptors.  If file descriptors are not implemented,
- *   then this function IS dup2().
- *
+ * Public Data
  ****************************************************************************/
 
-#if CONFIG_NFILE_DESCRIPTORS > 0
-int net_dupsd2(int sockfd1, int sockfd2)
-#else
-int dup2(int sockfd1, int sockfd2)
-#endif
+#ifdef __cplusplus
+#define EXTERN extern "C"
+extern "C"
 {
-  FAR struct socket *psock1;
-  FAR struct socket *psock2;
-  int err;
-  int ret;
+#else
+#define EXTERN extern
+#endif
 
-  /* Lock the scheduler throughout the following */
+/****************************************************************************
+ * Public Function Prototypes
+ ****************************************************************************/
 
-  sched_lock();
+EXTERN void act_unlock(void);
 
-  /* Get the socket structures underly both descriptors */
-
-  psock1 = sockfd_socket(sockfd1);
-  psock2 = sockfd_socket(sockfd2);
-
-  /* Verify that the sockfd1 and sockfd2 both refer to valid socket
-   * descriptors and that sockfd2 corresponds to allocated socket
-   */
-
-  if (!psock1 || !psock2 || psock1->s_crefs <= 0)
-    {
-      err = EBADF;
-      goto errout;
-    }
-
-  /* If sockfd2 also valid, allocated socket, then we will have to
-   * close it!
-   */
-
-  if (psock2->s_crefs > 0)
-    {
-      net_close(sockfd2);
-    }
-
-  /* Duplicate the socket state */
-
-  ret = net_clone(psock1, psock2);
-  if (ret < 0)
-    {
-      err = -ret;
-      goto errout;
-    }
-
-  sched_unlock();
-  return OK;
-
-errout:
-  sched_unlock();
-  set_errno(err);
-  return ERROR;
+#undef EXTERN
+#ifdef __cplusplus
 }
+#endif
 
-#endif /* CONFIG_NET && CONFIG_NSOCKET_DESCRIPTORS > 0 */
-
+#endif /* __APPS_INCLUDE_ILOCK_MAIN_H */
 

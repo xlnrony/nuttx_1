@@ -45,85 +45,8 @@
 /************************************************************************
  * Pre-processor Definitions
  ************************************************************************/
-/* How can we access the errno variable? */
-
-#if !defined(CONFIG_BUILD_PROTECTED) && !defined(CONFIG_BUILD_KERNEL)
-   /* Flat build */
-
-#  if defined(CONFIG_LIB_SYSCALL) && !defined(__KERNEL__)
-   /* We still might be using system calls in user code.  If so, then
-    * user code will have no direct access to the errno variable.
-    */
-
-#    undef __DIRECT_ERRNO_ACCESS
-
-#   else
-   /* Flat build with no system calls OR internal kernel logic... There
-    * is direct access.
-    */
-
-#    define __DIRECT_ERRNO_ACCESS 1
-#  endif
-
-#elif defined(CONFIG_BUILD_PROTECTED)
-#  if defined(__KERNEL__)
-   /* Kernel portion of protected build.  Kernel code has direct access */
-
-#    define __DIRECT_ERRNO_ACCESS 1
-
-#  else
-   /* User portion of protected build.  Application code has only indirect
-    * access
-    */
-
-#    undef __DIRECT_ERRNO_ACCESS
-#  endif
-
-#elif defined(CONFIG_BUILD_KERNEL) && !defined(__KERNEL__)
-#  if defined(__KERNEL__)
-   /* Kernel build.  Kernel code has direct access */
-
-#    define __DIRECT_ERRNO_ACCESS 1
-
-#  else
-   /* User libraries for the kernel.  Only indirect access from user
-    * libraries */
-
-#    undef __DIRECT_ERRNO_ACCESS
-#  endif
-#endif
-
-/* Convenience/compatibility definition.
- *
- * For a flat, all kernel-mode build, the error can be read and written
- * from all code using a simple pointer.
- */
-
-#ifdef __DIRECT_ERRNO_ACCESS
-
-#  define errno *get_errno_ptr()
-#  define set_errno(e) do { errno = (int)(e); } while (0)
-#  define get_errno(e) errno
-
-#else
-
-/* We doing separate user-/kernel-mode builds, then the errno has to be
- * a little differently. In kernel-mode, the TCB errno value can still be
- * read and written using a pointer from code executing within the
- * kernel.
- *
- * But in user-mode, the errno can only be read using the name 'errno'.
- * The non-standard API set_errno() must explicitly be used from user-
- * mode code in order to set the errno value.
- *
- * The same is true of the case where we have syscalls enabled but this
- * is not a kernel build, then we really have no option but to use the
- * set_errno() accessor function explicitly, even from OS logic!
- */
 
 #  define errno get_errno()
-
-#endif /* __DIRECT_ERRNO_ACCESS */
 
 /* Definitions of error numbers and the string that would be
  * returned by strerror().
@@ -405,10 +328,8 @@ extern "C"
 
 FAR int *get_errno_ptr(void);
 
-#ifndef __DIRECT_ERRNO_ACCESS
 void set_errno(int errcode);
 int  get_errno(void);
-#endif
 
 #undef EXTERN
 #if defined(__cplusplus)
