@@ -359,6 +359,8 @@ extern "C"
  ****************************************************************************/
 
 EXTERN int protocal_recv(int sockfd);
+EXTERN int protocal_send_heart_beat(int sockfd);
+EXTERN int protocal_send_connect(int sockfd);
 
 #undef EXTERN
 #ifdef __cplusplus

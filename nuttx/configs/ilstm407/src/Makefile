@@ -54,7 +54,7 @@ ifeq ($(CONFIG_KEYPAD),y)
 CSRCS += stm32_keypad.c
 endif
 
-ifeq ($(CONFIG_LED),y)
+ifeq ($(CONFIG_INDICATOR),y)
 CSRCS += stm32_led.c stm32_buzzer.c
 endif
 
@@ -64,14 +64,6 @@ endif
 
 ifeq ($(CONFIG_STM32_SDIO),y)
 CSRCS += stm32_sdio.c
-endif
-
-ifeq ($(CONFIG_WATCHDOG),y)
-CSRCS += stm32_watchdog.c
-endif
-
-ifeq ($(CONFIG_NSH_LIBRARY),y)
-CSRCS += stm32_nsh.c
 endif
 
 ifeq ($(CONFIG_ADC),y)

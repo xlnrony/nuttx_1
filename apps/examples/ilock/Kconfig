@@ -113,4 +113,10 @@ config GROUP_SIZE
 	---help---
 		Group size value. Default 32
 		
+config SERIALNO_DEF_VALUE		
+	hex "Serial no default value"
+	default 0x7FFFFFFF
+	---help---
+		Serial no default value. Default 0x7FFFFFFF
+		
 endif

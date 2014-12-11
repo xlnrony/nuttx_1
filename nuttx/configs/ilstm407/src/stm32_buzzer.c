@@ -53,7 +53,7 @@
 #include "stm32.h"
 #include "stm32f407.h"
 
-#ifdef CONFIG_LED
+#ifdef CONFIG_INDICATOR
 
 /****************************************************************************
  * Definitions
@@ -93,19 +93,19 @@ static struct ind_dev_s stm32_buzzer_dev =
  * Private Functions
  ****************************************************************************/
 
-static int stm32_buzzer_setup(FAR struct led_dev_s *dev)
+static int stm32_buzzer_setup(FAR struct ind_dev_s *dev)
 {
   struct stm32_dev_s *priv = (struct stm32_dev_s *)dev->priv;
   int ret;
   ret = stm32_configgpio(priv->pinset);
   if (ret < 0)
     {
-      leddbg("stm32_buzzer_setup: stm32_configgpio failed: %d\n", ret);
+      inddbg("stm32_buzzer_setup: stm32_configgpio failed: %d\n", ret);
     }
   return ret;
 }
 
-static int stm32_buzzer_shutdown(FAR struct led_dev_s *dev)
+static int stm32_buzzer_shutdown(FAR struct ind_dev_s *dev)
 {
   struct stm32_dev_s *priv = (struct stm32_dev_s *)dev->priv;
 
@@ -114,13 +114,16 @@ static int stm32_buzzer_shutdown(FAR struct led_dev_s *dev)
   return OK;
 }
 
-static void stm32_buzzer_ioctl(FAR struct led_dev_s *dev, uint8_t color)
+static void stm32_buzzer_ioctl(FAR struct ind_dev_s *dev, uint8_t color)
 {
   struct stm32_dev_s *priv = (struct stm32_dev_s *)dev->priv;
 
   switch(color)
     {
-      case IND_RED, IND_GREEN, IND_BLUE, IND_ON:
+      case IND_RED:
+      case IND_GREEN:
+      case IND_BLUE:
+      case IND_ON:
         stm32_gpiowrite(priv->pinset, false);
         break;
       case IND_NONE:
@@ -140,7 +143,7 @@ void stm32_buzzer_initialize(void)
   ret = ind_register(CONFIG_BUZZER_DEVNAME, &stm32_buzzer_dev);
   if (ret < 0)
     {
-      leddbg("stm32_buzzer_initialize: led_register failed: %d\n", ret);
+      inddbg("stm32_buzzer_initialize: led_register failed: %d\n", ret);
     }
 }
 

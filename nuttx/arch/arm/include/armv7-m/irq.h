@@ -365,6 +365,17 @@ static inline void setcontrol(uint32_t control)
       : "memory");
 }
 
+static inline void setmsp(uint32_t msp) inline_function;
+static inline void setmsp(uint32_t msp)
+{
+  __asm__ __volatile__
+    (
+      "\tmsr msp, %0\n"
+      :
+      : "r" (msp)
+      : "memory");
+}
+
 #endif /* __ASSEMBLY__ */
 
 /****************************************************************************

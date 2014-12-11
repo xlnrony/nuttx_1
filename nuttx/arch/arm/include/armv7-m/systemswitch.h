@@ -1,8 +1,8 @@
 /****************************************************************************
- * examples/ilock/led_lib.h
+ * include/nuttx/systemreset.h
  *
- *   Copyright (C) 2011, 2013-2014 xlnrony. All rights reserved.
- *   Author: xlnrony <xlnrony@gmail.com>
+ *   Copyright (C) 2009, 2011 Gregory Nutt. All rights reserved.
+ *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -14,7 +14,7 @@
  *    notice, this list of conditions and the following disclaimer in
  *    the documentation and/or other materials provided with the
  *    distribution.
- * 3. Neither the name Gregory Nutt nor the names of its contributors may be
+ * 3. Neither the name NuttX nor the names of its contributors may be
  *    used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -33,76 +33,36 @@
  *
  ****************************************************************************/
 
-#ifndef __APPS_INCLUDE_CONFIG_LIB_H
-#define __APPS_INCLUDE_CONFIG_LIB_H
+#ifndef __INCLUDE_ARMV7_M_SYSTEMSWITCH_H
+#define __INCLUDE_ARMV7_M_SYSTEMSWITCH_H
 
 /****************************************************************************
  * Included Files
  ****************************************************************************/
 
-#include <nuttx/config.h>
-#include <stdint.h>
-#include <net/if.h>
-#include <netinet/in.h>
-
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-
-/****************************************************************************
- * Public Types
- ****************************************************************************/
-struct keyslot_s
-{
-  uint8_t pubkey[CONFIG_PUBKEY_SIZE];
-  bool group[CONFIG_GROUP_SIZE];
-};
-
-struct config_s
-{
-  int32_t serial_no;
-  uint32_t knl_version;
-  uint32_t	 app_version;
-  uint8_t macaddr[IFHWADDRLEN];
-  struct in_addr hostaddr;
-  struct in_addr netmask;
-  struct in_addr dripaddr;
-  struct in_addr svraddr;
-  int16_t svrport;
-  int32_t shock_resistor_threshold;
-  int32_t infra_red_threshold;
-  int32_t photo_resistor_threshold;
-  uint8_t config_password[6];
-  struct keyslot_s keyslots[CONFIG_GROUP_SIZE];
-};
-
+ 
 /****************************************************************************
  * Public Data
  ****************************************************************************/
 
+/****************************************************************************
+ * Public Function Prototypes
+ ****************************************************************************/
+ 
 #ifdef __cplusplus
 #define EXTERN extern "C"
-extern "C"
-{
+extern "C" {
 #else
 #define EXTERN extern
 #endif
 
-EXTERN struct config_s *config;
-
-/****************************************************************************
- * Public Function Prototypes
- ****************************************************************************/
-
-EXTERN void load_config(void);
-EXTERN int save_config(void);
-EXTERN int config_init(void);
-EXTERN void config_deinit(void);
+EXTERN void up_systemswitch(void);
 
 #undef EXTERN
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* __APPS_INCLUDE_CONFIG_LIB_H */
-
+#endif /* __INCLUDE_ARMV7_M_SYSTEMSWITCH_H */

@@ -56,8 +56,9 @@
 
 #include <arpa/inet.h>
 
+#include <arch/systemreset.h>
+
 #include <nuttx/clock.h>
-#include <nuttx/systemreset.h>
 #include <nuttx/analog/adc.h>
 #include <nuttx/gpio/gpio.h>
 #include <nuttx/usb/usbhost.h>
@@ -147,6 +148,7 @@ static bool g_shock_resistor_sampled = false;
 static bool g_infra_red_sampled = false;
 static int32_t g_min_infra_red;
 static int32_t g_max_infra_red;
+static int g_sockfd;
 
 /****************************************************************************
  * Public Data
@@ -390,7 +392,7 @@ void heart_beat_in_task(void)
   if (ABS(clock_systimer() - last_heart_beat_tick) > SEC2TICK(10))
     {
       last_heart_beat_tick = clock_systimer();
-      (void)protocal_send_heart_beat();
+      (void)protocal_send_heart_beat(g_sockfd);
     }
 }
 
@@ -606,7 +608,7 @@ static int unlock_task(int argc, char *argv[])
                       {
                         return ret;
                       }
-										
+
                     g_infra_red_sampled = 0;
 
                     config->infra_red_threshold = (g_min_infra_red + g_max_infra_red) / 2;
@@ -766,13 +768,12 @@ static int unlock_task(int argc, char *argv[])
 static int net_task(int argc, char *argv[])
 {
   int ret;
-  int sockfd;
   struct sockaddr_in svraddr;
 
   while(true)
     {
-      sockfd = socket(PF_INET, SOCK_STREAM, 0);
-      if (sockfd < 0)
+      g_sockfd = socket(PF_INET, SOCK_STREAM, 0);
+      if (g_sockfd < 0)
         {
           ret = -errno;
           ilockdbg("net_task: socket failure %d\n", ret);
@@ -783,7 +784,7 @@ static int net_task(int argc, char *argv[])
       svraddr.sin_port        = HTONS(config->svrport);
       svraddr.sin_addr.s_addr = config->svraddr.s_addr;
 
-      ret = connect( sockfd, (struct sockaddr*)&svraddr, sizeof(struct sockaddr_in));
+      ret = connect(g_sockfd, (struct sockaddr*)&svraddr, sizeof(struct sockaddr_in));
       if (ret < 0)
         {
           ret = -errno;
@@ -791,10 +792,17 @@ static int net_task(int argc, char *argv[])
           goto errout_with_socket;
         }
 
-      while(protocal_recv(sockfd) == OK);
+      ret = protocal_send_connect(g_sockfd);
+      if (ret < 0)
+        {
+          ret = -errno;
+          goto errout_with_socket;
+        }
+
+      while(protocal_recv(g_sockfd) == OK);
 
 errout_with_socket:
-      close(sockfd);
+      close(g_sockfd);
     }
 errout:
   return ret;
@@ -832,11 +840,7 @@ int ilock_main(int argc, char *argv[])
     {
       return ret;
     }
-  ret = load_config();
-  if (ret <0)
-    {
-      return ret;
-    }
+  load_config();
 
   scan_pid = task_create("iLockScan", 50, CONFIG_SCAN_TASK_STACKSIZE, scan_task, NULL);
   if (scan_pid < 0)

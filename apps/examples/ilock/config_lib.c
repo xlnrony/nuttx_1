@@ -204,9 +204,8 @@ static int bin2hex(FAR char *dest, FAR const uint8_t * src, int nsrcbytes)
  * Private Functions
  ****************************************************************************/
 
-int load_config(void)
+void load_config(void)
 {
-  int ret = OK;
   INIHANDLE inifile;
   char *macaddr;
   char *hostaddr;
@@ -268,19 +267,19 @@ int load_config(void)
                                              CONFIG_SVRPORT_DEF_VALUE);
 
       config->shock_resistor_threshold =
-        inifile_read_integer(inifile, CONFIG_NET_SECTION_NAME,
+        inifile_read_integer(inifile, CONFIG_SENSOR_SECTION_NAME,
                              CONFIG_SHOCK_RESISTOR_VAR_NAME,
                              CONFIG_SHOCK_RESISTOR_DEF_VALUE);
 
       config->infra_red_threshold =
-        inifile_read_integer(inifile, CONFIG_NET_SECTION_NAME,
+        inifile_read_integer(inifile, CONFIG_SENSOR_SECTION_NAME,
                              CONFIG_INFRA_RED_VAR_NAME,
                              CONFIG_INFRA_RED_DEF_VALUE);
 
-      config->infra_red_threshold =
-        inifile_read_integer(inifile, CONFIG_NET_SECTION_NAME,
-                             CONFIG_INFRA_RED_VAR_NAME,
-                             CONFIG_INFRA_RED_DEF_VALUE);
+      config->photo_resistor_threshold =
+        inifile_read_integer(inifile, CONFIG_SENSOR_SECTION_NAME,
+                             CONFIG_PHOTO_RESISTOR_VAR_NAME,
+                             CONFIG_PHOTO_RESISTOR_DEF_VALUE);
 
       for (i = 0; i < CONFIG_GROUP_SIZE; i++)
         {
@@ -303,14 +302,37 @@ int load_config(void)
                                             CONFIG_GROUP_DEF_VALUE);
             }
         }
+			
       inifile_uninitialize(inifile);
     }
   else
     {
-      ret = -errno;
-      ilockdbg("load_config: inifile_initialize failed: %d\n", ret);
+      config->macaddr[0] = 0xFC;
+      config->macaddr[1] = 0xFC;
+      config->macaddr[2] = 0xFC;
+      config->macaddr[3] = 0xAB;
+      config->macaddr[4] = 0xAB;
+      config->macaddr[5] = 0xAB;
+
+      config->hostaddr.s_addr = inet_addr(CONFIG_HOSTADDR_DEF_VALUE);
+      config->netmask.s_addr = inet_addr(CONFIG_NETMASK_DEF_VALUE);
+      config->dripaddr.s_addr = inet_addr(CONFIG_DRIPADDR_DEF_VALUE);
+      config->svraddr.s_addr = inet_addr(CONFIG_SVRADDR_DEF_VALUE);
+      config->svrport = CONFIG_SVRPORT_DEF_VALUE;
+			
+      config->shock_resistor_threshold = CONFIG_SHOCK_RESISTOR_DEF_VALUE;
+      config->infra_red_threshold =CONFIG_INFRA_RED_DEF_VALUE;
+      config->photo_resistor_threshold = CONFIG_PHOTO_RESISTOR_DEF_VALUE;
+
+      for (i = 0; i < CONFIG_GROUP_SIZE; i++)
+        {
+          memset(config->keyslots[i].pubkey, 0xFF, CONFIG_PUBKEY_SIZE);
+          for (j = 0; j < CONFIG_GROUP_SIZE; j++)
+            {
+              config->keyslots[i].group[j] = CONFIG_GROUP_DEF_VALUE;
+            }
+        }
     }
-  return ret;
 }
 
 int save_config(void)

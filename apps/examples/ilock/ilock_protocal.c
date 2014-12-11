@@ -106,7 +106,7 @@ const size_t protocal_size[LAST_CATEGORY + 1] = {HEART_BEAT_CATEGORY_RECV_SIZE, 
  * Private Functions
  ****************************************************************************/
 
-void protocal_make_magic(struct protocal_s *p)
+static void protocal_make_magic(struct protocal_s *p)
 {
   p->head.magic[0] = MAGIC_ONE;
   p->head.magic[1] = MAGIC_TWO;
@@ -119,6 +119,12 @@ int protocal_send_heart_beat(int sockfd)
   int ret;
   ssize_t nsent;
   struct protocal_s p;
+
+  if (sockfd == 0)
+    {
+      ret = -ENODEV;
+      goto errout;
+    }
 
   protocal_make_magic(&p);
 
@@ -149,6 +155,12 @@ int protocal_send_connect(int sockfd)
   int ret;
   ssize_t nsent;
   struct protocal_s p;
+
+  if (sockfd == 0)
+    {
+      ret = -ENODEV;
+      goto errout;
+    }
 
   protocal_make_magic(&p);
 
@@ -183,6 +195,12 @@ int protocal_send_alert(int sockfd, unsigned long serial_no, unsigned char alert
   ssize_t nsent;
   struct protocal_s p;
 
+  if (sockfd == 0)
+    {
+      ret = -ENODEV;
+      goto errout;
+    }
+
   protocal_make_magic(&p);
 
   p.head.category = ALERT_CATEGORY;
@@ -216,6 +234,12 @@ int protocal_send_log(int sockfd, unsigned long serial_no, unsigned char log_gro
   ssize_t nsent;
   struct protocal_s p;
 
+  if (sockfd == 0)
+    {
+      ret = -ENODEV;
+      goto errout;
+    }
+
   protocal_make_magic(&p);
 
   p.head.category = LOG_CATEGORY;
@@ -245,7 +269,7 @@ errout:
   return ret;
 }
 
-int protocal_send_time_view(int sockfd)
+static int protocal_send_time_view(int sockfd)
 {
   int ret = -ENODATA;
   ssize_t nsent;
@@ -253,6 +277,12 @@ int protocal_send_time_view(int sockfd)
   struct tm *tm;
 
   struct protocal_s p;
+
+  if (sockfd == 0)
+    {
+      ret = -ENODEV;
+      goto errout;
+    }
 
   protocal_make_magic(&p);
 
@@ -288,11 +318,17 @@ errout:
   return ret;
 }
 
-int protocal_send_sensor_view(int sockfd)
+static int protocal_send_sensor_view(int sockfd)
 {
   int ret = -ENODATA;
   ssize_t nsent;
   struct protocal_s p;
+
+  if (sockfd == 0)
+    {
+      ret = -ENODEV;
+      goto errout;
+    }
 
   protocal_make_magic(&p);
 
@@ -324,12 +360,18 @@ errout:
   return ret;
 }
 
-int protocal_send_net_addr_view(int sockfd)
+static int protocal_send_net_addr_view(int sockfd)
 {
   int ret = -ENODATA;
   ssize_t nsent;
   struct protocal_s p;
 
+  if (sockfd == 0)
+    {
+      ret = -ENODEV;
+      goto errout;
+    }
+	
   protocal_make_magic(&p);
 
   p.head.category = VIEW_NET_ADDR_CATEGORY;
@@ -394,11 +436,17 @@ errout:
 }
 */
 
-int protocal_send_ok(int sockfd, uint8_t category)
+static int protocal_send_ok(int sockfd, uint8_t category)
 {
   int ret = -ENODATA;
   ssize_t nsent;
   struct protocal_s p;
+
+  if (sockfd == 0)
+    {
+      ret = -ENODEV;
+      goto errout;
+    }
 
   protocal_make_magic(&p);
 
@@ -424,11 +472,17 @@ errout:
   return ret;
 }
 
-int protocal_send_download_firmware_ok(int sockfd)
+static int protocal_send_download_firmware_ok(int sockfd)
 {
   int ret = -ENODATA;
   ssize_t nsent;
   struct protocal_s p;
+
+  if (sockfd == 0)
+    {
+      ret = -ENODEV;
+      goto errout;
+    }
 
   protocal_make_magic(&p);
 
@@ -464,6 +518,12 @@ int protocal_send_crc32_firmware(int sockfd)
   ssize_t nsent;
   struct protocal_s p;
 
+  if (sockfd == 0)
+    {
+      ret = -ENODEV;
+      goto errout;
+    }
+
   protocal_make_magic(&p);
 
   p.head.category = CRC32_FIRMWARE_CATEGORY;
@@ -489,11 +549,17 @@ errout:
   return ret;
 }
 
-int protocal_send_version(int sockfd)
+static int protocal_send_version(int sockfd)
 {
   int ret = -ENODATA;
   ssize_t nsent;
   struct protocal_s p;
+
+  if (sockfd == 0)
+    {
+      ret = -ENODEV;
+      goto errout;
+    }
 
   protocal_make_magic(&p);
 
@@ -635,7 +701,7 @@ static int protocal_deal(int sockfd, struct protocal_s * protocal)
               }
             else
               {
-                auth_set_log_type(LOG_AUTH_UNLOCK);              
+                auth_set_log_type(LOG_AUTH_UNLOCK);
                 act_unlock();
               }
             (void)protocal_send_ok(sockfd, REMOTE_AUTHORIZE_CATEGORY);

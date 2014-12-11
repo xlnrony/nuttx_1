@@ -140,7 +140,7 @@ inline int32_t adc_photo_resistor_op(void)
 
 inline int32_t adc_infra_red_op(void)
 {
-  return adc_op(CONFIG_ADC2_DEVNAME, 6);
+  return adc_op(CONFIG_ADC3_DEVNAME, 10);
 }
 
 #endif

@@ -33,17 +33,12 @@
  *
  ****************************************************************************/
 
-#ifndef __INCLUDE_NUTTX_SYSTEMRESET_H
-#define __INCLUDE_NUTTX_SYSTEMRESET_H
+#ifndef __INCLUDE_ARMV6_M_SYSTEMRESET_H
+#define __INCLUDE_ARMV6_M_SYSTEMRESET_H
 
 /****************************************************************************
  * Included Files
  ****************************************************************************/
-
-#include <nuttx/config.h>
-
-#if defined(CONFIG_ARCH_CORTEXM0) || defined(CONFIG_ARCH_CORTEXM3) || \
-    defined(CONFIG_ARCH_CORTEXM4)
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -70,5 +65,4 @@ EXTERN void up_systemreset(void);
 #ifdef __cplusplus
 }
 #endif
-#endif /* CONFIG_ARCH_CORTEXM0,3,4 */
-#endif /* __INCLUDE_NUTTX_SYSTEMRESET_H */
+#endif /* __INCLUDE_ARMV6_M_SYSTEMRESET_H */

@@ -83,11 +83,11 @@ int stm32_bringup(void)
 {
   int ret = OK;
 
-#ifdef CONFIG_LED
+#ifdef CONFIG_INDICATOR
   stm32_led_initialize();
 #endif
 
-#ifdef CONFIG_LED
+#ifdef CONFIG_INDICATOR
   stm32_buzzer_initialize();
 #endif
 

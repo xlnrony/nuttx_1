@@ -148,9 +148,6 @@
 #define GPIO_MAGNET_VCC       (GPIO_OUTPUT|GPIO_OPENDRAIN|GPIO_SPEED_2MHz|\
 				                    					  GPIO_OUTPUT_SET|GPIO_PORTC|GPIO_PIN7)
 
-#define GPIO_MAGNET_GND      (GPIO_OUTPUT|GPIO_OPENDRAIN|GPIO_SPEED_2MHz|\
-				                    					  GPIO_OUTPUT_SET|GPIO_PORTD|GPIO_PIN15)
-
 #define GPIO_BUZZER      (GPIO_OUTPUT|GPIO_OPENDRAIN|GPIO_SPEED_2MHz|\
 				                    					  GPIO_OUTPUT_SET|GPIO_PORTE|GPIO_PIN5)
 
@@ -289,7 +286,7 @@ void stm32_gpio_initialize(void);
 void stm32_keypad_initialize(void);
 #endif
 
-#ifdef CONFIG_LED
+#ifdef CONFIG_INDICATOR
 void stm32_led_initialize(void);
 void stm32_buzzer_initialize(void);
 #endif

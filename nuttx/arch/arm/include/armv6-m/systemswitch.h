@@ -1,7 +1,7 @@
 /****************************************************************************
- * config/ilstm407/src/stm32_nsh.c
+ * include/nuttx/systemreset.h
  *
- *   Copyright (C) 2012, 2014 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2009, 2011 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,44 +33,36 @@
  *
  ****************************************************************************/
 
+#ifndef __INCLUDE_ARMV6_M_SYSTEMSWITCH_H
+#define __INCLUDE_ARMV6_M_SYSTEMSWITCH_H
+
 /****************************************************************************
  * Included Files
  ****************************************************************************/
 
-#include <nuttx/config.h>
-
-#include "stm32f407.h"
-
 /****************************************************************************
- * Pre-Processor Definitions
+ * Pre-processor Definitions
  ****************************************************************************/
-
-#ifndef OK
-#  define OK 0
-#endif
-
+ 
 /****************************************************************************
- * Public Functions
+ * Public Data
  ****************************************************************************/
 
 /****************************************************************************
- * Name: nsh_archinitialize
- *
- * Description:
- *   Perform architecture-specific initialization (if this was not already
- *   done by board_initialize();
- *
+ * Public Function Prototypes
  ****************************************************************************/
-
-int nsh_archinitialize(void)
-{
-#ifdef CONFIG_BOARD_INITIALIZE
-  /* Board initialization already performed by board_initialize() */
-
-  return OK;
+ 
+#ifdef __cplusplus
+#define EXTERN extern "C"
+extern "C" {
 #else
-  /* Perform board-specific initialization */
-
-  return stm32_bringup();
+#define EXTERN extern
 #endif
+
+EXTERN void up_systemswitch(void);
+
+#undef EXTERN
+#ifdef __cplusplus
 }
+#endif
+#endif /* __INCLUDE_ARMV7_M_SYSTEMSWITCH_H */
