@@ -1,8 +1,8 @@
 /****************************************************************************
- * fs/inode/fs_inodefind.c
+ * system/cu/cu.h
  *
- *   Copyright (C) 2007-2009 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ *   Copyright (C) 2014 sysmocom - s.f.m.c. GmbH. All rights reserved.
+ *   Author: Harald Welte <hwelte@sysmocom.de>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -33,67 +33,57 @@
  *
  ****************************************************************************/
 
+#ifndef __APPS_SYSTEM_CU_CUTERM_H
+#define __APPS_SYSTEM_CU_CUTERM_H
+
 /****************************************************************************
  * Included Files
  ****************************************************************************/
 
 #include <nuttx/config.h>
 
-#include <errno.h>
-#include <nuttx/fs/fs.h>
-
-#include "inode/inode.h"
+#include <stdint.h>
+#include <stdbool.h>
+#include <semaphore.h>
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
+/* Configuration ***********************************************************/
+
+#ifndef CONFIG_SYSTEM_CUTERM_DEFAULT_DEVICE
+#  define CONFIG_SYSTEM_CUTERM_DEFAULT_DEVICE "/dev/ttyS0"
+#endif
+
+#ifndef CONFIG_SYSTEM_CUTERM_DEFAULT_BAUD
+#  define CONFIG_SYSTEM_CUTERM_DEFAULT_BAUD 115200
+#endif
 
 /****************************************************************************
- * Private Variables
+ * Public Types
  ****************************************************************************/
+
+/* All terminal state data is packaged in a single structure to minimize
+ * name conflicts with other global symbols -- a poor man's name space.
+ */
+
+struct cu_globals_s
+{
+  int infd;            /* Incmoming data from serial port */
+  int outfd;           /* Outgoing data to serial port */
+  pthread_t listener;  /* Terminal listener thread */
+};
 
 /****************************************************************************
  * Public Variables
  ****************************************************************************/
 
-/****************************************************************************
- * Private Functions
- ****************************************************************************/
+/* terminal state data */
+
+extern struct cu_globals_s g_cu;
 
 /****************************************************************************
- * Public Functions
+ * Public Function Prototypes
  ****************************************************************************/
 
-/****************************************************************************
- * Name: inode_find
- *
- * Description:
- *   This is called from the open() logic to get a reference to the inode
- *   associated with a path.
- *
- ****************************************************************************/
-
-FAR struct inode *inode_find(FAR const char *path, FAR const char **relpath)
-{
-  FAR struct inode *node;
-
-  if (!path || !*path || path[0] != '/')
-    {
-      return NULL;
-    }
-
-  /* Find the node matching the path.  If found, increment the count of
-   * references on the node.
-   */
-
-  inode_semtake();
-  node = inode_search(&path, (FAR struct inode**)NULL, (FAR struct inode**)NULL, relpath);
-  if (node)
-    {
-      node->i_crefs++;
-    }
-
-  inode_semgive();
-  return node;
-}
-
+#endif /* __APPS_SYSTEM_CU_CUTERM_H */

@@ -1,7 +1,7 @@
 /****************************************************************************
- * fs/inode/fs_inodefind.c
+ * sched/wdog/wdog_recover.c
  *
- *   Copyright (C) 2007-2009 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2014 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,13 +39,22 @@
 
 #include <nuttx/config.h>
 
-#include <errno.h>
-#include <nuttx/fs/fs.h>
+#include <nuttx/arch.h>
+#include <nuttx/wdog.h>
+#include <nuttx/sched.h>
 
-#include "inode/inode.h"
+#include "wdog/wdog.h"
 
 /****************************************************************************
  * Pre-processor Definitions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Private Type Declarations
+ ****************************************************************************/
+
+/****************************************************************************
+ * Global Variables
  ****************************************************************************/
 
 /****************************************************************************
@@ -53,7 +62,7 @@
  ****************************************************************************/
 
 /****************************************************************************
- * Public Variables
+ * Private Function Prototypes
  ****************************************************************************/
 
 /****************************************************************************
@@ -65,35 +74,42 @@
  ****************************************************************************/
 
 /****************************************************************************
- * Name: inode_find
+ * Name: wd_recover
  *
  * Description:
- *   This is called from the open() logic to get a reference to the inode
- *   associated with a path.
+ *   This function is called from task_recover() when a task is deleted via
+ *   task_delete() or via pthread_cancel(). It checks if the deleted task
+ *   is waiting for a timed event and if so cancels the timeout
+ *
+ * Inputs:
+ *   tcb - The TCB of the terminated task or thread
+ *
+ * Return Value:
+ *   None.
+ *
+ * Assumptions:
+ *   This function is called from task deletion logic in a safe context.
  *
  ****************************************************************************/
 
-FAR struct inode *inode_find(FAR const char *path, FAR const char **relpath)
+void wd_recover(FAR struct tcb_s *tcb)
 {
-  FAR struct inode *node;
+  irqstate_t flags;
 
-  if (!path || !*path || path[0] != '/')
-    {
-      return NULL;
-    }
-
-  /* Find the node matching the path.  If found, increment the count of
-   * references on the node.
+  /* The task is being deleted.  If it is waiting for any timed event, then
+   * tcb->waitdog will be non-NULL.  Cancel the watchdog now so that no
+   * events occur after the watchdog expires.  Obviously there are lots of
+   * race conditions here so this will most certainly have to be revisited in
+   * the future.
    */
 
-  inode_semtake();
-  node = inode_search(&path, (FAR struct inode**)NULL, (FAR struct inode**)NULL, relpath);
-  if (node)
+  flags = irqsave();
+  if (tcb->waitdog)
     {
-      node->i_crefs++;
+      (void)wd_cancel(tcb->waitdog);
+      (void)wd_delete(tcb->waitdog);
+      tcb->waitdog = NULL;
     }
 
-  inode_semgive();
-  return node;
+  irqrestore(flags);
 }
-

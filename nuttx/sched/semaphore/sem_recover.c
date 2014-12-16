@@ -1,7 +1,7 @@
 /****************************************************************************
- * fs/inode/fs_inodefind.c
+ * sched/semaphore/sem_recover.c
  *
- *   Copyright (C) 2007-2009 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2014 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,13 +39,21 @@
 
 #include <nuttx/config.h>
 
-#include <errno.h>
-#include <nuttx/fs/fs.h>
+#include <nuttx/arch.h>
+#include <nuttx/sched.h>
 
-#include "inode/inode.h"
+#include "semaphore/semaphore.h"
 
 /****************************************************************************
  * Pre-processor Definitions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Private Type Declarations
+ ****************************************************************************/
+
+/****************************************************************************
+ * Global Variables
  ****************************************************************************/
 
 /****************************************************************************
@@ -53,7 +61,7 @@
  ****************************************************************************/
 
 /****************************************************************************
- * Public Variables
+ * Private Function Prototypes
  ****************************************************************************/
 
 /****************************************************************************
@@ -65,35 +73,76 @@
  ****************************************************************************/
 
 /****************************************************************************
- * Name: inode_find
+ * Name: sem_recover
  *
  * Description:
- *   This is called from the open() logic to get a reference to the inode
- *   associated with a path.
+ *   This function is called from task_recover() when a task is deleted via
+ *   task_delete() or via pthread_cancel().  It current only checks on the
+ *   case where a task is waiting for semaphore at the time that is was
+ *   killed.
+ *
+ *   REVISIT:  A more complete implementation would release counts on all
+ *   semaphores held by the thread.  That would, however, require some
+ *   significant extension to the semaphore data structures because given
+ *   only the task, there is not mechanism to traverse all of the semaphores
+ *   with counts held by the task.
+ *
+ * Inputs:
+ *   tcb - The TCB of the terminated task or thread
+ *
+ * Return Value:
+ *   None.
+ *
+ * Assumptions:
+ *   This function is called from task deletion logic in a safe context.
  *
  ****************************************************************************/
 
-FAR struct inode *inode_find(FAR const char *path, FAR const char **relpath)
+void sem_recover(FAR struct tcb_s *tcb)
 {
-  FAR struct inode *node;
+  irqstate_t flags;
 
-  if (!path || !*path || path[0] != '/')
-    {
-      return NULL;
-    }
-
-  /* Find the node matching the path.  If found, increment the count of
-   * references on the node.
+  /* The task is being deleted.  If it is waiting for a semphore, then
+   * increment the count on the semaphores.  This logic is almost identical
+   * to what you see in sem_waitirq() except that no attempt is made to
+   * restart the exiting task.
+   *
+   * NOTE:  In the case that the task is waiting we can assume: (1) That the
+   * task state is TSTATE_WAIT_SEM and (2) that the 'waitsem' in the TCB is
+   * non-null.  If we get here via pthread_cancel() or via task_delete(),
+   * then the task state should be preserved; it will be altered in other
+   * cases but in those cases waitsem should be NULL anyway (but we do not
+   * enforce that here).
    */
 
-  inode_semtake();
-  node = inode_search(&path, (FAR struct inode**)NULL, (FAR struct inode**)NULL, relpath);
-  if (node)
+  flags = irqsave();
+  if (tcb->task_state == TSTATE_WAIT_SEM)
     {
-      node->i_crefs++;
+      sem_t *sem = tcb->waitsem;
+      DEBUGASSERT(sem != NULL && sem->semcount < 0);
+
+      /* Restore the correct priority of all threads that hold references
+       * to this semaphore.
+       */
+
+      sem_canceled(tcb, sem);
+
+      /* And increment the count on the semaphore.  This releases the count
+       * that was taken by sem_post().  This count decremented the semaphore
+       * count to negative and caused the thread to be blocked in the first
+       * place.
+       */
+
+      sem->semcount++;
+
+      /* Clear the semaphore to assure that it is not reused.  But leave the
+       * state as TSTATE_WAIT_SEM.  This is necessary because this is a
+       * necessary indication that the TCB still resides in the waiting-for-
+       * semaphore list.
+       */
+
+      tcb->waitsem = NULL;
     }
 
-  inode_semgive();
-  return node;
+  irqrestore(flags);
 }
-

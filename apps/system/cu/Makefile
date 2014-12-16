@@ -1,5 +1,5 @@
 ############################################################################
-# apps/graphics/traveler/Makefile
+# apps/system/cu/Makefile
 #
 #   Copyright (C) 2014 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -37,42 +37,11 @@
 -include $(TOPDIR)/Make.defs
 include $(APPDIR)/Make.defs
 
-# Directories
+# Minimal CU terminal
 
-TRAVELER_DIR   = $(APPDIR)/graphics/traveler
-TRAVELER_SRC   = $(TRAVELER_DIR)/src
-TRAVELER_INC   = $(TRAVELER_DIR)/include
-TRAVELER_DEMO  = $(TRAVELER_DIR)/world
-TRAVELER_TOOLS = $(TRAVELER_DIR)/tools
-
-# Traveler built-in application info
-
-APPNAME   = traveler
-PRIORITY  = SCHED_PRIORITY_DEFAULT
-STACKSIZE = 2048
-
-# Traveler files
-
-ASRCS   =
-CSRCS   = trv_bitmapfile.c trv_bitmaps.c trv_color.c trv_doors.c
-CSRCS  += trv_fsutils.c trv_graphicfile.c trv_graphics.c trv_input.c
-CSRCS  += trv_mem.c trv_paltbl.c trv_pcx.c trv_planefiles.c trv_planelists.c
-CSRCS  += trv_pov.c trv_rayavoid.c trv_raycast.c trv_raycntl.c
-CSRCS  += trv_rayprune.c trv_rayrend.c trv_texturefile.c trv_trigtbl.c
-CSRCS  += trv_world.c
-
-ifeq ($(CONFIG_GRAPHICS_TRAVELER_ROMFSDEMO),y)
-CSRCS += trv_romfs.c
-endif
-
-MAINSRC = trv_main.c
-
-ifeq ($(CONFIG_NX),y)
-CSRCS  += trv_nxbkgd.c
-ifeq ($(CONFIG_NX),y)
-CSRCS  += trv_nxserver.c
-endif
-endif
+ASRCS =
+CSRCS =
+MAINSRC = cu_main.c
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(CSRCS:.c=$(OBJEXT))
@@ -83,11 +52,6 @@ OBJS = $(AOBJS) $(COBJS)
 
 ifneq ($(CONFIG_BUILD_KERNEL),y)
   OBJS += $(MAINOBJ)
-endif
-
-ifeq ($(CONFIG_GRAPHICS_TRAVELER_ROMFSDEMO),y)
-ROMFS_IMG = trv_romfs.img
-ROMFS_HDR = trv_romfs.h
 endif
 
 ifeq ($(CONFIG_WINDOWS_NATIVE),y)
@@ -106,22 +70,26 @@ else
   INSTALL_DIR = $(BIN_DIR)
 endif
 
-CONFIG_EXAMPLES_HELLO_PROGNAME ?= hello$(EXEEXT)
-PROGNAME = $(CONFIG_EXAMPLES_HELLO_PROGNAME)
+CONFIG_XYZ_PROGNAME ?= cu$(EXEEXT)
+PROGNAME = $(CONFIG_XYZ_PROGNAME)
 
-ifeq ($(WINTOOL),y)
-INCDIROPT = -w
-endif
+ROOTDEPPATH = --dep-path .
 
-CFLAGS += ${shell $(INCDIR) $(INCDIROPT) "$(CC)" $(TRAVELER_INC)}
+# Built-in application info
 
-DEPPATH = --dep-path . --dep-path src
-VPATH = .:src
+CONFIG_SYSTEM_CUTERM_STACKSIZE ?= 2048
+CONFIG_SYSTEM_CUTERM_PRIORITY ?= SCHED_PRIORITY_DEFAULT
+
+APPNAME  = cu
+PRIORITY = $(CONFIG_SYSTEM_CUTERM_PRIORITY)
+STACKSIZE = $(CONFIG_SYSTEM_CUTERM_STACKSIZE)
 
 # Common build
 
-all: .built tools
-.PHONY: tools clean depend distclean
+VPATH =
+
+all: .built
+.PHONY: context clean depend distclean
 
 $(AOBJS): %$(OBJEXT): %.S
 	$(call ASSEMBLE, $<, $@)
@@ -129,20 +97,9 @@ $(AOBJS): %$(OBJEXT): %.S
 $(COBJS) $(MAINOBJ): %$(OBJEXT): %.c
 	$(call COMPILE, $<, $@)
 
-ifeq ($(CONFIG_GRAPHICS_TRAVELER_ROMFSDEMO),y)
-$(ROMFS_IMG):
-	$(Q) genromfs -f $@ -d $(TRAVELER_DEMO) -V "DemoWorld"
-
-$(ROMFS_HDR): $(ROMFS_IMG)
-	$(Q) (xxd -i $< | sed -e "s/^unsigned/static const unsigned/g" >$@)
-endif
-
-.built: $(ROMFS_HDR) $(OBJS)
+.built: $(OBJS)
 	$(call ARCHIVE, $(BIN), $(OBJS))
 	@touch .built
-
-tools:
-	$(Q) $(MAKE) -C  $(TRAVELER_TOOLS) -f Makefile.host TOPDIR="$(TOPDIR)" APPDIR="$(APPDIR)"
 
 ifeq ($(CONFIG_BUILD_KERNEL),y)
 $(BIN_DIR)$(DELIM)$(PROGNAME): $(OBJS) $(MAINOBJ)
@@ -167,15 +124,13 @@ context:
 endif
 
 .depend: Makefile $(SRCS)
-	@$(MKDEP) $(DEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
+	@$(MKDEP) $(ROOTDEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
 	@touch $@
 
 depend: .depend
 
 clean:
 	$(call DELFILE, .built)
-	$(call DELFILE, $(ROMFS_IMG))
-	$(call DELFILE, $(ROMFS_HDR))
 	$(call CLEAN)
 
 distclean: clean
@@ -183,3 +138,4 @@ distclean: clean
 	$(call DELFILE, .depend)
 
 -include Make.dep
+
