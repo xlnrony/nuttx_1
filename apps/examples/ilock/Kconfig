@@ -11,6 +11,12 @@ config EXAMPLES_ILOCK
 
 if EXAMPLES_ILOCK
 
+config EXAMPLES_ILOCK_VERSION
+	int "Version of iLock"
+	default 300
+	---help---
+		Version of iLock.  Default: 300
+
 config EXAMPLES_ILOCK_DEFPRIO
 	int "Waiter Thread Priority"
 	default 100
@@ -114,9 +120,15 @@ config GROUP_SIZE
 		Group size value. Default 32
 		
 config SERIALNO_DEF_VALUE		
-	hex "Serial no default value"
-	default 0x7FFFFFFF
+	int "Serial no default value"
+	default -1
 	---help---
-		Serial no default value. Default 0x7FFFFFFF
+		Serial no default value. Default -1
+
+config FIRMWARE_BIN_PATH
+	string "Firmware bin path"
+	default "/mnt/sd/firmware.bin"
+	---help---
+		Firmware bin path. Default: "/mnt/sd/firmware.bin"
 		
 endif

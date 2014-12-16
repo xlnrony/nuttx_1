@@ -82,5 +82,17 @@ config KEYPAD_DEVNAME
 	default "/dev/keypad"
 	---help---
 		Name of keypad device to be used. Default: "/dev/keypad"		
+		
+config SAFE_MODE_FLAG_PATH
+	string "Path of safe mode flag"
+	default "/mnt/sd/safemode"
+	---help---
+		Path of safe mode flag to be used. Default: "/mnt/sd/safemode"		
+
+config UPDATE_FM_FLAG_PATH
+	string "Path of update firmware flag"
+	default "/mnt/sd/updatefm"
+	---help---
+		Path of update firmware flag to be used. Default: "/mnt/sd/updatefm"		
 				
 endif

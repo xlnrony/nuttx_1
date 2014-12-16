@@ -72,7 +72,7 @@ extern "C"
 
 EXTERN inline void magnet_write(bool value);
 EXTERN inline bool closesw_read(void);
-EXTERN void gpio_init(void);
+EXTERN int gpio_init(void);
 EXTERN void gpio_deinit(void);
 
 #undef EXTERN

@@ -174,3 +174,4 @@
 "vsprintf","stdio.h","","int","FAR char *","const char *","va_list"
 "vsscanf","stdio.h","","int","char *","const char *","va_list"
 "vsyslog","syslog.h","","int","int","FAR const char *","va_list"
+"version","version.h","","uint16_t"

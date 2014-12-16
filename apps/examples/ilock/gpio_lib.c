@@ -95,13 +95,13 @@ static bool gpio_read(int fd)
   int ret;
   bool value = false;
 
-  DEBUGASSERT(fd>0);
+  DEBUGASSERT(fd > 0);
   ret = ioctl(fd, GPIOC_READ, (unsigned long)&value);
   if (ret < 0)
     {
       gpiodbg("gpio_write: GPIOC_READ ioctl failed: %d\n", errno);
     }
-	
+
   return value;
 }
 
@@ -119,19 +119,31 @@ inline bool closesw_read(void)
   return gpio_read(closesw_fd);
 }
 
-void gpio_init(void)
+int gpio_init(void)
 {
+  int ret = OK;
+	
   magnet_fd = open(CONFIG_MAGNET_VCC_DEVNAME, 0);
   if (magnet_fd < 0)
     {
-      gpiodbg("gpio_init: open %s failed: %d\n", CONFIG_MAGNET_VCC_DEVNAME, errno);
+      ret = -errno;
+      gpiodbg("gpio_init: open %s failed: %d\n", CONFIG_MAGNET_VCC_DEVNAME, ret);
+      goto errout;
     }
 
   closesw_fd = open(CONFIG_CLOSE_SW_DEVNAME, 0);
   if (closesw_fd < 0)
     {
-      gpiodbg("gpio_init: open %s failed: %d\n", CONFIG_CLOSE_SW_DEVNAME, errno);
+      ret = -errno;
+      gpiodbg("gpio_init: open %s failed: %d\n", CONFIG_CLOSE_SW_DEVNAME, ret);
+      goto errout;
     }
+	
+  return ret;
+	
+errout:
+  gpio_deinit();
+  return ret;
 }
 
 void gpio_deinit(void)

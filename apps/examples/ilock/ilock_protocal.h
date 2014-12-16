@@ -90,7 +90,8 @@
 #define VERSION_VIEW_CATEGORY													28
 #define DEFINE_CONFIG_PASSWORD_CATEGORY							29
 #define REMOTE_AUTHORIZE_WITH_PUBKEY_CATEGORY  		30
-#define LAST_CATEGORY																	30
+#define LOG_EX_CATEGORY 																31
+#define LAST_CATEGORY																	31
 
 #define ALERT_SHOCK_RESISTOR														1
 #define ALERT_CLOSE_SWITCH															2
@@ -144,8 +145,6 @@
 #define UPLOAD_PUBKEY_CATEGORY_SEND_SIZE	   										(PROTOCAL_HEAD_SIZE+sizeof(((struct protocal_s *)NULL)->body.upload_pubkey_category))
 #define REMOTE_AUTHORIZE_CATEGORY_RECV_SIZE  									(PROTOCAL_HEAD_SIZE)
 #define REMOTE_AUTHORIZE_CATEGORY_SEND_SIZE  									(PROTOCAL_HEAD_SIZE)
-#define REMOTE_AUTHORIZE_WITH_PUBKEY_CATEGORY_RECV_SIZE 		(PROTOCAL_HEAD_SIZE+sizeof(((struct protocal_s *)NULL)->body.remote_authorize_with_pubkey_category))
-#define REMOTE_AUTHORIZE_WITH_PUBKEY_CATEGORY_SEND_SIZE 		(PROTOCAL_HEAD_SIZE)
 #define TIME_SYNC_CATEGORY_RECV_SIZE		   												(PROTOCAL_HEAD_SIZE+sizeof(((struct protocal_s *)NULL)->body.time_sync_category))
 #define TIME_SYNC_CATEGORY_SEND_SIZE		   												(PROTOCAL_HEAD_SIZE)
 #define ALERT_CATEGORY_RECV_SIZE			   													(PROTOCAL_HEAD_SIZE)
@@ -176,6 +175,10 @@
 #define VERSION_VIEW_CATEGORY_SEND_SIZE												(PROTOCAL_HEAD_SIZE+sizeof(((struct protocal_s *)NULL)->body.version_view_category))
 #define DEFINE_CONFIG_PASSWORD_CATEGORY_RECV_SIZE						(PROTOCAL_HEAD_SIZE+sizeof(((struct protocal_s *)NULL)->body.define_config_password_category))
 #define DEFINE_CONFIG_PASSWORD_CATEGORY_SEND_SIZE						(PROTOCAL_HEAD_SIZE)
+#define REMOTE_AUTHORIZE_WITH_PUBKEY_CATEGORY_RECV_SIZE 		(PROTOCAL_HEAD_SIZE+sizeof(((struct protocal_s *)NULL)->body.remote_authorize_with_pubkey_category))
+#define REMOTE_AUTHORIZE_WITH_PUBKEY_CATEGORY_SEND_SIZE 		(PROTOCAL_HEAD_SIZE)
+#define LOG_EX_CATEGORY_RECV_SIZE 															(PROTOCAL_HEAD_SIZE)
+#define LOG_EX_CATEGORY_SEND_SIZE 															(PROTOCAL_HEAD_SIZE+sizeof(((struct protocal_s *)NULL)->body.log_ex_category))
 
 /****************************************************************************
  * Public Types
@@ -221,6 +224,14 @@ struct protocal_s
       uint8_t flag;
       uint8_t log_time[6];
     } log_category;
+
+    struct
+    {
+      uint8_t log_group[CONFIG_GROUP_SIZE];
+      uint8_t log_pubkey[CONFIG_PUBKEY_SIZE];
+      uint8_t flag;
+      uint8_t log_time[6];
+    } log_ex_category;
 
     struct
     {
@@ -361,6 +372,7 @@ extern "C"
 EXTERN int protocal_recv(int sockfd);
 EXTERN int protocal_send_heart_beat(int sockfd);
 EXTERN int protocal_send_connect(int sockfd);
+EXTERN int protocal_send_log(int sockfd, int32_t serial_no, bool *log_group, uint8_t *log_pubkey, uint8_t flag, uint8_t tm[6]);
 
 #undef EXTERN
 #ifdef __cplusplus

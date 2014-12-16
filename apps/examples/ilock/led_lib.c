@@ -118,30 +118,36 @@ inline void led3_op(int cmd, uint8_t type, uint32_t delay, uint32_t interval)
 
 int led_init(void)
 {
-  int ret;
+  int ret = OK;
+
   led1_fd = open(CONFIG_LED1_DEVNAME, 0);
   if (led1_fd < 0)
     {
       ret = -errno;
       inddbg("led_init: open %s failed: %d\n", CONFIG_LED1_DEVNAME, ret);
-      return ret;
+      goto errout;
     }
 
   led2_fd = open(CONFIG_LED2_DEVNAME, 0);
   if (led2_fd < 0)
     {
-      inddbg("led_init: open %s failed: %d\n", CONFIG_LED2_DEVNAME, errno);
-      return ret;
+      ret = -errno;
+      inddbg("led_init: open %s failed: %d\n", CONFIG_LED2_DEVNAME, ret);
+      goto errout;
     }
 
   led3_fd = open(CONFIG_LED3_DEVNAME, 0);
   if (led3_fd < 0)
     {
-      inddbg("led_init: open %s failed: %d\n", CONFIG_LED3_DEVNAME, errno);
-      return ret;
+      ret = -errno;
+      inddbg("led_init: open %s failed: %d\n", CONFIG_LED3_DEVNAME, ret);
+      goto errout;
     }
 
-  return OK;
+  return ret;
+errout:
+  led_deinit();
+  return ret;
 }
 
 void led_deinit(void)

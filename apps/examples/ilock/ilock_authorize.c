@@ -40,21 +40,34 @@
 #include <nuttx/config.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <string.h>
 #include <nuttx/clock.h>
+#include <nuttx/gpio/indicator.h>
 
 #include "ilock_protocal.h"
 #include "ilock_authorize.h"
 
+#include "led_lib.h"
 #include "config_lib.h"
+#include "file_lib.h"
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
- 
+
 /****************************************************************************
  * Private Types
  ****************************************************************************/
+
+struct log_file_block_s
+{
+  int32_t log_sn;
+  uint8_t log_group[CONFIG_GROUP_SIZE];
+  uint8_t log_pubkey[CONFIG_PUBKEY_SIZE];
+  uint8_t type;
+  uint8_t time[6];
+};
 
 /****************************************************************************
  * Private Data
@@ -65,7 +78,6 @@ static bool g_group[CONFIG_GROUP_SIZE] = { true };
 static bool g_check[CONFIG_GROUP_SIZE] = { false };
 
 static uint8_t g_unlock_type = LOG_UNLOCK;
-static uint8_t g_log_type = 0;
 
 /****************************************************************************
  * Public Function Prototypes
@@ -78,15 +90,57 @@ static uint8_t g_log_type = 0;
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
- 
-void auth_set_log_type(uint8_t log_type)
+
+void auth_send_log_to_disk_or_net(int sockfd, uint8_t log_type, uint8_t *pubkey)
 {
-  g_log_type |= log_type;
+  int ret;
+  int i;
+  struct log_file_block_s log_file_block;
+  struct timespec ts;
+  struct tm *tm;
+
+  char file_path[25];
+  //unsigned long time;
+
+  if (log_type != 0)
+    {
+      clock_gettime(CLOCK_REALTIME, &ts);
+      tm = gmtime(&ts.tv_sec);
+
+      log_file_block.time[0] = tm->tm_year;
+      log_file_block.time[1] = tm->tm_mon;
+      log_file_block.time[2] = tm->tm_mday;
+      log_file_block.time[3] = tm->tm_hour;
+      log_file_block.time[4] = tm->tm_min;
+      log_file_block.time[5] = tm->tm_sec;
+
+      ret = protocal_send_log(sockfd, config->serial_no, g_group, pubkey, log_type, log_file_block.time);
+      if (ret < 0)
+        {
+          log_file_block.log_sn = config->serial_no;
+          for(i = 0; i < CONFIG_GROUP_SIZE; i++)
+            {
+              log_file_block.log_group[i] = g_group[i];
+            }
+          memcpy(log_file_block.log_pubkey, pubkey, CONFIG_PUBKEY_SIZE);
+          log_file_block.type = log_type;
+
+          sprintf(file_path, "/mnt/sd/log/%8x.log",clock_systimer());
+
+          ret = filewrite(file_path, 0, &log_file_block, sizeof(struct log_file_block_s));
+          if (ret < 0)
+            {
+              led1_op(INDC_TWINKLE, IND_RED, SEC2TICK(3), MSEC2TICK(200));
+              led1_op(INDC_TWINKLE, IND_RED, SEC2TICK(3), MSEC2TICK(200));
+              led1_op(INDC_ALWAYS, IND_RED, SEC2TICK(3), MSEC2TICK(200));
+            }
+        }
+    }
 }
 
-void auth_set_log_type_by_unlock_type(void)
+void auth_send_log_to_disk_or_net_by_unlock_type(int sockfd, uint8_t *pubkey)
 {
-	auth_set_log_type(g_unlock_type);
+  auth_send_log_to_disk_or_net(sockfd, g_unlock_type, pubkey);
 }
 
 void auth_init(void)
@@ -108,20 +162,20 @@ void auth_time_out_check(void)
     }
 }
 
-void auth_set_temp_unlock(void)
+void auth_set_temp_unlock(int sockfd, uint8_t *pubkey)
 {
   g_unlock_type = LOG_TEMP_UNLOCK;
-  g_log_type |= LOG_HALF_UNLOCK;
   g_last_time = clock_systimer();
+  auth_send_log_to_disk_or_net(sockfd, LOG_HALF_UNLOCK, pubkey);
 }
 
-void auth_set_auth_unlock(void)
+void auth_set_auth_unlock(int sockfd, uint8_t *pubkey)
 {
   g_unlock_type = LOG_AUTH_UNLOCK;
-  g_log_type |= LOG_HALF_UNLOCK;
+  auth_send_log_to_disk_or_net(sockfd, LOG_HALF_UNLOCK, pubkey);
 }
 
-bool auth_this_time(uint8_t pubkey[CONFIG_PUBKEY_SIZE])
+bool auth_this_time(uint8_t *pubkey)
 {
   int i, j;
   bool ret = false;

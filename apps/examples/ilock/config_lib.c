@@ -307,6 +307,7 @@ void load_config(void)
     }
   else
     {
+	  config->serial_no = CONFIG_SERIALNO_DEF_VALUE;
       config->macaddr[0] = 0xFC;
       config->macaddr[1] = 0xFC;
       config->macaddr[2] = 0xFC;

@@ -71,6 +71,10 @@ endif
 
 CSRCS += lib_match.c lib_crc32.c lib_crc16.c lib_crc8.c lib_dumpbuffer.c
 
+ifeq ($(CONFIG_VERSION),y)
+CSRCS += lib_version.c
+endif
+
 ifeq ($(CONFIG_DEBUG),y)
 CSRCS += lib_dbg.c
 endif

@@ -123,15 +123,15 @@
 #endif
 
 #ifndef CONFIG_SCAN_TASK_STACKSIZE
-#  define CONFIG_SCAN_TASK_STACKSIZE 2048
+#  define CONFIG_SCAN_TASK_STACKSIZE 4096
 #endif
 
 #ifndef CONFIG_UNLOCK_TASK_STACKSIZE
-#  define CONFIG_UNLOCK_TASK_STACKSIZE 2048
+#  define CONFIG_UNLOCK_TASK_STACKSIZE 4096
 #endif
 
 #ifndef CONFIG_NET_TASK_STACKSIZE
-#  define CONFIG_NET_TASK_STACKSIZE 2048
+#  define CONFIG_NET_TASK_STACKSIZE 4096
 #endif
 
 /****************************************************************************
@@ -309,8 +309,8 @@ void unlock_step_in_task(void)
           if (flag)
             {
               g_alert_type |= ALERT_CLOSE_SWITCH;
-              led1_op(INDC_TWINKLE, IND_RED, SEC2TICK(3), MSEC2TICK(500));
-              buzzer_op(INDC_TWINKLE, IND_ON, SEC2TICK(3), MSEC2TICK(500));
+              led1_op(INDC_TWINKLE, IND_RED, SEC2TICK(3), MSEC2TICK(200));
+              buzzer_op(INDC_TWINKLE, IND_ON, SEC2TICK(3), MSEC2TICK(200));
             }
         }
 
@@ -320,8 +320,8 @@ void unlock_step_in_task(void)
           if (flag)
             {
               g_alert_type |= ALERT_PHOTO_RESISTOR;
-              led1_op(INDC_TWINKLE, IND_RED, SEC2TICK(3), MSEC2TICK(500));
-              buzzer_op(INDC_TWINKLE, IND_ON, SEC2TICK(3), MSEC2TICK(500));
+              led1_op(INDC_TWINKLE, IND_RED, SEC2TICK(3), MSEC2TICK(200));
+              buzzer_op(INDC_TWINKLE, IND_ON, SEC2TICK(3), MSEC2TICK(200));
             }
         }
 
@@ -331,8 +331,8 @@ void unlock_step_in_task(void)
           if (flag)
             {
               g_alert_type |= ALERT_INFRA_RED;
-              led1_op(INDC_TWINKLE, IND_RED, SEC2TICK(3), MSEC2TICK(500));
-              buzzer_op(INDC_TWINKLE, IND_ON, SEC2TICK(3), MSEC2TICK(500));
+              led1_op(INDC_TWINKLE, IND_RED, SEC2TICK(3), MSEC2TICK(200));
+              buzzer_op(INDC_TWINKLE, IND_ON, SEC2TICK(3), MSEC2TICK(200));
             }
         }
 
@@ -342,8 +342,8 @@ void unlock_step_in_task(void)
           if (flag)
             {
               g_alert_type |= ALERT_SHOCK_RESISTOR;
-              led3_op(INDC_TWINKLE, IND_RED, SEC2TICK(5), MSEC2TICK(500));
-              buzzer_op(INDC_TWINKLE, IND_ON, SEC2TICK(5), MSEC2TICK(500));
+              led3_op(INDC_TWINKLE, IND_RED, SEC2TICK(5), MSEC2TICK(200));
+              buzzer_op(INDC_TWINKLE, IND_ON, SEC2TICK(5), MSEC2TICK(200));
             }
         }
     }
@@ -398,19 +398,13 @@ void heart_beat_in_task(void)
 
 static int scan_task(int argc, char *argv[])
 {
-
-  while (1)
+  while (true)
     {
       usleep(USEC_PER_TICK);
       act_magnet_in_task();
       unlock_step_in_task();
-
       heart_beat_in_task();
-      /*
-      			lock_check_sample();
-                 download_firmware_ok_in_task();
-                 crc32_firmware_in_task();
-                 */
+      threshold_sample_in_task();
     }
 }
 
@@ -419,6 +413,7 @@ void act_unlock(void)
   auth_init();
   g_unlock_step = 1;
   g_magnet_delay = CONFIG_MAGNET_DELAY;
+  magnet_write(false);
   led1_op(INDC_ALWAYS, IND_GREEN, SEC2TICK(3), 0);
 }
 
@@ -433,8 +428,8 @@ bool authorize(char *pwd)
     {
       ilockdbg("authorize: opening device %s Failed: %d\n",
                CONFIG_JKSAFEKEY_DEVNAME, errno);
-      buzzer_op(INDC_TWINKLE, IND_ON, SEC2TICK(1), MSEC2TICK(500));
-      led1_op(INDC_TWINKLE, IND_BLUE, SEC2TICK(3), MSEC2TICK(500));
+      buzzer_op(INDC_TWINKLE, IND_ON, SEC2TICK(1), MSEC2TICK(200));
+      led1_op(INDC_TWINKLE, IND_BLUE, SEC2TICK(3), MSEC2TICK(200));
       goto errclose;
     }
 
@@ -442,9 +437,9 @@ bool authorize(char *pwd)
   if (ret != RV_OK)
     {
       ilockdbg("jksafekey_get_pubkey failed: %d\n", ret);
-      buzzer_op(INDC_TWINKLE, IND_ON, SEC2TICK(1), MSEC2TICK(500));
-      led1_op(INDC_TWINKLE, IND_RED, SEC2TICK(3), MSEC2TICK(500));
-      led2_op(INDC_TWINKLE, IND_RED, SEC2TICK(3), MSEC2TICK(500));
+      buzzer_op(INDC_TWINKLE, IND_ON, SEC2TICK(1), MSEC2TICK(200));
+      led1_op(INDC_TWINKLE, IND_RED, SEC2TICK(3), MSEC2TICK(200));
+      led2_op(INDC_TWINKLE, IND_RED, SEC2TICK(3), MSEC2TICK(200));
       goto errclose;
     }
 
@@ -452,34 +447,30 @@ bool authorize(char *pwd)
   if (ret < 0)
     {
       ilockdbg("authorize: jksafekey_verify_pin failed: %d\n", ret);
-      auth_set_log_type(LOG_KEY_PASSWORD_ERROR);
-      buzzer_op(INDC_TWINKLE, IND_ON, SEC2TICK(3), MSEC2TICK(500));
-      led3_op(INDC_ALWAYS, IND_RED, SEC2TICK(3), MSEC2TICK(500));
+      auth_send_log_to_disk_or_net(g_sockfd, LOG_KEY_PASSWORD_ERROR, pubkey);
+      buzzer_op(INDC_TWINKLE, IND_ON, SEC2TICK(3), MSEC2TICK(200));
+      led3_op(INDC_ALWAYS, IND_RED, SEC2TICK(3), MSEC2TICK(200));
       goto errclose;
     }
 
   close(jksafekey_fd);
 
   auth_time_out_check();
-  if (!auth_this_time(pubkey))
+  if (!auth_this_time(pubkey) && (auth_init(), !auth_this_time(pubkey)))
     {
-      auth_init();
-      if (!auth_this_time(pubkey))
-        {
-          led1_op(INDC_TWINKLE, IND_RED, SEC2TICK(3), MSEC2TICK(500));
-          led3_op(INDC_TWINKLE, IND_RED, SEC2TICK(3), MSEC2TICK(500));
-          buzzer_op(INDC_TWINKLE, IND_ON, SEC2TICK(1), MSEC2TICK(500));
-          goto errout;
-        }
+      led1_op(INDC_TWINKLE, IND_RED, SEC2TICK(3), MSEC2TICK(200));
+      led3_op(INDC_TWINKLE, IND_RED, SEC2TICK(3), MSEC2TICK(200));
+      buzzer_op(INDC_TWINKLE, IND_ON, SEC2TICK(1), MSEC2TICK(200));
+      goto errout;
     }
   if (auth_need_more())
     {
-      auth_set_log_type(LOG_HALF_UNLOCK);
-      led1_op(INDC_TWINKLE, IND_GREEN, SEC2TICK(3), MSEC2TICK(500));
+      auth_send_log_to_disk_or_net(g_sockfd, LOG_HALF_UNLOCK, pubkey);
+      led1_op(INDC_TWINKLE, IND_GREEN, SEC2TICK(3), MSEC2TICK(200));
       goto errout;
     }
 
-  auth_set_log_type_by_unlock_type();
+  auth_send_log_to_disk_or_net_by_unlock_type(g_sockfd, pubkey);
   act_unlock();
 
   return true;
@@ -634,8 +625,8 @@ static int unlock_task(int argc, char *argv[])
                       {
                         return ret;
                       }
-//                      P11_voltage = atoi(pwd);
-                    config->photo_resistor_threshold = 0;
+
+                    config->photo_resistor_threshold = atoi(keybuf);
 
                     (void)save_config();
                   }
@@ -829,11 +820,16 @@ int ilock_main(int argc, char *argv[])
     {
       return ret;
     }
+  ret = gpio_init();
+  if (ret < 0)
+    {
+      return ret;
+    }
 
-  led1_op(INDC_TWINKLE, IND_RED, SEC2TICK(5), MSEC2TICK(500));
-  led2_op(INDC_TWINKLE, IND_GREEN, SEC2TICK(5), MSEC2TICK(500));
-  led3_op(INDC_TWINKLE, IND_BLUE, SEC2TICK(5), MSEC2TICK(500));
-  buzzer_op(INDC_TWINKLE, IND_ON, SEC2TICK(5), MSEC2TICK(500));
+  led1_op(INDC_TWINKLE, IND_RED, SEC2TICK(3), MSEC2TICK(200));
+  led2_op(INDC_TWINKLE, IND_GREEN, SEC2TICK(3), MSEC2TICK(200));
+  led3_op(INDC_TWINKLE, IND_BLUE, SEC2TICK(3), MSEC2TICK(200));
+  buzzer_op(INDC_TWINKLE, IND_ON, SEC2TICK(3), MSEC2TICK(200));
 
   ret = config_init();
   if (ret < 0)
@@ -875,6 +871,7 @@ int ilock_main(int argc, char *argv[])
 
   config_deinit();
 
+  gpio_deinit();
   buzzer_deinit();
   led_deinit();
   return OK;
