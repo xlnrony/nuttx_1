@@ -193,7 +193,7 @@ errout:
   return ret;
 }
 
-int protocal_send_alert(int sockfd, unsigned long serial_no, unsigned char alert_type, unsigned char tm[6])
+int protocal_send_alert(int sockfd, uint32_t serial_no, uint8_t alert_type, uint8_t tm[6])
 {
   int ret = -EIO;
   ssize_t nsent;

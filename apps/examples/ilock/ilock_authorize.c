@@ -98,9 +98,7 @@ void auth_send_log_to_disk_or_net(int sockfd, uint8_t log_type, uint8_t *pubkey)
   struct log_file_block_s log_file_block;
   struct timespec ts;
   struct tm *tm;
-
   char file_path[25];
-  //unsigned long time;
 
   if (log_type != 0)
     {
