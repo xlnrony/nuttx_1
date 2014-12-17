@@ -1,8 +1,7 @@
 /************************************************************************************
- * configs/stm32f3discovery/src/up_qencoder.c
- * arch/arm/src/board/up_qencoder.c
+ * configs/dk-tm4c129x/src/tm4c_ssi.c
  *
- *   Copyright (C) 2013 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2014 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,83 +39,43 @@
 
 #include <nuttx/config.h>
 
-#include <errno.h>
+#include <stdint.h>
+#include <stdbool.h>
 #include <debug.h>
 
-#include <nuttx/sensors/qencoder.h>
+#include <nuttx/spi/spi.h>
 #include <arch/board/board.h>
 
-#include "chip.h"
 #include "up_arch.h"
-#include "stm32_qencoder.h"
-#include "stm32f3discovery-internal.h"
+#include "chip.h"
+#include "tiva_gpio.h"
+#include "dk-tm4c129x.h"
+
+/* The DK-TM4C129x microSD CS is on SSI0 */
+
+#if !defined(CONFIG_SSI0_DISABLE) || !defined(CONFIG_SSI1_DISABLE)
 
 /************************************************************************************
  * Definitions
  ************************************************************************************/
-/* Configuration *******************************************************************/
-/* Check if we have a timer configured for quadrature encoder -- assume YES. */
 
-#define HAVE_QENCODER 1
+/* CONFIG_DEBUG_SPI enables debug output from this file (needs CONFIG_DEBUG too) */
 
-/* If TIMn is not enabled (via CONFIG_STM32_TIMn), then the configuration cannot
- * specify TIMn as a quadrature encoder (via CONFIG_STM32_TIMn_QE).
- */
-
-#ifndef CONFIG_STM32_TIM1
-#  undef CONFIG_STM32_TIM1_QE
-#endif
-#ifndef CONFIG_STM32_TIM2
-#  undef CONFIG_STM32_TIM2_QE
-#endif
-#ifndef CONFIG_STM32_TIM3
-#  undef CONFIG_STM32_TIM3_QE
-#endif
-#ifndef CONFIG_STM32_TIM4
-#  undef CONFIG_STM32_TIM4_QE
-#endif
-#ifndef CONFIG_STM32_TIM5
-#  undef CONFIG_STM32_TIM5_QE
-#endif
-#ifndef CONFIG_STM32_TIM8
-#  undef CONFIG_STM32_TIM8_QE
-#endif
-
-/* If the upper-half quadrature encoder driver is not enabled, then we cannot
- * support the quadrature encoder.
- */
-
-#ifndef CONFIG_QENCODER
-#  undef HAVE_QENCODER
-#endif
-
-/* Which Timer should we use, TIMID={1,2,3,4,5,8}.  If multiple timers are
- * configured as quadrature encoders, this logic will arbitrarily select
- * the lowest numbered timer.
- *
- * At least one TIMn, n={1,2,3,4,5,8}, must be both enabled and configured
- * as a quadrature encoder in order to support the lower half quadrature
- * encoder driver.  The above check assures that if CONFIG_STM32_TIMn_QE
- * is defined, then the correspdonding TIMn is also enabled.
- */
-
-#if defined CONFIG_STM32_TIM1_QE
-#  define TIMID 1
-#elif defined CONFIG_STM32_TIM2_QE
-#  define TIMID 2
-#elif defined CONFIG_STM32_TIM3_QE
-#  define TIMID 3
-#elif defined CONFIG_STM32_TIM4_QE
-#  define TIMID 4
-#elif defined CONFIG_STM32_TIM5_QE
-#  define TIMID 5
-#elif defined CONFIG_STM32_TIM8_QE
-#  define TIMID 8
+#ifdef CONFIG_DEBUG_SPI
+#  define ssidbg lldbg
 #else
-#  undef HAVE_QENCODER
+#  define ssidbg(x...)
 #endif
 
-#ifdef HAVE_QENCODER
+/* Dump GPIO registers */
+
+#if defined(CONFIG_DEBUG_SPI) && defined(CONFIG_DEBUG_VERBOSE)
+#  define ssivdbg lldbg
+#  define ssi_dumpgpio(m) tiva_dumpgpio(SDCCS_GPIO, m)
+#else
+#  define ssivdbg(x...)
+#  define ssi_dumpgpio(m)
+#endif
 
 /************************************************************************************
  * Private Functions
@@ -127,37 +86,47 @@
  ************************************************************************************/
 
 /************************************************************************************
- * Name: qe_devinit
+ * Name: tm4c_ssiinitialize
  *
  * Description:
- *   All STM32 architectures must provide the following interface to work with
- *   examples/qencoder.
+ *   Called to configure SPI chip select GPIO pins for the DK-TM4C129x.
  *
  ************************************************************************************/
 
-int qe_devinit(void)
+void weak_function tm4c_ssiinitialize(void)
 {
-  static bool initialized = false;
-  int ret;
-
-  /* Check if we are already initialized */
-
-  if (!initialized)
-    {
-      /* Initialize a quadrature encoder interface. */
-
-      snvdbg("Initializing the quadrature encoder using TIM%d\n", TIMID);
-      ret = stm32_qeinitialize("/dev/qe0", TIMID);
-      if (ret < 0)
-        {
-          sndbg("stm32_qeinitialize failed: %d\n", ret);
-          return ret;
-        }
-
-      initialized = true;
-    }
-
-  return OK;
 }
 
-#endif /* HAVE_QENCODER */
+/****************************************************************************
+ * The external functions, tiva_spiselect and tiva_spistatus must be provided
+ * by board-specific logic.  The are implementations of the select and status
+ * methods SPI interface defined by struct spi_ops_s (see include/nuttx/spi/spi.h).
+ * All othermethods (including tiva_spiinitialize()) are provided by common
+ * logic.  To use this common SPI logic on your board:
+ *
+ *   1. Provide tiva_spiselect() and tiva_spistatus() functions in your
+ *      board-specific logic.  This function will perform chip selection and
+ *      status operations using GPIOs in the way your board is configured.
+ *   2. Add a call to tiva_spiinitialize() in your low level initialization
+ *      logic
+ *   3. The handle returned by tiva_spiinitialize() may then be used to bind the
+ *      SPI driver to higher level logic (e.g., calling
+ *      mmcsd_spislotinitialize(), for example, will bind the SPI driver to
+ *      the SPI MMC/SD driver).
+ *
+ ****************************************************************************/
+
+void tiva_spiselect(FAR struct spi_dev_s *dev, enum spi_dev_e devid, bool selected)
+{
+  ssidbg("devid: %d CS: %s\n", (int)devid, selected ? "assert" : "de-assert");
+  ssi_dumpgpio("tiva_spiselect() Entry");
+  ssi_dumpgpio("tiva_spiselect() Exit");
+}
+
+uint8_t tiva_spistatus(FAR struct spi_dev_s *dev, enum spi_dev_e devid)
+{
+  ssidbg("Returning SPI_STATUS_PRESENT\n");
+  return SPI_STATUS_PRESENT;
+}
+
+#endif /* !CONFIG_SSI0_DISABLE || !CONFIG_SSI1_DISABLE */

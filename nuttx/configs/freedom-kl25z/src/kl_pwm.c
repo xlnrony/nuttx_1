@@ -1,9 +1,9 @@
 /************************************************************************************
- * configs/stm32f3discovery/src/up_qencoder.c
- * arch/arm/src/board/up_qencoder.c
+ * configs/freedom-kl25z/src/kl_pwm.c
  *
  *   Copyright (C) 2013 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
+ *           Alan Carvalho de Assis <acassis@gmail.com>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -43,80 +43,26 @@
 #include <errno.h>
 #include <debug.h>
 
-#include <nuttx/sensors/qencoder.h>
+#include <nuttx/pwm.h>
+#include <sys/types.h>
 #include <arch/board/board.h>
 
 #include "chip.h"
 #include "up_arch.h"
-#include "stm32_qencoder.h"
-#include "stm32f3discovery-internal.h"
+#include "kl_pwm.h"
 
 /************************************************************************************
  * Definitions
  ************************************************************************************/
 /* Configuration *******************************************************************/
-/* Check if we have a timer configured for quadrature encoder -- assume YES. */
-
-#define HAVE_QENCODER 1
-
-/* If TIMn is not enabled (via CONFIG_STM32_TIMn), then the configuration cannot
- * specify TIMn as a quadrature encoder (via CONFIG_STM32_TIMn_QE).
- */
-
-#ifndef CONFIG_STM32_TIM1
-#  undef CONFIG_STM32_TIM1_QE
-#endif
-#ifndef CONFIG_STM32_TIM2
-#  undef CONFIG_STM32_TIM2_QE
-#endif
-#ifndef CONFIG_STM32_TIM3
-#  undef CONFIG_STM32_TIM3_QE
-#endif
-#ifndef CONFIG_STM32_TIM4
-#  undef CONFIG_STM32_TIM4_QE
-#endif
-#ifndef CONFIG_STM32_TIM5
-#  undef CONFIG_STM32_TIM5_QE
-#endif
-#ifndef CONFIG_STM32_TIM8
-#  undef CONFIG_STM32_TIM8_QE
-#endif
-
-/* If the upper-half quadrature encoder driver is not enabled, then we cannot
- * support the quadrature encoder.
- */
-
-#ifndef CONFIG_QENCODER
-#  undef HAVE_QENCODER
-#endif
-
-/* Which Timer should we use, TIMID={1,2,3,4,5,8}.  If multiple timers are
- * configured as quadrature encoders, this logic will arbitrarily select
- * the lowest numbered timer.
+/* PWM
  *
- * At least one TIMn, n={1,2,3,4,5,8}, must be both enabled and configured
- * as a quadrature encoder in order to support the lower half quadrature
- * encoder driver.  The above check assures that if CONFIG_STM32_TIMn_QE
- * is defined, then the correspdonding TIMn is also enabled.
+ * The Kinetis Freedom board provides a LED on GPIO.
  */
 
-#if defined CONFIG_STM32_TIM1_QE
-#  define TIMID 1
-#elif defined CONFIG_STM32_TIM2_QE
-#  define TIMID 2
-#elif defined CONFIG_STM32_TIM3_QE
-#  define TIMID 3
-#elif defined CONFIG_STM32_TIM4_QE
-#  define TIMID 4
-#elif defined CONFIG_STM32_TIM5_QE
-#  define TIMID 5
-#elif defined CONFIG_STM32_TIM8_QE
-#  define TIMID 8
-#else
-#  undef HAVE_QENCODER
-#endif
+#ifdef CONFIG_PWM
 
-#ifdef HAVE_QENCODER
+extern struct pwm_lowerhalf_s *kl_pwminitialize(int timer);
 
 /************************************************************************************
  * Private Functions
@@ -127,32 +73,43 @@
  ************************************************************************************/
 
 /************************************************************************************
- * Name: qe_devinit
+ * Name: pwm_devinit
  *
  * Description:
- *   All STM32 architectures must provide the following interface to work with
- *   examples/qencoder.
+ *   All Kinetis KL architectures must provide the following interface to work with
+ *   examples/pwm.
  *
  ************************************************************************************/
 
-int qe_devinit(void)
+int pwm_devinit(void)
 {
   static bool initialized = false;
+  struct pwm_lowerhalf_s *pwm;
   int ret;
 
-  /* Check if we are already initialized */
+  /* Have we already initialized? */
 
   if (!initialized)
     {
-      /* Initialize a quadrature encoder interface. */
+      /* Call kl_pwminitialize() to get an instance of the PWM interface */
 
-      snvdbg("Initializing the quadrature encoder using TIM%d\n", TIMID);
-      ret = stm32_qeinitialize("/dev/qe0", TIMID);
+      pwm = kl_pwminitialize(0);
+      if (!pwm)
+        {
+          adbg("Failed to get the KL25 PWM lower half\n");
+          return -ENODEV;
+        }
+
+      /* Register the PWM driver at "/dev/pwm0" */
+
+      ret = pwm_register("/dev/pwm0", pwm);
       if (ret < 0)
         {
-          sndbg("stm32_qeinitialize failed: %d\n", ret);
+          adbg("pwm_register failed: %d\n", ret);
           return ret;
         }
+
+      /* Now we are initialized */
 
       initialized = true;
     }
@@ -160,4 +117,4 @@ int qe_devinit(void)
   return OK;
 }
 
-#endif /* HAVE_QENCODER */
+#endif /* CONFIG_PWM */

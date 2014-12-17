@@ -1,7 +1,7 @@
 /****************************************************************************
- * config/stm32f4discovery/src/kl_nsh.c
+ * config/dk-tm4c129x/src/tm4c_bringup.c
  *
- *   Copyright (C) 2013 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2014 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,47 +39,28 @@
 
 #include <nuttx/config.h>
 
-#include <sys/types.h>
-#include <stdio.h>
 #include <syslog.h>
 
-#ifdef CONFIG_NSH_LIBRARY
+#include "dk-tm4c129x.h"
 
 /****************************************************************************
  * Pre-Processor Definitions
  ****************************************************************************/
+
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Name: nsh_archinitialize
+ * Name: tm4c_bringup
  *
  * Description:
- *   Perform architecture specific initialization
- *
- *   CONFIG_NSH_ARCHINIT=y :
- *     Called from the NSH library
- *
- *   CONFIG_BOARD_INITIALIZE=y, CONFIG_NSH_LIBRARY=y, &&
- *   CONFIG_NSH_ARCHINIT=n :
- *     Called from board_initialize().
+ *   Bring up board features
  *
  ****************************************************************************/
 
-int nsh_archinitialize(void)
+int tm4c_bringup(void)
 {
-#if defined(CONFIG_SENSORS_ADXL345)
-  int ret;
-
-  ret = adxl345_archinitialize(0);
-  if (ret < 0)
-    {
-      dbg("ERROR: adxl345_archinitialize failed: %d\n", ret);
-    }
-#endif
   return OK;
 }
-
-#endif /* CONFIG_NSH_LIBRARY */

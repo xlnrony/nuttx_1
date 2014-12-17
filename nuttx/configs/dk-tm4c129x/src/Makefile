@@ -1,7 +1,7 @@
 ############################################################################
-# configs/freedom-kl25z/src/Makefile
+# configs/dk-tm4c129x/src/Makefile
 #
-#   Copyright (C) 2013-2014 Gregory Nutt. All rights reserved.
+#   Copyright (C) 2014 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>
 #
 # Redistribution and use in source and binary forms, with or without
@@ -39,55 +39,14 @@ CFLAGS += -I$(TOPDIR)/sched
 
 ASRCS =
 AOBJS = $(ASRCS:.S=$(OBJEXT))
-
-CSRCS = kl_boardinitialize.c
-
-ifeq ($(CONFIG_NSH_ARCHINIT),y)
-CSRCS += kl_nsh.c
-endif
-
-ifeq ($(CONFIG_WL_CC3000),y)
-CSRCS += kl_wifi.c
-endif
-
-ifeq ($(CONFIG_KL_TSI),y)
-CSRCS += kl_tsi.c
-endif
-
-ifeq ($(CONFIG_KL_SPI),y)
-CSRCS += kl_spi.c
-endif
-
-ifeq ($(CONFIG_HAVE_CXX),y)
-CSRCS += kl_cxxinitialize.c
-endif
+CSRCS = tm4c_boot.c tm4c_bringup.c tm4c_ssi.c
 
 ifeq ($(CONFIG_ARCH_LEDS),y)
-CSRCS += kl_led.c
+CSRCS += tm4c_autoleds.c
 endif
 
-ifeq ($(CONFIG_KL_USBOTG),y)
-CSRCS += kl_usb.c
-endif
-
-ifeq ($(CONFIG_PWM),y)
-CSRCS += kl_pwm.c
-endif
-
-ifeq ($(CONFIG_QENCODER),y)
-CSRCS += kl_qencoder.c
-endif
-
-ifeq ($(CONFIG_WATCHDOG),y)
-CSRCS += kl_watchdog.c
-endif
-
-ifeq ($(CONFIG_NSH_LIBRARY),y)
-CSRCS += kl_nsh.c
-endif
-
-ifeq ($(CONFIG_SENSORS_ADXL345),y)
-CSRCS += kl_adxl345.c
+ifeq ($(CONFIG_NSH_ARCHINIT),y)
+CSRCS += tm4c_nsh.c
 endif
 
 COBJS = $(CSRCS:.c=$(OBJEXT))
@@ -95,17 +54,13 @@ COBJS = $(CSRCS:.c=$(OBJEXT))
 SRCS = $(ASRCS) $(CSRCS)
 OBJS = $(AOBJS) $(COBJS)
 
-ARCH_SRCDIR = $(TOPDIR)/arch/$(CONFIG_ARCH)/src
-ifeq ($(CONFIG_WINDOWS_NATIVE),y)
-  CFLAGS += -I$(ARCH_SRCDIR)\chip -I$(ARCH_SRCDIR)\common -I$(ARCH_SRCDIR)\armv7-m
-else
+ARCH_SRCDIR	= $(TOPDIR)/arch/$(CONFIG_ARCH)/src
 ifeq ($(WINTOOL),y)
   CFLAGS += -I "${shell cygpath -w $(ARCH_SRCDIR)/chip}" \
-			-I "${shell cygpath -w $(ARCH_SRCDIR)/common}" \
-			-I "${shell cygpath -w $(ARCH_SRCDIR)/armv7-m}"
+            -I "${shell cygpath -w $(ARCH_SRCDIR)/common}" \
+            -I "${shell cygpath -w $(ARCH_SRCDIR)/armv7-m}"
 else
   CFLAGS += -I$(ARCH_SRCDIR)/chip -I$(ARCH_SRCDIR)/common -I$(ARCH_SRCDIR)/armv7-m
-endif
 endif
 
 all: libboard$(LIBEXT)

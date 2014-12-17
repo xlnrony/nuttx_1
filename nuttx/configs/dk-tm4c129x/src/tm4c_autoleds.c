@@ -1,7 +1,7 @@
 /****************************************************************************
- * config/stm32f4discovery/src/kl_nsh.c
+ * configs/dk-tm4c129x/src/tm4c_leds.c
  *
- *   Copyright (C) 2013 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2014 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,14 +39,47 @@
 
 #include <nuttx/config.h>
 
-#include <sys/types.h>
-#include <stdio.h>
-#include <syslog.h>
+#include <stdbool.h>
+#include <debug.h>
 
-#ifdef CONFIG_NSH_LIBRARY
+#include <arch/board/board.h>
+
+#include "chip.h"
+#include "up_arch.h"
+#include "up_internal.h"
+#include "tiva_gpio.h"
+#include "dk-tm4c129x.h"
 
 /****************************************************************************
- * Pre-Processor Definitions
+ * Preprocessor Definitions
+ ****************************************************************************/
+
+/* CONFIG_DEBUG_LEDS enables debug output from this file (needs CONFIG_DEBUG
+ * with CONFIG_DEBUG_VERBOSE too)
+ */
+
+#ifdef CONFIG_DEBUG_LEDS
+#  define leddbg  lldbg
+#  define ledvdbg llvdbg
+#else
+#  define leddbg(x...)
+#  define ledvdbg(x...)
+#endif
+
+/* Dump GPIO registers */
+
+#ifdef CONFIG_DEBUG_LEDS
+#  define led_dumpgpio(m) tiva_dumpgpio(LED_GPIO, m)
+#else
+#  define led_dumpgpio(m)
+#endif
+
+/****************************************************************************
+ * Private Data
+ ****************************************************************************/
+
+/****************************************************************************
+ * Private Functions
  ****************************************************************************/
 
 /****************************************************************************
@@ -54,32 +87,36 @@
  ****************************************************************************/
 
 /****************************************************************************
- * Name: nsh_archinitialize
+ * Name: tm4c_ledinit
  *
  * Description:
- *   Perform architecture specific initialization
- *
- *   CONFIG_NSH_ARCHINIT=y :
- *     Called from the NSH library
- *
- *   CONFIG_BOARD_INITIALIZE=y, CONFIG_NSH_LIBRARY=y, &&
- *   CONFIG_NSH_ARCHINIT=n :
- *     Called from board_initialize().
+ *   Called to initialize the on-board LEDs.
  *
  ****************************************************************************/
 
-int nsh_archinitialize(void)
+#ifdef CONFIG_ARCH_LEDS
+void tm4c_ledinit(void)
 {
-#if defined(CONFIG_SENSORS_ADXL345)
-  int ret;
+  leddbg("Initializing\n");
 
-  ret = adxl345_archinitialize(0);
-  if (ret < 0)
-    {
-      dbg("ERROR: adxl345_archinitialize failed: %d\n", ret);
-    }
-#endif
-  return OK;
+  led_dumpgpio("tm4c_ledinit before tiva_configgpio()");
+  led_dumpgpio("tm4c_ledinit after tiva_configgpio()");
 }
 
-#endif /* CONFIG_NSH_LIBRARY */
+/****************************************************************************
+ * Name: board_led_on
+ ****************************************************************************/
+
+void board_led_on(int led)
+{
+}
+
+/****************************************************************************
+ * Name: board_led_off
+ ****************************************************************************/
+
+void board_led_off(int led)
+{
+}
+
+#endif /* CONFIG_ARCH_LEDS */

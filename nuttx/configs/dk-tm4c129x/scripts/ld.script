@@ -1,7 +1,7 @@
 /****************************************************************************
- * config/stm32f4discovery/src/kl_nsh.c
+ * configs/dk-tm4c129x/scripts/ld.script
  *
- *   Copyright (C) 2013 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2014 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,53 +33,83 @@
  *
  ****************************************************************************/
 
-/****************************************************************************
- * Included Files
- ****************************************************************************/
+/* The TM4C129XNCZAD has 1024Kib of FLASH beginning at address 0x0000:0000 and
+ * 256Kib of SRAM beginning at 0x2000:0000.
+ */
 
-#include <nuttx/config.h>
-
-#include <sys/types.h>
-#include <stdio.h>
-#include <syslog.h>
-
-#ifdef CONFIG_NSH_LIBRARY
-
-/****************************************************************************
- * Pre-Processor Definitions
- ****************************************************************************/
-
-/****************************************************************************
- * Public Functions
- ****************************************************************************/
-
-/****************************************************************************
- * Name: nsh_archinitialize
- *
- * Description:
- *   Perform architecture specific initialization
- *
- *   CONFIG_NSH_ARCHINIT=y :
- *     Called from the NSH library
- *
- *   CONFIG_BOARD_INITIALIZE=y, CONFIG_NSH_LIBRARY=y, &&
- *   CONFIG_NSH_ARCHINIT=n :
- *     Called from board_initialize().
- *
- ****************************************************************************/
-
-int nsh_archinitialize(void)
+MEMORY
 {
-#if defined(CONFIG_SENSORS_ADXL345)
-  int ret;
-
-  ret = adxl345_archinitialize(0);
-  if (ret < 0)
-    {
-      dbg("ERROR: adxl345_archinitialize failed: %d\n", ret);
-    }
-#endif
-  return OK;
+    flash (rx) : ORIGIN = 0x00000000, LENGTH = 1M
+    sram (rwx) : ORIGIN = 0x20000000, LENGTH = 256K
 }
 
-#endif /* CONFIG_NSH_LIBRARY */
+OUTPUT_ARCH(arm)
+ENTRY(_stext)
+
+SECTIONS
+{
+	.text : {
+		_stext = ABSOLUTE(.);
+		*(.vectors)
+		*(.text .text.*)
+		*(.fixup)
+		*(.gnu.warning)
+		*(.rodata .rodata.*)
+		*(.gnu.linkonce.t.*)
+		*(.glue_7)
+		*(.glue_7t)
+		*(.got)
+		*(.gcc_except_table)
+		*(.gnu.linkonce.r.*)
+		_etext = ABSOLUTE(.);
+	} > flash
+
+	.init_section : {
+		_sinit = ABSOLUTE(.);
+		*(.init_array .init_array.*)
+		_einit = ABSOLUTE(.);
+	} > flash
+
+	.ARM.extab : {
+		*(.ARM.extab*)
+	} > flash
+
+	__exidx_start = ABSOLUTE(.);
+	.ARM.exidx : {
+		*(.ARM.exidx*)
+	} > flash
+	__exidx_end = ABSOLUTE(.);
+
+	_eronly = ABSOLUTE(.);
+
+	.data : {
+		_sdata = ABSOLUTE(.);
+		*(.data .data.*)
+		*(.gnu.linkonce.d.*)
+		CONSTRUCTORS
+		_edata = ABSOLUTE(.);
+	} > sram AT > flash
+
+	.bss : {
+		_sbss = ABSOLUTE(.);
+		*(.bss .bss.*)
+		*(.gnu.linkonce.b.*)
+		*(COMMON)
+		_ebss = ABSOLUTE(.);
+	} > sram
+
+	/* Stabs debugging sections. */
+
+	.stab 0 : { *(.stab) }
+	.stabstr 0 : { *(.stabstr) }
+	.stab.excl 0 : { *(.stab.excl) }
+	.stab.exclstr 0 : { *(.stab.exclstr) }
+	.stab.index 0 : { *(.stab.index) }
+	.stab.indexstr 0 : { *(.stab.indexstr) }
+	.comment 0 : { *(.comment) }
+	.debug_abbrev 0 : { *(.debug_abbrev) }
+	.debug_info 0 : { *(.debug_info) }
+	.debug_line 0 : { *(.debug_line) }
+	.debug_pubnames 0 : { *(.debug_pubnames) }
+	.debug_aranges 0 : { *(.debug_aranges) }
+}
