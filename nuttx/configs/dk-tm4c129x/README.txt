@@ -322,10 +322,57 @@ NXFLAT Toolchain
   8. Edit setenv.h, if necessary, so that the PATH variable includes
      the path to the newly builtNXFLAT binaries.
 
-LEDs
-====
+Buttons and LEDs
+================
 
-  [To be provided]
+  Buttons
+  -------
+  There are three push buttons on the board.
+
+    --- ------------ -----------------
+    Pin Pin Function Jumper
+    --- ------------ -----------------
+    PP1 Select SW4   J37 pins 1 and 2
+    PN3 Up SW2       J37 pins 3 and 4
+    PE5 Down SW3     J37 pins 5 and 6
+    --- ------------ -----------------
+
+  LEDs
+  ----
+  The development board has one tri-color user LED.
+
+    --- ------------ -----------------
+    Pin Pin Function Jumper
+    --- ------------ -----------------
+    PN5 Red LED      J36 pins 1 and 2
+    PQ4 Blue LED     J36 pins 3 and 4
+    PQ7 Green LED    J36 pins 5 and 6
+    --- ------------ -----------------
+
+  If CONFIG_ARCH_LEDS is not defined, this LED is not used by the NuttX
+  logic.  APIs are provided to support application control of the LED in
+  that case (in include/board.h and src/tm4c_userleds.c).
+
+  If CONFIG_ARCH_LEDS is defined then the usage of the LEDs by Nuttx is
+  defined in include/board.h and src/tm4c_autoleds.c. The LEDs are used to
+  encode OS-related events as follows:
+
+    SYMBOL                Meaning                     LED state
+    -------------------  -----------------------  -------- --------
+    LED_STARTED          NuttX has been started     Blue
+    LED_HEAPALLOCATE     Heap has been allocated    (No change)
+    LED_IRQSENABLED      Interrupts enabled         (No change)
+    LED_STACKCREATED     Idle stack created         Green
+    LED_INIRQ            In an interrupt            (No change)
+    LED_SIGNAL           In a signal handler        (No change)
+    LED_ASSERTION        An assertion failed        (No change)
+    LED_PANIC            The system has crashed     Blinking OFF/RED
+    LED_IDLE             MCU is is sleep mode       (Not used)
+
+  Thus if the LED is GREEN then NuttX has successfully booted and is,
+  apparently, running normally.  If the LED is flashing OFF/RED at
+  approximately 2Hz, then a fatal error has been detected and the
+  system has halted.
 
 Serial Console
 ==============
@@ -401,25 +448,12 @@ DK-TM4129X Configuration Options
        the delay actually is 100 seconds.
 
   There are configurations for disabling support for interrupts GPIO ports.
-  GPIOJ must be disabled because it does not exist on the TM4C129x.
-  Additional interrupt support can be disabled if desired to reduce memory
-  footprint.
+  Only GPIOP and GPIOQ pins can be used as interrupting sources on the
+  TM4C129x.  Additional interrupt support can be disabled if desired to
+  reduce memory footprint.
 
-    CONFIG_TIVA_DISABLE_GPIOA_IRQS=n
-    CONFIG_TIVA_DISABLE_GPIOB_IRQS=n
-    CONFIG_TIVA_DISABLE_GPIOC_IRQS=n
-    CONFIG_TIVA_DISABLE_GPIOD_IRQS=n
-    CONFIG_TIVA_DISABLE_GPIOE_IRQS=n
-    CONFIG_TIVA_DISABLE_GPIOF_IRQS=n
-    CONFIG_TIVA_DISABLE_GPIOG_IRQS=n
-    CONFIG_TIVA_DISABLE_GPIOH_IRQS=n
-    CONFIG_TIVA_DISABLE_GPIOJ_IRQS=n
-    CONFIG_TIVA_DISABLE_GPIOK_IRQS=n
-    CONFIG_TIVA_DISABLE_GPIOL_IRQS=n
-    CONFIG_TIVA_DISABLE_GPIOM_IRQS=n
-    CONFIG_TIVA_DISABLE_GPION_IRQS=n
-    CONFIG_TIVA_DISABLE_GPIOP_IRQS=n
-    CONFIG_TIVA_DISABLE_GPIOQ_IRQS=n
+    CONFIG_TIVA_GPIOP_IRQS=y
+    CONFIG_TIVA_GPIOQ_IRQS=y
 
   TM4C129x specific device driver settings
 
