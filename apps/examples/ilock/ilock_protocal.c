@@ -232,7 +232,7 @@ errout:
   return ret;
 }
 
-int protocal_send_log(int sockfd, int32_t serial_no, bool *log_group, uint8_t *log_pubkey, uint8_t flag, uint8_t tm[6])
+int protocal_send_log(int sockfd, int32_t serial_no, bool *log_group, uint8_t *log_pubkey, uint8_t type, uint8_t tm[6])
 {
   int ret = -EIO;
   int i;
@@ -256,7 +256,7 @@ int protocal_send_log(int sockfd, int32_t serial_no, bool *log_group, uint8_t *l
     }
 
   memcpy(p.body.log_ex_category.log_pubkey, log_pubkey, CONFIG_PUBKEY_SIZE);
-  p.body.log_ex_category.flag = flag;
+  p.body.log_ex_category.flag = type;
   memcpy(p.body.log_ex_category.log_time, tm, 6);
 
   nsent = send(sockfd, &p, LOG_CATEGORY_SEND_SIZE, 0);

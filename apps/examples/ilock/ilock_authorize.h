@@ -77,6 +77,7 @@ EXTERN bool auth_this_time(uint8_t *pubkey);
 EXTERN bool auth_need_more(void);
 EXTERN void auth_send_log_to_disk_or_net(int sockfd, uint8_t log_type, uint8_t *pubkey);
 EXTERN void auth_send_log_to_disk_or_net_by_unlock_type(int sockfd, uint8_t *pubkey);
+EXTERN void auth_send_history_log_to_net(int sockfd);
 EXTERN bool auth_if_half_unlock(void);
 
 #undef EXTERN

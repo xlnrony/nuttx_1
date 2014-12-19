@@ -196,7 +196,7 @@ in_addr_t netlib_formataddr(FAR const char *cp)
   return HTONL(result);
 }
 
-void send_alert_log_to_disk_or_net(int sockfd, uint8_t alert_type)
+void send_alert_to_disk_or_net(int sockfd, uint8_t alert_type)
 {
   int ret;
   struct alert_file_block_s alert_file_block;
@@ -222,7 +222,7 @@ void send_alert_log_to_disk_or_net(int sockfd, uint8_t alert_type)
           alert_file_block.alert_sn = config->serial_no;
           alert_file_block.alert_type = alert_type;
 
-          sprintf(file_path, "/mnt/sd/alt/%8x.alt",clock_systimer());
+          sprintf(file_path, CONFIG_ALT_FILE_PATH"/%8x.alt",clock_systimer());
 
           ret = filewrite(file_path, 0, &alert_file_block, sizeof(struct alert_file_block_s));
           if (ret < 0)
@@ -234,7 +234,6 @@ void send_alert_log_to_disk_or_net(int sockfd, uint8_t alert_type)
         }
     }
 }
-
 
 bool illegal_unlock_timeout(void)
 {
@@ -294,7 +293,7 @@ void unlock_step_in_task(void)
               if (check_unlock_delay0 == 0)
                 {
                   g_unlock_step = 3;
-                  send_alert_log_to_disk_or_net(g_sockfd, ALERT_LOCK);
+                  send_alert_to_disk_or_net(g_sockfd, ALERT_LOCK);
                   // shock_alert_enabled = 1;
                   led3_op(INDC_ALWAYS, IND_BLUE, SEC2TICK(3), 0);
                 }
@@ -318,7 +317,7 @@ void unlock_step_in_task(void)
       else
         {
           unlock_time_out = CONFIG_UNLOCK_SECOND_TIME_OUT;
-          send_alert_log_to_disk_or_net(g_sockfd, ALERT_NOLOCK_TIME_OUT);
+          send_alert_to_disk_or_net(g_sockfd, ALERT_NOLOCK_TIME_OUT);
           buzzer_op(INDC_ALWAYS, IND_ON, SEC2TICK(3), 0);
           led2_op(INDC_ALWAYS, IND_RED, SEC2TICK(3), 0);        // 没关门超时
         }
@@ -332,7 +331,7 @@ void unlock_step_in_task(void)
                   adc_photo_resistor_op() >= config->photo_resistor_threshold)
                 {
                   g_unlock_step = 3;
-                  send_alert_log_to_disk_or_net(g_sockfd, ALERT_LOCK);
+                  send_alert_to_disk_or_net(g_sockfd, ALERT_LOCK);
                   // shock_alert_enabled = 1;
                   led3_op(INDC_ALWAYS, IND_BLUE, SEC2TICK(3), 0);       // 门阀扭闭通知
                 }
@@ -354,7 +353,7 @@ void unlock_step_in_task(void)
           flag = !closesw_read();
           if (flag)
             {
-				send_alert_log_to_disk_or_net(g_sockfd, ALERT_CLOSE_SWITCH);			
+              send_alert_to_disk_or_net(g_sockfd, ALERT_CLOSE_SWITCH);
               led1_op(INDC_TWINKLE, IND_RED, SEC2TICK(3), MSEC2TICK(200));
               buzzer_op(INDC_TWINKLE, IND_ON, SEC2TICK(3), MSEC2TICK(200));
             }
@@ -365,7 +364,7 @@ void unlock_step_in_task(void)
           flag = adc_photo_resistor_op() < config->photo_resistor_threshold;
           if (flag)
             {
-				send_alert_log_to_disk_or_net(g_sockfd, ALERT_PHOTO_RESISTOR);			
+              send_alert_to_disk_or_net(g_sockfd, ALERT_PHOTO_RESISTOR);
               led1_op(INDC_TWINKLE, IND_RED, SEC2TICK(3), MSEC2TICK(200));
               buzzer_op(INDC_TWINKLE, IND_ON, SEC2TICK(3), MSEC2TICK(200));
             }
@@ -376,7 +375,7 @@ void unlock_step_in_task(void)
           flag = adc_infra_red_op() > config->infra_red_threshold;
           if (flag)
             {
-				send_alert_log_to_disk_or_net(g_sockfd, ALERT_INFRA_RED);			
+              send_alert_to_disk_or_net(g_sockfd, ALERT_INFRA_RED);
               led1_op(INDC_TWINKLE, IND_RED, SEC2TICK(3), MSEC2TICK(200));
               buzzer_op(INDC_TWINKLE, IND_ON, SEC2TICK(3), MSEC2TICK(200));
             }
@@ -387,7 +386,7 @@ void unlock_step_in_task(void)
           flag = adc_shock_resistor_op() > config->shock_resistor_threshold;
           if (flag)
             {
-				send_alert_log_to_disk_or_net(g_sockfd, ALERT_SHOCK_RESISTOR);			
+              send_alert_to_disk_or_net(g_sockfd, ALERT_SHOCK_RESISTOR);
               led3_op(INDC_TWINKLE, IND_RED, SEC2TICK(5), MSEC2TICK(200));
               buzzer_op(INDC_TWINKLE, IND_ON, SEC2TICK(5), MSEC2TICK(200));
             }

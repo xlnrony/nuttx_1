@@ -42,6 +42,11 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
+#include <errno.h>
+
+#include <nuttx/fs/fs.h>
+#include <nuttx/fs/dirent.h>
+
 #include <nuttx/clock.h>
 #include <nuttx/gpio/indicator.h>
 
@@ -51,6 +56,7 @@
 #include "led_lib.h"
 #include "config_lib.h"
 #include "file_lib.h"
+#include "ilock_debug.h"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -123,7 +129,7 @@ void auth_send_log_to_disk_or_net(int sockfd, uint8_t log_type, uint8_t *pubkey)
           memcpy(log_file_block.log_pubkey, pubkey, CONFIG_PUBKEY_SIZE);
           log_file_block.type = log_type;
 
-          sprintf(file_path, "/mnt/sd/log/%8x.log",clock_systimer());
+          sprintf(file_path, CONFIG_LOG_FILE_PATH"/%8x.log",clock_systimer());
 
           ret = filewrite(file_path, 0, &log_file_block, sizeof(struct log_file_block_s));
           if (ret < 0)
@@ -133,6 +139,53 @@ void auth_send_log_to_disk_or_net(int sockfd, uint8_t log_type, uint8_t *pubkey)
               led1_op(INDC_ALWAYS, IND_RED, SEC2TICK(3), MSEC2TICK(200));
             }
         }
+    }
+}
+
+void auth_send_history_log_to_net(int sockfd)
+{
+  int ret;
+  struct log_file_block_s log_file_block;
+  DIR *dirp;
+  struct dirent *entryp;
+  char file_path[25];
+
+  dirp = opendir(CONFIG_LOG_FILE_PATH);
+
+  if (!dirp)
+    {
+      ilockdbg("send_history_log_to_net: opendir %s failed: %d\n", CONFIG_LOG_FILE_PATH, -errno);
+    }
+  else
+    {
+      do
+        {
+          entryp = readdir(dirp);
+          if (entryp && DIRENT_ISFILE(entryp->d_type))
+            {
+              sprintf(file_path, CONFIG_LOG_FILE_PATH"/%s", entryp->d_name);
+
+              ret = fileread(file_path, 0, &log_file_block, sizeof (struct log_file_block_s));
+              if (ret == sizeof (struct log_file_block_s))
+                {
+                  ret =  protocal_send_log(sockfd, log_file_block.log_sn, log_file_block.log_group,
+                                           log_file_block.log_pubkey, log_file_block.type, log_file_block.time);
+                  if (ret == OK)
+                    {
+                      unlink(file_path);
+                    }
+                }
+              else
+                {
+                  led1_op(INDC_TWINKLE, IND_RED, SEC2TICK(3), MSEC2TICK(200));
+                  led1_op(INDC_TWINKLE, IND_RED, SEC2TICK(3), MSEC2TICK(200));
+                  led1_op(INDC_ALWAYS, IND_RED, SEC2TICK(3), MSEC2TICK(200));
+                }
+            }
+        }
+      while(entryp);
+
+      closedir(dirp);
     }
 }
 

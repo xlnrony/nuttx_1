@@ -131,4 +131,16 @@ config FIRMWARE_BIN_PATH
 	---help---
 		Firmware bin path. Default: "/mnt/sd/firmware.bin"
 		
+config LOG_FILE_PATH
+	string "Log file path"
+	default "/mnt/sd/log"
+	---help---
+		Log file path. Default: "/mnt/sd/log"
+
+config ALT_FILE_PATH
+	string "Alert file path"
+	default "/mnt/sd/alt"
+	---help---
+		Alert file path. Default: "/mnt/sd/alt"
+			
 endif
