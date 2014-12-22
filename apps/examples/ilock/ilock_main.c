@@ -135,16 +135,13 @@
 #  define CONFIG_NET_TASK_STACKSIZE 4096
 #endif
 
+#ifndef CONFIG_LOG_TASK_STACKSIZE
+#  define CONFIG_LOG_TASK_STACKSIZE 4096
+#endif
+
 /****************************************************************************
  * Private Types
  ****************************************************************************/
-
-struct alert_file_block_s
-{
-  uint32_t alert_sn;
-  uint8_t alert_type;
-  uint8_t time[6];
-};
 
 /****************************************************************************
  * Private Data
@@ -156,7 +153,7 @@ static bool g_shock_resistor_sampled = false;
 static bool g_infra_red_sampled = false;
 static int32_t g_min_infra_red;
 static int32_t g_max_infra_red;
-static int g_sockfd;
+static int g_sockfd = ERROR;
 
 /****************************************************************************
  * Public Data
@@ -194,45 +191,6 @@ in_addr_t netlib_formataddr(FAR const char *cp)
   result <<= 8;
   result |= d;
   return HTONL(result);
-}
-
-void send_alert_to_disk_or_net(int sockfd, uint8_t alert_type)
-{
-  int ret;
-  struct alert_file_block_s alert_file_block;
-  struct timespec ts;
-  struct tm *tm;
-  char file_path[25];
-
-  if (alert_type != 0)
-    {
-      clock_gettime(CLOCK_REALTIME, &ts);
-      tm = gmtime(&ts.tv_sec);
-
-      alert_file_block.time[0] = tm->tm_year;
-      alert_file_block.time[1] = tm->tm_mon;
-      alert_file_block.time[2] = tm->tm_mday;
-      alert_file_block.time[3] = tm->tm_hour;
-      alert_file_block.time[4] = tm->tm_min;
-      alert_file_block.time[5] = tm->tm_sec;
-
-      ret = protocal_send_alert(sockfd, config->serial_no, alert_type, alert_file_block.time);
-      if (ret < 0)
-        {
-          alert_file_block.alert_sn = config->serial_no;
-          alert_file_block.alert_type = alert_type;
-
-          sprintf(file_path, CONFIG_ALT_FILE_PATH"/%8x.alt",clock_systimer());
-
-          ret = filewrite(file_path, 0, &alert_file_block, sizeof(struct alert_file_block_s));
-          if (ret < 0)
-            {
-              led1_op(INDC_TWINKLE, IND_RED, SEC2TICK(3), MSEC2TICK(200));
-              led1_op(INDC_TWINKLE, IND_RED, SEC2TICK(3), MSEC2TICK(200));
-              led1_op(INDC_ALWAYS, IND_RED, SEC2TICK(3), MSEC2TICK(200));
-            }
-        }
-    }
 }
 
 bool illegal_unlock_timeout(void)
@@ -293,7 +251,7 @@ void unlock_step_in_task(void)
               if (check_unlock_delay0 == 0)
                 {
                   g_unlock_step = 3;
-                  send_alert_to_disk_or_net(g_sockfd, ALERT_LOCK);
+                  auth_send_alert_to_disk_or_net(g_sockfd, ALERT_LOCK);
                   // shock_alert_enabled = 1;
                   led3_op(INDC_ALWAYS, IND_BLUE, SEC2TICK(3), 0);
                 }
@@ -317,7 +275,7 @@ void unlock_step_in_task(void)
       else
         {
           unlock_time_out = CONFIG_UNLOCK_SECOND_TIME_OUT;
-          send_alert_to_disk_or_net(g_sockfd, ALERT_NOLOCK_TIME_OUT);
+          auth_send_alert_to_disk_or_net(g_sockfd, ALERT_NOLOCK_TIME_OUT);
           buzzer_op(INDC_ALWAYS, IND_ON, SEC2TICK(3), 0);
           led2_op(INDC_ALWAYS, IND_RED, SEC2TICK(3), 0);        // 没关门超时
         }
@@ -331,7 +289,7 @@ void unlock_step_in_task(void)
                   adc_photo_resistor_op() >= config->photo_resistor_threshold)
                 {
                   g_unlock_step = 3;
-                  send_alert_to_disk_or_net(g_sockfd, ALERT_LOCK);
+                  auth_send_alert_to_disk_or_net(g_sockfd, ALERT_LOCK);
                   // shock_alert_enabled = 1;
                   led3_op(INDC_ALWAYS, IND_BLUE, SEC2TICK(3), 0);       // 门阀扭闭通知
                 }
@@ -353,7 +311,7 @@ void unlock_step_in_task(void)
           flag = !closesw_read();
           if (flag)
             {
-              send_alert_to_disk_or_net(g_sockfd, ALERT_CLOSE_SWITCH);
+              auth_send_alert_to_disk_or_net(g_sockfd, ALERT_CLOSE_SWITCH);
               led1_op(INDC_TWINKLE, IND_RED, SEC2TICK(3), MSEC2TICK(200));
               buzzer_op(INDC_TWINKLE, IND_ON, SEC2TICK(3), MSEC2TICK(200));
             }
@@ -364,7 +322,7 @@ void unlock_step_in_task(void)
           flag = adc_photo_resistor_op() < config->photo_resistor_threshold;
           if (flag)
             {
-              send_alert_to_disk_or_net(g_sockfd, ALERT_PHOTO_RESISTOR);
+              auth_send_alert_to_disk_or_net(g_sockfd, ALERT_PHOTO_RESISTOR);
               led1_op(INDC_TWINKLE, IND_RED, SEC2TICK(3), MSEC2TICK(200));
               buzzer_op(INDC_TWINKLE, IND_ON, SEC2TICK(3), MSEC2TICK(200));
             }
@@ -375,7 +333,7 @@ void unlock_step_in_task(void)
           flag = adc_infra_red_op() > config->infra_red_threshold;
           if (flag)
             {
-              send_alert_to_disk_or_net(g_sockfd, ALERT_INFRA_RED);
+              auth_send_alert_to_disk_or_net(g_sockfd, ALERT_INFRA_RED);
               led1_op(INDC_TWINKLE, IND_RED, SEC2TICK(3), MSEC2TICK(200));
               buzzer_op(INDC_TWINKLE, IND_ON, SEC2TICK(3), MSEC2TICK(200));
             }
@@ -386,7 +344,7 @@ void unlock_step_in_task(void)
           flag = adc_shock_resistor_op() > config->shock_resistor_threshold;
           if (flag)
             {
-              send_alert_to_disk_or_net(g_sockfd, ALERT_SHOCK_RESISTOR);
+              auth_send_alert_to_disk_or_net(g_sockfd, ALERT_SHOCK_RESISTOR);
               led3_op(INDC_TWINKLE, IND_RED, SEC2TICK(5), MSEC2TICK(200));
               buzzer_op(INDC_TWINKLE, IND_ON, SEC2TICK(5), MSEC2TICK(200));
             }
@@ -424,17 +382,18 @@ void act_magnet_in_task(void)
   if (g_magnet_delay > 0)
     {
       g_magnet_delay--;
-    }
-  else
-    {
-      magnet_write(true);
+      if (g_magnet_delay == 0)
+        {
+          magnet_write(true);
+        }
     }
 }
 
 void heart_beat_in_task(void)
 {
   static uint32_t last_heart_beat_tick = 0;
-  if (ABS(clock_systimer() - last_heart_beat_tick) > SEC2TICK(10))
+	
+  if (g_sockfd >=0 && ABS(clock_systimer() - last_heart_beat_tick) > SEC2TICK(10))
     {
       last_heart_beat_tick = clock_systimer();
       (void)protocal_send_heart_beat(g_sockfd);
@@ -839,9 +798,20 @@ static int net_task(int argc, char *argv[])
 
 errout_with_socket:
       close(g_sockfd);
+errout_no_socket:			
     }
 errout:
   return ret;
+}
+
+static int log_task(int argc, char *argv[])
+{
+  while(true)
+    {
+      sleep(60);
+      auth_send_history_log_to_net(g_sockfd);
+      auth_send_history_alert_to_net(g_sockfd);
+    }
 }
 
 /****************************************************************************
@@ -854,6 +824,10 @@ int ilock_main(int argc, char *argv[])
   pid_t scan_pid;
   pid_t unlock_pid;
   pid_t net_pid;
+  pid_t log_pid;
+
+  mkdir(CONFIG_ALT_FILE_PATH, 0777);
+  mkdir(CONFIG_LOG_FILE_PATH, 0777);
 
   ret = led_init();
   if (ret < 0)
@@ -886,19 +860,25 @@ int ilock_main(int argc, char *argv[])
   scan_pid = task_create("iLockScan", 50, CONFIG_SCAN_TASK_STACKSIZE, scan_task, NULL);
   if (scan_pid < 0)
     {
-      ilockdbg("ilock_main: iLockScan task_create failed: %d\n", errno);
+      ilockdbg("ilock_main: iLockScan task_create failed: %d\n", -errno);
     }
 
   unlock_pid = task_create("iLockUnlock", 50, CONFIG_UNLOCK_TASK_STACKSIZE, unlock_task, NULL);
   if (unlock_pid < 0)
     {
-      ilockdbg("ilock_main: iLockUnlock task_create failed: %d\n", errno);
+      ilockdbg("ilock_main: iLockUnlock task_create failed: %d\n", -errno);
     }
 
   net_pid = task_create("iLockNet", 50, CONFIG_NET_TASK_STACKSIZE, net_task, NULL);
   if (net_pid < 0)
     {
-      ilockdbg("ilock_main: iLockUnlock task_create failed: %d\n", errno);
+      ilockdbg("ilock_main: iLockNet task_create failed: %d\n", -errno);
+    }
+
+  log_pid = task_create("iLockLog", 50, CONFIG_LOG_TASK_STACKSIZE, log_task, NULL);
+  if (log_pid < 0)
+    {
+      ilockdbg("ilock_main: iLockLog task_create failed: %d\n", -errno);
     }
 
   printf("Press any key to exit ......\n");
@@ -912,6 +892,16 @@ int ilock_main(int argc, char *argv[])
   if (unlock_pid > 0)
     {
       task_delete(unlock_pid);
+    }
+
+  if (net_pid > 0)
+    {
+      task_delete(net_pid);
+    }
+
+  if (log_pid > 0)
+    {
+      task_delete(log_pid);
     }
 
   config_deinit();

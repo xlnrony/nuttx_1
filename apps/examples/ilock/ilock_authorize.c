@@ -66,12 +66,19 @@
  * Private Types
  ****************************************************************************/
 
+struct alert_file_block_s
+{
+  uint32_t alert_sn;
+  uint8_t alert_type;
+  uint8_t time[6];
+};
+
 struct log_file_block_s
 {
   int32_t log_sn;
   uint8_t log_group[CONFIG_GROUP_SIZE];
   uint8_t log_pubkey[CONFIG_PUBKEY_SIZE];
-  uint8_t type;
+  uint8_t log_type;
   uint8_t time[6];
 };
 
@@ -82,7 +89,6 @@ struct log_file_block_s
 static uint32_t g_last_time = 0;
 static bool g_group[CONFIG_GROUP_SIZE] = { true };
 static bool g_check[CONFIG_GROUP_SIZE] = { false };
-
 static uint8_t g_unlock_type = LOG_UNLOCK;
 
 /****************************************************************************
@@ -96,6 +102,92 @@ static uint8_t g_unlock_type = LOG_UNLOCK;
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
+
+void auth_send_alert_to_disk_or_net(int sockfd, uint8_t alert_type)
+{
+  int ret;
+  struct alert_file_block_s alert_file_block;
+  struct timespec ts;
+  struct tm *tm;
+  char file_path[25];
+
+  if (alert_type != 0)
+    {
+      clock_gettime(CLOCK_REALTIME, &ts);
+      tm = gmtime(&ts.tv_sec);
+
+      alert_file_block.time[0] = tm->tm_year;
+      alert_file_block.time[1] = tm->tm_mon;
+      alert_file_block.time[2] = tm->tm_mday;
+      alert_file_block.time[3] = tm->tm_hour;
+      alert_file_block.time[4] = tm->tm_min;
+      alert_file_block.time[5] = tm->tm_sec;
+
+      ret = protocal_send_alert(sockfd, config->serial_no, alert_type, alert_file_block.time);
+      if (ret < 0)
+        {
+          alert_file_block.alert_sn = config->serial_no;
+          alert_file_block.alert_type = alert_type;
+
+          sprintf(file_path, CONFIG_ALT_FILE_PATH"/%8x.alt",clock_systimer());
+
+          ret = filewrite(file_path, 0, &alert_file_block, sizeof(struct alert_file_block_s));
+          if (ret < 0)
+            {
+              led1_op(INDC_TWINKLE, IND_RED, SEC2TICK(3), MSEC2TICK(200));
+              led1_op(INDC_TWINKLE, IND_RED, SEC2TICK(3), MSEC2TICK(200));
+              led1_op(INDC_ALWAYS, IND_RED, SEC2TICK(3), MSEC2TICK(200));
+            }
+        }
+    }
+}
+
+void auth_send_history_alert_to_net(int sockfd)
+{
+  int ret;
+  struct alert_file_block_s alert_file_block;
+  DIR *dirp;
+  struct dirent *entryp;
+  char file_path[25];
+
+  dirp = opendir(CONFIG_ALT_FILE_PATH);
+
+  if (!dirp)
+    {
+      ilockdbg("auth_send_history_alert_to_net: opendir %s failed: %d\n", CONFIG_ALT_FILE_PATH, -errno);
+    }
+  else
+    {
+      do
+        {
+          entryp = readdir(dirp);
+          if (entryp && DIRENT_ISFILE(entryp->d_type))
+            {
+              sprintf(file_path, CONFIG_ALT_FILE_PATH"/%s", entryp->d_name);
+
+              ret = fileread(file_path, 0, &alert_file_block, sizeof (struct alert_file_block_s));
+              if (ret == sizeof (struct alert_file_block_s))
+                {
+                  ret =  protocal_send_alert(sockfd, alert_file_block.alert_sn, alert_file_block.alert_type,
+                                             alert_file_block.time);
+                  if (ret == OK)
+                    {
+                      unlink(file_path);
+                    }
+                }
+              else
+                {
+                  led1_op(INDC_TWINKLE, IND_RED, SEC2TICK(3), MSEC2TICK(200));
+                  led1_op(INDC_TWINKLE, IND_RED, SEC2TICK(3), MSEC2TICK(200));
+                  led1_op(INDC_ALWAYS, IND_RED, SEC2TICK(3), MSEC2TICK(200));
+                }
+            }
+        }
+      while(entryp);
+
+      closedir(dirp);
+    }
+}
 
 void auth_send_log_to_disk_or_net(int sockfd, uint8_t log_type, uint8_t *pubkey)
 {
@@ -127,7 +219,7 @@ void auth_send_log_to_disk_or_net(int sockfd, uint8_t log_type, uint8_t *pubkey)
               log_file_block.log_group[i] = g_group[i];
             }
           memcpy(log_file_block.log_pubkey, pubkey, CONFIG_PUBKEY_SIZE);
-          log_file_block.type = log_type;
+          log_file_block.log_type = log_type;
 
           sprintf(file_path, CONFIG_LOG_FILE_PATH"/%8x.log",clock_systimer());
 
@@ -154,7 +246,7 @@ void auth_send_history_log_to_net(int sockfd)
 
   if (!dirp)
     {
-      ilockdbg("send_history_log_to_net: opendir %s failed: %d\n", CONFIG_LOG_FILE_PATH, -errno);
+      ilockdbg("auth_send_history_log_to_net: opendir %s failed: %d\n", CONFIG_LOG_FILE_PATH, -errno);
     }
   else
     {
@@ -169,7 +261,7 @@ void auth_send_history_log_to_net(int sockfd)
               if (ret == sizeof (struct log_file_block_s))
                 {
                   ret =  protocal_send_log(sockfd, log_file_block.log_sn, log_file_block.log_group,
-                                           log_file_block.log_pubkey, log_file_block.type, log_file_block.time);
+                                           log_file_block.log_pubkey, log_file_block.log_type, log_file_block.time);
                   if (ret == OK)
                     {
                       unlink(file_path);
