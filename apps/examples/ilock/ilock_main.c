@@ -153,11 +153,13 @@ static bool g_shock_resistor_sampled = false;
 static bool g_infra_red_sampled = false;
 static int32_t g_min_infra_red;
 static int32_t g_max_infra_red;
-static int g_sockfd = ERROR;
 
 /****************************************************************************
  * Public Data
  ****************************************************************************/
+
+int g_sockfd = ERROR;
+bool g_connected = false;
 
 /****************************************************************************
  * Public Function Prototypes
@@ -232,6 +234,7 @@ void unlock_step_in_task(void)
                   unlock_time_out = CONFIG_UNLOCK_FIRST_TIME_OUT;
                   led1_op(INDC_ALWAYS, IND_GREEN, SEC2TICK(3), 0);
                   led2_op(INDC_ALWAYS, IND_GREEN, SEC2TICK(3), 0);
+		           ilockdbg("unlock_step_in_task: door opened!");									
                 }
             }
           else
@@ -251,9 +254,10 @@ void unlock_step_in_task(void)
               if (check_unlock_delay0 == 0)
                 {
                   g_unlock_step = 3;
-                  auth_send_alert_to_disk_or_net(g_sockfd, ALERT_LOCK);
+                  auth_send_alert_to_disk_or_net(ALERT_LOCK);
                   // shock_alert_enabled = 1;
                   led3_op(INDC_ALWAYS, IND_BLUE, SEC2TICK(3), 0);
+		           ilockdbg("unlock_step_in_task: door closing and magnet released!");
                 }
             }
           else
@@ -275,9 +279,10 @@ void unlock_step_in_task(void)
       else
         {
           unlock_time_out = CONFIG_UNLOCK_SECOND_TIME_OUT;
-          auth_send_alert_to_disk_or_net(g_sockfd, ALERT_NOLOCK_TIME_OUT);
+          auth_send_alert_to_disk_or_net(ALERT_NOLOCK_TIME_OUT);
           buzzer_op(INDC_ALWAYS, IND_ON, SEC2TICK(3), 0);
           led2_op(INDC_ALWAYS, IND_RED, SEC2TICK(3), 0);        // 没关门超时
+          ilockdbg("unlock_step_in_task: door opened time out!");
         }
       if (adc_infra_red_op() < config->infra_red_threshold)
         {
@@ -289,9 +294,10 @@ void unlock_step_in_task(void)
                   adc_photo_resistor_op() >= config->photo_resistor_threshold)
                 {
                   g_unlock_step = 3;
-                  auth_send_alert_to_disk_or_net(g_sockfd, ALERT_LOCK);
+                  auth_send_alert_to_disk_or_net(ALERT_LOCK);
                   // shock_alert_enabled = 1;
                   led3_op(INDC_ALWAYS, IND_BLUE, SEC2TICK(3), 0);       // 门阀扭闭通知
+		           ilockdbg("unlock_step_in_task: door closed.");
                 }
             }
           else
@@ -311,9 +317,10 @@ void unlock_step_in_task(void)
           flag = !closesw_read();
           if (flag)
             {
-              auth_send_alert_to_disk_or_net(g_sockfd, ALERT_CLOSE_SWITCH);
+              auth_send_alert_to_disk_or_net(ALERT_CLOSE_SWITCH);
               led1_op(INDC_TWINKLE, IND_RED, SEC2TICK(3), MSEC2TICK(200));
               buzzer_op(INDC_TWINKLE, IND_ON, SEC2TICK(3), MSEC2TICK(200));
+				ilockdbg("unlock_step_in_task: close switch alert!");
             }
         }
 
@@ -322,9 +329,10 @@ void unlock_step_in_task(void)
           flag = adc_photo_resistor_op() < config->photo_resistor_threshold;
           if (flag)
             {
-              auth_send_alert_to_disk_or_net(g_sockfd, ALERT_PHOTO_RESISTOR);
+              auth_send_alert_to_disk_or_net(ALERT_PHOTO_RESISTOR);
               led1_op(INDC_TWINKLE, IND_RED, SEC2TICK(3), MSEC2TICK(200));
               buzzer_op(INDC_TWINKLE, IND_ON, SEC2TICK(3), MSEC2TICK(200));
+				ilockdbg("unlock_step_in_task: photo resistor alert!");
             }
         }
 
@@ -333,9 +341,10 @@ void unlock_step_in_task(void)
           flag = adc_infra_red_op() > config->infra_red_threshold;
           if (flag)
             {
-              auth_send_alert_to_disk_or_net(g_sockfd, ALERT_INFRA_RED);
+              auth_send_alert_to_disk_or_net(ALERT_INFRA_RED);
               led1_op(INDC_TWINKLE, IND_RED, SEC2TICK(3), MSEC2TICK(200));
               buzzer_op(INDC_TWINKLE, IND_ON, SEC2TICK(3), MSEC2TICK(200));
+				ilockdbg("unlock_step_in_task: infra red alert!");
             }
         }
 
@@ -344,9 +353,10 @@ void unlock_step_in_task(void)
           flag = adc_shock_resistor_op() > config->shock_resistor_threshold;
           if (flag)
             {
-              auth_send_alert_to_disk_or_net(g_sockfd, ALERT_SHOCK_RESISTOR);
+              auth_send_alert_to_disk_or_net(ALERT_SHOCK_RESISTOR);
               led3_op(INDC_TWINKLE, IND_RED, SEC2TICK(5), MSEC2TICK(200));
               buzzer_op(INDC_TWINKLE, IND_ON, SEC2TICK(5), MSEC2TICK(200));
+				ilockdbg("unlock_step_in_task: shock resistor alert!");
             }
         }
     }
@@ -392,11 +402,11 @@ void act_magnet_in_task(void)
 void heart_beat_in_task(void)
 {
   static uint32_t last_heart_beat_tick = 0;
-	
-  if (g_sockfd >=0 && ABS(clock_systimer() - last_heart_beat_tick) > SEC2TICK(10))
+
+  if (g_connected && ABS(clock_systimer() - last_heart_beat_tick) > SEC2TICK(10))
     {
       last_heart_beat_tick = clock_systimer();
-      (void)protocal_send_heart_beat(g_sockfd);
+      (void)protocal_send_heart_beat();
     }
 }
 
@@ -451,7 +461,7 @@ bool authorize(char *pwd)
   if (ret < 0)
     {
       ilockdbg("authorize: jksafekey_verify_pin failed: %d\n", ret);
-      auth_send_log_to_disk_or_net(g_sockfd, LOG_KEY_PASSWORD_ERROR, pubkey);
+      auth_send_log_to_disk_or_net(LOG_KEY_PASSWORD_ERROR, pubkey);
       buzzer_op(INDC_TWINKLE, IND_ON, SEC2TICK(3), MSEC2TICK(200));
       led3_op(INDC_ALWAYS, IND_RED, SEC2TICK(3), MSEC2TICK(200));
       goto errclose;
@@ -469,12 +479,12 @@ bool authorize(char *pwd)
     }
   if (auth_need_more())
     {
-      auth_send_log_to_disk_or_net(g_sockfd, LOG_HALF_UNLOCK, pubkey);
+      auth_send_log_to_disk_or_net(LOG_HALF_UNLOCK, pubkey);
       led1_op(INDC_TWINKLE, IND_GREEN, SEC2TICK(3), MSEC2TICK(200));
       goto errout;
     }
 
-  auth_send_log_to_disk_or_net_by_unlock_type(g_sockfd, pubkey);
+  auth_send_log_to_disk_or_net_by_unlock_type(pubkey);
   act_unlock();
 
   return true;
@@ -763,6 +773,7 @@ static int unlock_task(int argc, char *argv[])
 static int net_task(int argc, char *argv[])
 {
   int ret;
+  struct timeval tv;
   struct sockaddr_in svraddr;
 
   while(true)
@@ -775,10 +786,17 @@ static int net_task(int argc, char *argv[])
           goto errout;
         }
 
+      tv.tv_sec  = 10;
+      tv.tv_usec = 0;
+
+      (void)setsockopt(g_sockfd, SOL_SOCKET, SO_RCVTIMEO, (FAR const void *)&tv,
+                       sizeof(struct timeval));
+      (void)setsockopt(g_sockfd, SOL_SOCKET, SO_SNDTIMEO, (FAR const void *)&tv,
+                       sizeof(struct timeval));
+
       svraddr.sin_family      = AF_INET;
       svraddr.sin_port        = HTONS(config->svrport);
       svraddr.sin_addr.s_addr = config->svraddr.s_addr;
-
       ret = connect(g_sockfd, (struct sockaddr*)&svraddr, sizeof(struct sockaddr_in));
       if (ret < 0)
         {
@@ -787,18 +805,22 @@ static int net_task(int argc, char *argv[])
           goto errout_with_socket;
         }
 
-      ret = protocal_send_connect(g_sockfd);
+      ret = protocal_send_connect();
       if (ret < 0)
         {
           ret = -errno;
           goto errout_with_socket;
         }
 
-      while(protocal_recv(g_sockfd) == OK);
+      g_connected = true;
+
+      while(protocal_recv() == OK);
 
 errout_with_socket:
+      g_connected = false;
       close(g_sockfd);
-errout_no_socket:			
+      led2_op(INDC_TWINKLE, IND_RED, SEC2TICK(3), MSEC2TICK(200));
+      sleep(10);
     }
 errout:
   return ret;
@@ -809,8 +831,8 @@ static int log_task(int argc, char *argv[])
   while(true)
     {
       sleep(60);
-      auth_send_history_log_to_net(g_sockfd);
-      auth_send_history_alert_to_net(g_sockfd);
+      auth_send_history_log_to_net();
+      auth_send_history_alert_to_net();
     }
 }
 

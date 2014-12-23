@@ -369,11 +369,11 @@ extern "C"
  * Public Function Prototypes
  ****************************************************************************/
 
-EXTERN int protocal_recv(int sockfd);
-EXTERN int protocal_send_heart_beat(int sockfd);
-EXTERN int protocal_send_connect(int sockfd);
-EXTERN int protocal_send_alert(int sockfd, uint32_t serial_no, uint8_t alert_type, uint8_t tm[6]);
-EXTERN int protocal_send_log(int sockfd, int32_t serial_no, bool *log_group, uint8_t *log_pubkey, uint8_t flag, uint8_t tm[6]);
+EXTERN int protocal_recv(void);
+EXTERN int protocal_send_heart_beat(void);
+EXTERN int protocal_send_connect(void);
+EXTERN int protocal_send_alert(uint32_t serial_no, uint8_t alert_type, uint8_t tm[6]);
+EXTERN int protocal_send_log(int32_t serial_no, bool *log_group, uint8_t *log_pubkey, uint8_t flag, uint8_t tm[6]);
 
 #undef EXTERN
 #ifdef __cplusplus

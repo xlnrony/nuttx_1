@@ -63,6 +63,9 @@ extern "C"
 #define EXTERN extern
 #endif
 
+EXTERN int g_sockfd;
+EXTERN bool g_connected;
+
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/

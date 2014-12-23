@@ -256,7 +256,7 @@ static ssize_t keypad_read(FAR struct file *filep, FAR char *buffer, size_t bufl
   unsigned int                tail;
   int                         ret;
 
-  keypaddbg("Entry\n");
+//  keypaddbg("Entry\n");
   DEBUGASSERT(filep && filep->f_inode && buffer);
   inode = filep->f_inode;
   dev  = inode->i_private;

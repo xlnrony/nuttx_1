@@ -103,7 +103,7 @@ static uint8_t g_unlock_type = LOG_UNLOCK;
  * Public Functions
  ****************************************************************************/
 
-void auth_send_alert_to_disk_or_net(int sockfd, uint8_t alert_type)
+void auth_send_alert_to_disk_or_net(uint8_t alert_type)
 {
   int ret;
   struct alert_file_block_s alert_file_block;
@@ -123,7 +123,7 @@ void auth_send_alert_to_disk_or_net(int sockfd, uint8_t alert_type)
       alert_file_block.time[4] = tm->tm_min;
       alert_file_block.time[5] = tm->tm_sec;
 
-      ret = protocal_send_alert(sockfd, config->serial_no, alert_type, alert_file_block.time);
+      ret = protocal_send_alert(config->serial_no, alert_type, alert_file_block.time);
       if (ret < 0)
         {
           alert_file_block.alert_sn = config->serial_no;
@@ -142,7 +142,7 @@ void auth_send_alert_to_disk_or_net(int sockfd, uint8_t alert_type)
     }
 }
 
-void auth_send_history_alert_to_net(int sockfd)
+void auth_send_history_alert_to_net(void)
 {
   int ret;
   struct alert_file_block_s alert_file_block;
@@ -168,7 +168,7 @@ void auth_send_history_alert_to_net(int sockfd)
               ret = fileread(file_path, 0, &alert_file_block, sizeof (struct alert_file_block_s));
               if (ret == sizeof (struct alert_file_block_s))
                 {
-                  ret =  protocal_send_alert(sockfd, alert_file_block.alert_sn, alert_file_block.alert_type,
+                  ret =  protocal_send_alert(alert_file_block.alert_sn, alert_file_block.alert_type,
                                              alert_file_block.time);
                   if (ret == OK)
                     {
@@ -189,7 +189,7 @@ void auth_send_history_alert_to_net(int sockfd)
     }
 }
 
-void auth_send_log_to_disk_or_net(int sockfd, uint8_t log_type, uint8_t *pubkey)
+void auth_send_log_to_disk_or_net(uint8_t log_type, uint8_t *pubkey)
 {
   int ret;
   int i;
@@ -210,7 +210,7 @@ void auth_send_log_to_disk_or_net(int sockfd, uint8_t log_type, uint8_t *pubkey)
       log_file_block.time[4] = tm->tm_min;
       log_file_block.time[5] = tm->tm_sec;
 
-      ret = protocal_send_log(sockfd, config->serial_no, g_group, pubkey, log_type, log_file_block.time);
+      ret = protocal_send_log(config->serial_no, g_group, pubkey, log_type, log_file_block.time);
       if (ret < 0)
         {
           log_file_block.log_sn = config->serial_no;
@@ -234,7 +234,7 @@ void auth_send_log_to_disk_or_net(int sockfd, uint8_t log_type, uint8_t *pubkey)
     }
 }
 
-void auth_send_history_log_to_net(int sockfd)
+void auth_send_history_log_to_net(void)
 {
   int ret;
   struct log_file_block_s log_file_block;
@@ -260,7 +260,7 @@ void auth_send_history_log_to_net(int sockfd)
               ret = fileread(file_path, 0, &log_file_block, sizeof (struct log_file_block_s));
               if (ret == sizeof (struct log_file_block_s))
                 {
-                  ret =  protocal_send_log(sockfd, log_file_block.log_sn, log_file_block.log_group,
+                  ret =  protocal_send_log(log_file_block.log_sn, log_file_block.log_group,
                                            log_file_block.log_pubkey, log_file_block.log_type, log_file_block.time);
                   if (ret == OK)
                     {
@@ -281,9 +281,9 @@ void auth_send_history_log_to_net(int sockfd)
     }
 }
 
-void auth_send_log_to_disk_or_net_by_unlock_type(int sockfd, uint8_t *pubkey)
+void auth_send_log_to_disk_or_net_by_unlock_type(uint8_t *pubkey)
 {
-  auth_send_log_to_disk_or_net(sockfd, g_unlock_type, pubkey);
+  auth_send_log_to_disk_or_net(g_unlock_type, pubkey);
 }
 
 void auth_init(void)
@@ -305,17 +305,17 @@ void auth_time_out_check(void)
     }
 }
 
-void auth_set_temp_unlock(int sockfd, uint8_t *pubkey)
+void auth_set_temp_unlock(uint8_t *pubkey)
 {
   g_unlock_type = LOG_TEMP_UNLOCK;
   g_last_time = clock_systimer();
-  auth_send_log_to_disk_or_net(sockfd, LOG_HALF_UNLOCK, pubkey);
+  auth_send_log_to_disk_or_net(LOG_HALF_UNLOCK, pubkey);
 }
 
-void auth_set_auth_unlock(int sockfd, uint8_t *pubkey)
+void auth_set_auth_unlock(uint8_t *pubkey)
 {
   g_unlock_type = LOG_AUTH_UNLOCK;
-  auth_send_log_to_disk_or_net(sockfd, LOG_HALF_UNLOCK, pubkey);
+  auth_send_log_to_disk_or_net(LOG_HALF_UNLOCK, pubkey);
 }
 
 bool auth_this_time(uint8_t *pubkey)

@@ -90,7 +90,7 @@ int keypad_readln(char *buf, size_t buflen, bool postip)
 
   DEBUGASSERT(buf != NULL && buflen > 0)
 
-  keypaddbg("keypad_readln: Opening device %s\n", CONFIG_KEYPAD_DEVNAME);
+//  keypaddbg("keypad_readln: Opening device %s\n", CONFIG_KEYPAD_DEVNAME);
   fd = open(CONFIG_KEYPAD_DEVNAME, O_RDONLY);
   if (fd < 0)
     {
