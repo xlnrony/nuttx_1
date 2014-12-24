@@ -186,6 +186,10 @@ void arp_arpin(struct net_driver_s *dev);
 
 void arp_out(FAR struct net_driver_s *dev);
 
+#ifdef CONFIG_NET_ARP_IP_CONFLICT_DETECT_CALLBACK
+void arp_ip_conflict(void);
+#endif
+
 #else /* CONFIG_NET_ARP */
 
 /* If ARP is disabled, stub out all ARP interfaces */
@@ -195,6 +199,41 @@ void arp_out(FAR struct net_driver_s *dev);
 # define arp_out(dev)
 
 #endif /* CONFIG_NET_ARP */
+
+/****************************************************************************
+ * Function: arp_send
+ *
+ * Description:
+ *   The arp_send() call may be to send an ARP request to resolve an IP
+ *   address.  This function first checks if the IP address is already in
+ *   ARP table.  If so, then it returns success immediately.
+ *
+ *   If the requested IP address in not in the ARP table, then this function
+ *   will send an ARP request, delay, then check if the IP address is now in
+ *   the ARP table.  It will repeat this sequence until either (1) the IP
+ *   address mapping is now in the ARP table, or (2) a configurable number
+ *   of timeouts occur without receiving the ARP replay.
+ *
+ * Parameters:
+ *   ipaddr   The IP address to be queried.
+ *
+ * Returned Value:
+ *   Zero (OK) is returned on success and the IP address mapping can now be
+ *   found in the ARP table.  On error a negated errno value is returned:
+ *
+ *     -ETIMEDOUT:    The number or retry counts has been exceed.
+ *     -EHOSTUNREACH: Could not find a route to the host
+ *
+ * Assumptions:
+ *   This function is called from the normal tasking context.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_NET_ARP_SEND
+int arp_send(in_addr_t ipaddr);
+#else
+#  define arp_send(i) (0)
+#endif
 
 #undef EXTERN
 #ifdef __cplusplus

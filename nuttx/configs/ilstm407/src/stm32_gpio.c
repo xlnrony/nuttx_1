@@ -150,18 +150,7 @@ static struct gpio_dev_s stm32_gpio_dev_magnet_vcc =
   .ops = &stm32_gpio_ops,
   .priv= &stm32_gpio_priv_magnet_vcc,
 };
-
-static struct stm32_dev_s stm32_gpio_priv_buzzer =
-{
-  .pinset         = GPIO_BUZZER,
-};
-
-static struct gpio_dev_s stm32_gpio_dev_buzzer =
-{
-  .ops = &stm32_gpio_ops,
-  .priv= &stm32_gpio_priv_buzzer,
-};
-
+///////////////////////////////////////////////////////////////////////////////////////////
 static struct stm32_dev_s stm32_gpio_priv_close_sw =
 {
   .pinset         = GPIO_CLOSE_SW,
@@ -181,19 +170,13 @@ void stm32_gpio_initialize(void)
   ret = gpio_register(CONFIG_MAGNET_VCC_DEVNAME, &stm32_gpio_dev_magnet_vcc);
   if (ret < 0)
     {
-      gpiodbg("gpio_register failed: %d\n", ret);
-    }
-////////////////////////////////////////////////////////////////////////////////////////////////
-  ret = gpio_register(CONFIG_BUZZER_DEVNAME, &stm32_gpio_dev_buzzer);
-  if (ret < 0)
-    {
-      gpiodbg("gpio_register failed: %d\n", ret);
+      gpiodbg("gpio_register(%s) failed: %d\n", CONFIG_MAGNET_VCC_DEVNAME, ret);
     }
 ////////////////////////////////////////////////////////////////////////////////////////////////
   ret = gpio_register(CONFIG_CLOSE_SW_DEVNAME, &stm32_gpio_dev_close_sw);
   if (ret < 0)
     {
-      gpiodbg("gpio_register failed: %d\n", ret);
+      gpiodbg("gpio_register(%s) failed: %d\n", CONFIG_CLOSE_SW_DEVNAME, ret);
     }
 }
 

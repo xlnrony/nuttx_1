@@ -181,7 +181,7 @@ extern struct arp_conn_s g_arp_conn;
  * Public Function Prototypes
  ****************************************************************************/
 
- #ifdef CONFIG_NET_ARP
+#ifdef CONFIG_NET_ARP
 /****************************************************************************
  * Name: arp_reset
  *

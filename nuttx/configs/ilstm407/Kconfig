@@ -53,18 +53,18 @@ config LED3_DEVNAME
 	---help---
 		Name of led device to be used. Default: "/dev/led3"		
 
+config IP_CONFLICT_DEVNAME
+	string "IP conflict check Device Name"
+	default "/dev/ipconflict"
+	---help---
+		Name of IP conflict check device to be used. Default: "/dev/ipconflict"		
+
 config MAGNET_VCC_DEVNAME
 	string "MAGNET VCC PIN Device Name"
 	default "/dev/magnetvcc"
 	---help---
 		Name of gpio device to be used. Default: "/dev/magnetvcc"		
 
-config MAGNET_GND_DEVNAME
-	string "MAGNET GND PIN Device Name"
-	default "/dev/magnetgnd"
-	---help---
-		Name of gpio device to be used. Default: "/dev/magnetgnd"		
-		
 config BUZZER_DEVNAME
 	string "BUZZER PIN Device Name"
 	default "/dev/buzzer"

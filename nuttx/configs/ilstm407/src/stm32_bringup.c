@@ -93,6 +93,7 @@ int stm32_bringup(void)
 
 #ifdef CONFIG_GPIO
   stm32_gpio_initialize();
+  stm32_ip_conflict_initialize();
 #endif
 
 #ifdef CONFIG_KEYPAD

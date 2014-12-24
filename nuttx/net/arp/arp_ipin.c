@@ -42,6 +42,7 @@
  ****************************************************************************/
 
 #include <nuttx/config.h>
+#include <debug.h>
 
 #include <netinet/in.h>
 
@@ -103,6 +104,17 @@ void arp_ipin(FAR struct net_driver_s *dev)
     {
       arp_update(IPBUF->eh_srcipaddr, ETHBUF->src);
     }
+
+#ifdef CONFIG_NET_ARP_IP_CONFLICT_DETECT
+  if (net_ipaddr_cmp(srcipaddr, dev->d_ipaddr))
+    {
+      nlldbg("Detect ip conflict from IP packet\n");
+#ifdef CONFIG_NET_ARP_IP_CONFLICT_DETECT_CALLBACK
+      arp_ip_conflict();
+#endif
+    }
+#endif
+
 }
 
 #endif /* CONFIG_NET_ARP_IPIN */

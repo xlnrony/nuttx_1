@@ -70,6 +70,22 @@ config NET_ARP_DUMP
 	depends on DEBUG
 	---help---
 		Dump ARP packets to the SYSLOG device.
+		
+config NET_ARP_IP_CONFLICT_DETECT
+	bool "IP conflict detect"
+	default n
+	---help---
+		IP conflict detect.	
+		
+if NET_ARP_IP_CONFLICT_DETECT
+
+config NET_ARP_IP_CONFLICT_DETECT_CALLBACK
+	bool "IP conflict detect callback function"
+	default n
+	---help---
+		IP conflict detect callback function void arp_ip_conflict(void) must be implemented if check	
+
+endif # NET_ARP_IP_CONFLICT_DETECT	
 
 endif # NET_ARP
 endmenu # ARP Configuration

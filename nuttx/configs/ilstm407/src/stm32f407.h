@@ -280,6 +280,7 @@ void stm32_adc_initialize(void);
 
 #ifdef CONFIG_GPIO
 void stm32_gpio_initialize(void);
+void stm32_ip_conflict_initialize(void);
 #endif
 
 #ifdef CONFIG_KEYPAD

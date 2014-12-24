@@ -121,10 +121,21 @@ void arp_arpin(FAR struct net_driver_s *dev)
       case HTONS(ARP_REQUEST):
         nllvdbg("ARP request for IP %04lx\n", (long)ipaddr);
 
+#ifdef CONFIG_NET_ARP_IP_CONFLICT_DETECT
+        if (net_ipaddr_cmp(net_ip4addr_conv32(parp->ah_sipaddr), dev->d_ipaddr))
+          {
+            nlldbg("Detect ip conflict from ARP request for IP %04lx\n", (long)ipaddr);
+#ifdef CONFIG_NET_ARP_IP_CONFLICT_DETECT_CALLBACK_NAME
+            arp_ip_conflict();
+#endif
+          }
+#endif
+
         /* ARP request. If it asked for our address, we send out a reply. */
 
         if (net_ipaddr_cmp(ipaddr, dev->d_ipaddr))
           {
+
             struct eth_hdr_s *peth = ETHBUF;
 
             /* First, we register the one who made the request in our ARP
@@ -152,6 +163,16 @@ void arp_arpin(FAR struct net_driver_s *dev)
 
       case HTONS(ARP_REPLY):
         nllvdbg("ARP reply for IP %04lx\n", (long)ipaddr);
+
+#ifdef CONFIG_NET_ARP_IP_CONFLICT_DETECT
+        if (net_ipaddr_cmp(net_ip4addr_conv32(parp->ah_sipaddr), dev->d_ipaddr))
+          {
+            nlldbg("Detect ip conflict from ARP reply for IP %04lx\n", (long)ipaddr);
+#ifdef CONFIG_NET_ARP_IP_CONFLICT_DETECT_CALLBACK
+            arp_ip_conflict();
+#endif
+          }
+#endif
 
         /* ARP reply. We insert or update the ARP table if it was meant
          * for us.
