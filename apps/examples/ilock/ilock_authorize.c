@@ -154,7 +154,7 @@ void auth_send_history_alert_to_net(void)
 
   if (!dirp)
     {
-      ilockdbg("auth_send_history_alert_to_net: opendir %s failed: %d\n", CONFIG_ALT_FILE_PATH, -errno);
+      ilockdbg("opendir %s failed: %d\n", CONFIG_ALT_FILE_PATH, -errno);
     }
   else
     {
@@ -246,7 +246,7 @@ void auth_send_history_log_to_net(void)
 
   if (!dirp)
     {
-      ilockdbg("auth_send_history_log_to_net: opendir %s failed: %d\n", CONFIG_LOG_FILE_PATH, -errno);
+      ilockdbg("opendir %s failed: %d\n", CONFIG_LOG_FILE_PATH, -errno);
     }
   else
     {

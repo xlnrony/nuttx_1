@@ -78,6 +78,7 @@
 #include "gpio_lib.h"
 #include "buzzer_lib.h"
 #include "file_lib.h"
+#include "ipconflict_lib.h"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -195,13 +196,11 @@ in_addr_t netlib_formataddr(FAR const char *cp)
   return HTONL(result);
 }
 
-bool illegal_unlock_timeout(void)
+bool sensor_check_timeout(uint32_t *last_tick)
 {
-  static uint32_t last_illegal_unlock_tick = 0;
-
-  if (ABS(clock_systimer() - last_illegal_unlock_tick) > SEC2TICK(20))
+  if (ABS(clock_systimer() - *last_tick) > SEC2TICK(20))
     {
-      last_illegal_unlock_tick = clock_systimer();
+      *last_tick = clock_systimer();
       return true;
     }
   else
@@ -217,6 +216,11 @@ void unlock_step_in_task(void)
   static uint32_t check_infra_red_delay1 = 0;
   static uint32_t check_unlock_delay0 = 0;
   static uint32_t unlock_time_out = 0;
+  static uint32_t last_close_sw_tick = 0;
+  static uint32_t last_photo_resistor_tick = 0;
+  static uint32_t last_infra_red_tick = 0;
+  static uint32_t last_shock_resistor_tick = 0;
+  static uint32_t last_ip_conflict_tick = 0;
 
   if (g_unlock_step == 1)
     {
@@ -234,7 +238,7 @@ void unlock_step_in_task(void)
                   unlock_time_out = CONFIG_UNLOCK_FIRST_TIME_OUT;
                   led1_op(INDC_ALWAYS, IND_GREEN, SEC2TICK(3), 0);
                   led2_op(INDC_ALWAYS, IND_GREEN, SEC2TICK(3), 0);
-		           ilockdbg("unlock_step_in_task: door opened!");									
+                  ilockdbg("door opened!\n");
                 }
             }
           else
@@ -257,7 +261,7 @@ void unlock_step_in_task(void)
                   auth_send_alert_to_disk_or_net(ALERT_LOCK);
                   // shock_alert_enabled = 1;
                   led3_op(INDC_ALWAYS, IND_BLUE, SEC2TICK(3), 0);
-		           ilockdbg("unlock_step_in_task: door closing and magnet released!");
+                  ilockdbg("door closing and magnet released!\n");
                 }
             }
           else
@@ -282,7 +286,7 @@ void unlock_step_in_task(void)
           auth_send_alert_to_disk_or_net(ALERT_NOLOCK_TIME_OUT);
           buzzer_op(INDC_ALWAYS, IND_ON, SEC2TICK(3), 0);
           led2_op(INDC_ALWAYS, IND_RED, SEC2TICK(3), 0);        // 没关门超时
-          ilockdbg("unlock_step_in_task: door opened time out!");
+          ilockdbg("door opened time out!\n");
         }
       if (adc_infra_red_op() < config->infra_red_threshold)
         {
@@ -297,7 +301,7 @@ void unlock_step_in_task(void)
                   auth_send_alert_to_disk_or_net(ALERT_LOCK);
                   // shock_alert_enabled = 1;
                   led3_op(INDC_ALWAYS, IND_BLUE, SEC2TICK(3), 0);       // 门阀扭闭通知
-		           ilockdbg("unlock_step_in_task: door closed.");
+                  ilockdbg("door closed.\n");
                 }
             }
           else
@@ -312,7 +316,7 @@ void unlock_step_in_task(void)
     }
   else if (g_unlock_step == 3)
     {
-      if (illegal_unlock_timeout())
+      if (sensor_check_timeout(&last_close_sw_tick))
         {
           flag = !closesw_read();
           if (flag)
@@ -320,11 +324,11 @@ void unlock_step_in_task(void)
               auth_send_alert_to_disk_or_net(ALERT_CLOSE_SWITCH);
               led1_op(INDC_TWINKLE, IND_RED, SEC2TICK(3), MSEC2TICK(200));
               buzzer_op(INDC_TWINKLE, IND_ON, SEC2TICK(3), MSEC2TICK(200));
-				ilockdbg("unlock_step_in_task: close switch alert!");
+              ilockdbg("close switch alert!\n");
             }
         }
 
-      if (illegal_unlock_timeout())
+      if (sensor_check_timeout(&last_photo_resistor_tick))
         {
           flag = adc_photo_resistor_op() < config->photo_resistor_threshold;
           if (flag)
@@ -332,11 +336,11 @@ void unlock_step_in_task(void)
               auth_send_alert_to_disk_or_net(ALERT_PHOTO_RESISTOR);
               led1_op(INDC_TWINKLE, IND_RED, SEC2TICK(3), MSEC2TICK(200));
               buzzer_op(INDC_TWINKLE, IND_ON, SEC2TICK(3), MSEC2TICK(200));
-				ilockdbg("unlock_step_in_task: photo resistor alert!");
+              ilockdbg("photo resistor alert!\n");
             }
         }
 
-      if (illegal_unlock_timeout())
+      if (sensor_check_timeout(&last_infra_red_tick))
         {
           flag = adc_infra_red_op() > config->infra_red_threshold;
           if (flag)
@@ -344,11 +348,11 @@ void unlock_step_in_task(void)
               auth_send_alert_to_disk_or_net(ALERT_INFRA_RED);
               led1_op(INDC_TWINKLE, IND_RED, SEC2TICK(3), MSEC2TICK(200));
               buzzer_op(INDC_TWINKLE, IND_ON, SEC2TICK(3), MSEC2TICK(200));
-				ilockdbg("unlock_step_in_task: infra red alert!");
+              ilockdbg("infra red alert!\n");
             }
         }
 
-      if (illegal_unlock_timeout())
+      if (sensor_check_timeout(&last_shock_resistor_tick))
         {
           flag = adc_shock_resistor_op() > config->shock_resistor_threshold;
           if (flag)
@@ -356,7 +360,19 @@ void unlock_step_in_task(void)
               auth_send_alert_to_disk_or_net(ALERT_SHOCK_RESISTOR);
               led3_op(INDC_TWINKLE, IND_RED, SEC2TICK(5), MSEC2TICK(200));
               buzzer_op(INDC_TWINKLE, IND_ON, SEC2TICK(5), MSEC2TICK(200));
-				ilockdbg("unlock_step_in_task: shock resistor alert!");
+              ilockdbg("shock resistor alert!\n");
+            }
+        }
+
+      if (sensor_check_timeout(&last_ip_conflict_tick))
+        {
+          flag = ipconflict_read();
+          if (flag)
+            {
+              led1_op(INDC_ALWAYS, IND_RED, SEC2TICK(10), 0);
+              led2_op(INDC_ALWAYS, IND_RED, SEC2TICK(10), 0);
+              led3_op(INDC_ALWAYS, IND_RED, SEC2TICK(10), 0);
+              ilockdbg("ip conflict alert!\n");
             }
         }
     }
@@ -440,7 +456,7 @@ bool authorize(char *pwd)
   jksafekey_fd = open(CONFIG_JKSAFEKEY_DEVNAME, O_RDWR);
   if (jksafekey_fd < 0)
     {
-      ilockdbg("authorize: opening device %s Failed: %d\n",
+      ilockdbg("opening device %s Failed: %d\n",
                CONFIG_JKSAFEKEY_DEVNAME, errno);
       buzzer_op(INDC_TWINKLE, IND_ON, SEC2TICK(1), MSEC2TICK(200));
       led1_op(INDC_TWINKLE, IND_BLUE, SEC2TICK(3), MSEC2TICK(200));
@@ -460,7 +476,7 @@ bool authorize(char *pwd)
   ret = jksafekey_verify_pin(jksafekey_fd, pwd);
   if (ret < 0)
     {
-      ilockdbg("authorize: jksafekey_verify_pin failed: %d\n", ret);
+      ilockdbg("jksafekey_verify_pin failed: %d\n", ret);
       auth_send_log_to_disk_or_net(LOG_KEY_PASSWORD_ERROR, pubkey);
       buzzer_op(INDC_TWINKLE, IND_ON, SEC2TICK(3), MSEC2TICK(200));
       led3_op(INDC_ALWAYS, IND_RED, SEC2TICK(3), MSEC2TICK(200));
@@ -773,6 +789,7 @@ static int unlock_task(int argc, char *argv[])
 static int net_task(int argc, char *argv[])
 {
   int ret;
+  int flags;
   struct timeval tv;
   struct sockaddr_in svraddr;
 
@@ -782,8 +799,23 @@ static int net_task(int argc, char *argv[])
       if (g_sockfd < 0)
         {
           ret = -errno;
-          ilockdbg("net_task: socket failure %d\n", ret);
+          ilockdbg("socket failure %d\n", ret);
           goto errout;
+        }
+
+      flags = fcntl(g_sockfd, F_GETFL, 0);
+      if (flags == -1)
+        {
+          ndbg("fcntl(F_GETFL) failed: %d\n", -errno);
+          goto errout_with_socket;
+        }
+
+      ndbg("fcntl(F_GETFL) return: %d\n", flags);
+
+      if (fcntl(g_sockfd, F_SETFL, flags & ~O_NDELAY) < 0)
+        {
+          ndbg("fcntl(O_NDELAY) failed: %d\n", -errno);
+          goto			errout_with_socket;
         }
 
       tv.tv_sec  = 10;
@@ -801,7 +833,7 @@ static int net_task(int argc, char *argv[])
       if (ret < 0)
         {
           ret = -errno;
-          ilockdbg("net_task: connect failure: %d\n", ret);
+          ndbg("connect failure: %d\n", ret);
           goto errout_with_socket;
         }
 
@@ -854,17 +886,64 @@ int ilock_main(int argc, char *argv[])
   ret = led_init();
   if (ret < 0)
     {
-      return ret;
+      goto errout;
     }
+
   ret = buzzer_init();
   if (ret < 0)
     {
-      return ret;
+      goto errout;
     }
+
   ret = gpio_init();
   if (ret < 0)
     {
-      return ret;
+      goto errout;
+    }
+
+  ret = config_init();
+  if (ret < 0)
+    {
+      goto errout;
+    }
+  load_config();
+
+  ret = netlib_setmacaddr(CONFIG_ILOCK_IFNAME, config->macaddr);
+  if (ret < 0)
+    {
+      ret = -errno;
+      ilockdbg("netlib_setmacaddr %s failed: %d\n", CONFIG_ILOCK_IFNAME, ret);
+      goto errout;
+    }
+
+  ret = netlib_sethostaddr(CONFIG_ILOCK_IFNAME, &config->hostaddr);
+  if (ret < 0)
+    {
+      ret = -errno;
+      ilockdbg("netlib_sethostaddr %s failed: %d\n", CONFIG_ILOCK_IFNAME, ret);
+      goto errout;
+    }
+
+  ret = netlib_setnetmask(CONFIG_ILOCK_IFNAME, &config->netmask);
+  if (ret < 0)
+    {
+      ret = -errno;
+      ilockdbg("netlib_setnetmask %s failed: %d\n", CONFIG_ILOCK_IFNAME, ret);
+      goto errout;
+    }
+
+  ret = netlib_setdraddr(CONFIG_ILOCK_IFNAME, &config->dripaddr);
+  if (ret < 0)
+    {
+      ret = -errno;
+      ilockdbg("netlib_setdraddr %s failed: %d\n", CONFIG_ILOCK_IFNAME, ret);
+      goto errout;
+    }
+
+  ret = ipconflict_init();
+  if (ret < 0)
+    {
+      goto errout;
     }
 
   led1_op(INDC_TWINKLE, IND_RED, SEC2TICK(3), MSEC2TICK(200));
@@ -872,40 +951,42 @@ int ilock_main(int argc, char *argv[])
   led3_op(INDC_TWINKLE, IND_BLUE, SEC2TICK(3), MSEC2TICK(200));
   buzzer_op(INDC_TWINKLE, IND_ON, SEC2TICK(3), MSEC2TICK(200));
 
-  ret = config_init();
-  if (ret < 0)
-    {
-      return ret;
-    }
-  load_config();
-
   scan_pid = task_create("iLockScan", 50, CONFIG_SCAN_TASK_STACKSIZE, scan_task, NULL);
   if (scan_pid < 0)
     {
-      ilockdbg("ilock_main: iLockScan task_create failed: %d\n", -errno);
+      ret = -errno;
+      ilockdbg("iLockScan task_create failed: %d\n", ret);
+      goto errout;
     }
 
   unlock_pid = task_create("iLockUnlock", 50, CONFIG_UNLOCK_TASK_STACKSIZE, unlock_task, NULL);
   if (unlock_pid < 0)
     {
-      ilockdbg("ilock_main: iLockUnlock task_create failed: %d\n", -errno);
+      ret = -errno;
+      ilockdbg("iLockUnlock task_create failed: %d\n", ret);
+      goto errout;
     }
 
   net_pid = task_create("iLockNet", 50, CONFIG_NET_TASK_STACKSIZE, net_task, NULL);
   if (net_pid < 0)
     {
-      ilockdbg("ilock_main: iLockNet task_create failed: %d\n", -errno);
+      ret = -errno;
+      ilockdbg("iLockNet task_create failed: %d\n", ret);
+      goto errout;
     }
 
   log_pid = task_create("iLockLog", 50, CONFIG_LOG_TASK_STACKSIZE, log_task, NULL);
   if (log_pid < 0)
     {
-      ilockdbg("ilock_main: iLockLog task_create failed: %d\n", -errno);
+      ret = -errno;
+      ilockdbg("iLockLog task_create failed: %d\n", ret);
+      goto errout;
     }
 
   printf("Press any key to exit ......\n");
   getchar();
 
+errout:
   if (scan_pid > 0)
     {
       task_delete(scan_pid);
@@ -926,10 +1007,12 @@ int ilock_main(int argc, char *argv[])
       task_delete(log_pid);
     }
 
+  ipconflict_deinit();
+
   config_deinit();
 
   gpio_deinit();
   buzzer_deinit();
   led_deinit();
-  return OK;
+  return ret;
 }

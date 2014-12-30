@@ -48,9 +48,7 @@ endif
 
 ifeq ($(CONFIG_GPIO),y)
 CSRCS += stm32_gpio.c
-ifeq ($(CONFIG_NET_ARP_IP_CONFLICT_DETECT_CALLBACK),y)
 CSRCS += stm32_ipconflict.c
-endif
 endif
 
 ifeq ($(CONFIG_KEYPAD),y)

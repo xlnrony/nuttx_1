@@ -93,7 +93,7 @@ static void led_op(int fd, int cmd, uint8_t type, uint32_t delay, uint32_t inter
   ret = ioctl(fd, cmd, (unsigned long)&indctl);
   if (ret < 0)
     {
-      inddbg("led_op: ioctl failed: %d\n", errno);
+      inddbg("ioctl failed: %d\n", errno);
     }
 }
 
@@ -124,7 +124,7 @@ int led_init(void)
   if (led1_fd < 0)
     {
       ret = -errno;
-      inddbg("led_init: open %s failed: %d\n", CONFIG_LED1_DEVNAME, ret);
+      inddbg("open %s failed: %d\n", CONFIG_LED1_DEVNAME, ret);
       goto errout;
     }
 
@@ -132,7 +132,7 @@ int led_init(void)
   if (led2_fd < 0)
     {
       ret = -errno;
-      inddbg("led_init: open %s failed: %d\n", CONFIG_LED2_DEVNAME, ret);
+      inddbg("open %s failed: %d\n", CONFIG_LED2_DEVNAME, ret);
       goto errout;
     }
 
@@ -140,7 +140,7 @@ int led_init(void)
   if (led3_fd < 0)
     {
       ret = -errno;
-      inddbg("led_init: open %s failed: %d\n", CONFIG_LED3_DEVNAME, ret);
+      inddbg("open %s failed: %d\n", CONFIG_LED3_DEVNAME, ret);
       goto errout;
     }
 

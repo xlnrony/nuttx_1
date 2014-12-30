@@ -95,7 +95,7 @@ int keypad_readln(char *buf, size_t buflen, bool postip)
   if (fd < 0)
     {
       ret = errno;
-      keypaddbg("keypad_readln: open() failed: %d\n", ret);
+      keypaddbg("open() failed: %d\n", ret);
       return ret;
     }
 
@@ -208,10 +208,10 @@ int keypad_readln(char *buf, size_t buflen, bool postip)
   if (n<0)
     {
       ret = -errno;
-      keypaddbg("keypad_readln: read() failed: %d\n", ret);
+      keypaddbg("read() failed: %d\n", ret);
     }
 
-  keypaddbg("keypad_readln: Closing device %s\n", CONFIG_KEYPAD_DEVNAME);
+  keypaddbg("Closing device %s\n", CONFIG_KEYPAD_DEVNAME);
   close(fd);
 
   return ret;

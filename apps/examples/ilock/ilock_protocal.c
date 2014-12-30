@@ -139,12 +139,12 @@ int protocal_send_heart_beat(void)
   if (nsent < 0)
     {
       ret = -errno;
-      ilockdbg("protocal_send_heart_beat: send failed: %d\n", ret);
+      ilockdbg("send failed: %d\n", ret);
       goto errout;
     }
   else if (nsent != HEART_BEAT_CATEGORY_SEND_SIZE)
     {
-      ilockdbg("protocal_send_heart_beat: Bad send length=%d: %d of \n",
+      ilockdbg("Bad send length=%d: %d of \n",
                nsent, HEART_BEAT_CATEGORY_SEND_SIZE);
       goto errout;
     }
@@ -160,12 +160,6 @@ int protocal_send_connect(void)
   ssize_t nsent;
   struct protocal_s p;
 
-  if (!g_connected)
-    {
-      ret = -ENOTCONN;
-      goto errout;
-    }
-
   protocal_make_magic(&p);
 
   p.head.category = CONNECT_CATEGORY;
@@ -178,12 +172,12 @@ int protocal_send_connect(void)
   if (nsent < 0)
     {
       ret = -errno;
-      ilockdbg("protocal_send_connect: send failed: %d\n", ret);
+      ilockdbg("send failed: %d\n", ret);
       goto errout;
     }
   else if (nsent != CONNECT_CATEGORY_SEND_SIZE)
     {
-      ilockdbg("protocal_send_connect: Bad send length=%d: %d of \n",
+      ilockdbg("Bad send length=%d: %d of \n",
                nsent, CONNECT_CATEGORY_SEND_SIZE);
       goto errout;
     }
@@ -217,12 +211,12 @@ int protocal_send_alert(uint32_t serial_no, uint8_t alert_type, uint8_t tm[6])
   if (nsent < 0)
     {
       ret = -errno;
-      ilockdbg("protocal_send_alert: send failed: %d\n", ret);
+      ilockdbg("send failed: %d\n", ret);
       goto errout;
     }
   else if (nsent != ALERT_CATEGORY_SEND_SIZE)
     {
-      ilockdbg("protocal_send_alert: Bad send length=%d: %d of \n",
+      ilockdbg("Bad send length=%d: %d of \n",
                nsent, ALERT_CATEGORY_SEND_SIZE);
       goto errout;
     }
@@ -263,12 +257,12 @@ int protocal_send_log(int32_t serial_no, bool *log_group, uint8_t *log_pubkey, u
   if (nsent < 0)
     {
       ret = -errno;
-      ilockdbg("protocal_send_log: send failed: %d\n", ret);
+      ilockdbg("send failed: %d\n", ret);
       goto errout;
     }
   else if (nsent != LOG_CATEGORY_SEND_SIZE)
     {
-      ilockdbg("protocal_send_log: Bad send length=%d: %d of \n",
+      ilockdbg("Bad send length=%d: %d of \n",
                nsent, LOG_CATEGORY_SEND_SIZE);
       goto errout;
     }
@@ -312,12 +306,12 @@ static int protocal_send_time_view(void)
   if (nsent < 0)
     {
       ret = -errno;
-      ilockdbg("protocal_send_time_view: send failed: %d\n", ret);
+      ilockdbg("send failed: %d\n", ret);
       goto errout;
     }
   else if (nsent != TIME_VIEW_CATEGORY_SEND_SIZE)
     {
-      ilockdbg("protocal_send_time_view: Bad send length=%d: %d of \n",
+      ilockdbg("Bad send length=%d: %d of \n",
                nsent, TIME_VIEW_CATEGORY_SEND_SIZE);
       goto errout;
     }
@@ -354,12 +348,12 @@ static int protocal_send_sensor_view(void)
   if (nsent < 0)
     {
       ret = -errno;
-      ilockdbg("protocal_send_sensor_view: send failed: %d\n", ret);
+      ilockdbg("send failed: %d\n", ret);
       goto errout;
     }
   else if (nsent != SENSOR_VIEW_CATEGORY_SEND_SIZE)
     {
-      ilockdbg("protocal_send_sensor_view: Bad send length=%d: %d of \n",
+      ilockdbg("Bad send length=%d: %d of \n",
                nsent, SENSOR_VIEW_CATEGORY_SEND_SIZE);
       goto errout;
     }
@@ -396,12 +390,12 @@ static int protocal_send_net_addr_view(void)
   if (nsent < 0)
     {
       ret = -errno;
-      ilockdbg("protocal_send_net_addr_view: send failed: %d\n", ret);
+      ilockdbg("send failed: %d\n", ret);
       goto errout;
     }
   else if (nsent != VIEW_NET_ADDR_CATEGORY_SEND_SIZE)
     {
-      ilockdbg("protocal_send_net_addr_view: Bad send length=%d: %d of \n",
+      ilockdbg("Bad send length=%d: %d of \n",
                nsent, VIEW_NET_ADDR_CATEGORY_SEND_SIZE);
       goto errout;
     }
@@ -466,12 +460,12 @@ static int protocal_send_ok(uint8_t category)
   if (nsent < 0)
     {
       ret = -errno;
-      ilockdbg("protocal_send_ok: send failed: %d\n", ret);
+      ilockdbg("send failed: %d\n", ret);
       goto errout;
     }
   else if (nsent != PROTOCAL_HEAD_SIZE)
     {
-      ilockdbg("protocal_send_ok: Bad send length=%d: %d of \n",
+      ilockdbg("Bad send length=%d: %d of \n",
                nsent, PROTOCAL_HEAD_SIZE);
       goto errout;
     }
@@ -506,12 +500,12 @@ static int protocal_send_download_firmware_ok(uint32_t firmware_crc32, uint32_t 
   if (nsent < 0)
     {
       ret = -errno;
-      ilockdbg("protocal_send_download_firmware_ok: send failed: %d\n", ret);
+      ilockdbg("send failed: %d\n", ret);
       goto errout;
     }
   else if (nsent != DOWNLOAD_FIRMWARE_CATEGORY_SEND_SIZE)
     {
-      ilockdbg("protocal_send_download_firmware_ok: Bad send length=%d: %d of \n",
+      ilockdbg("Bad send length=%d: %d of \n",
                nsent, DOWNLOAD_FIRMWARE_CATEGORY_SEND_SIZE);
       goto errout;
     }
@@ -543,12 +537,12 @@ static int protocal_send_crc32_firmware(uint8_t crc32_firmware_success)
   if (nsent < 0)
     {
       ret = -errno;
-      ilockdbg("protocal_send_crc32_firmware: send failed: %d\n", ret);
+      ilockdbg("send failed: %d\n", ret);
       goto errout;
     }
   else if (nsent != CRC32_FIRMWARE_CATEGORY_SEND_SIZE)
     {
-      ilockdbg("protocal_send_crc32_firmware: Bad send length=%d: %d of \n",
+      ilockdbg("Bad send length=%d: %d of \n",
                nsent, CRC32_FIRMWARE_CATEGORY_SEND_SIZE);
       goto errout;
     }
@@ -582,12 +576,12 @@ static int protocal_send_version(void)
   if (nsent < 0)
     {
       ret = -errno;
-      ilockdbg("protocal_send_version: send failed: %d\n", ret);
+      ilockdbg("send failed: %d\n", ret);
       goto errout;
     }
   else if (nsent != VERSION_VIEW_CATEGORY_SEND_SIZE)
     {
-      ilockdbg("protocal_send_version: Bad send length=%d: %d of \n",
+      ilockdbg("Bad send length=%d: %d of \n",
                nsent, VERSION_VIEW_CATEGORY_SEND_SIZE);
       goto errout;
     }
@@ -617,7 +611,7 @@ int protocal_set_time(struct protocal_s * protocal)
   if (ret < 0)
     {
       ret = -errno;
-      ilockdbg("protocal_set_time: clock_settime failed: %d\n", ret);
+      ilockdbg("clock_settime failed: %d\n", ret);
     }
 
   return ret;

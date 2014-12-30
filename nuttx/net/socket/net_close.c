@@ -304,7 +304,7 @@ static inline int netclose_disconnect(FAR struct socket *psock)
 
   /* There shouldn't be any callbacks registered. */
 
-  DEBUGASSERT(conn && conn->list == NULL);
+//  DEBUGASSERT(conn && conn->list == NULL);
 
   /* Check for the case where the host beat us and disconnected first */
 

@@ -99,7 +99,7 @@ static bool gpio_read(int fd)
   ret = ioctl(fd, GPIOC_READ, (unsigned long)&value);
   if (ret < 0)
     {
-      gpiodbg("gpio_write: GPIOC_READ ioctl failed: %d\n", errno);
+      gpiodbg("gpio_read: GPIOC_READ ioctl failed: %d\n", errno);
     }
 
   return value;
@@ -127,7 +127,7 @@ int gpio_init(void)
   if (magnet_fd < 0)
     {
       ret = -errno;
-      gpiodbg("gpio_init: open %s failed: %d\n", CONFIG_MAGNET_VCC_DEVNAME, ret);
+      gpiodbg("open %s failed: %d\n", CONFIG_MAGNET_VCC_DEVNAME, ret);
       goto errout;
     }
 
@@ -135,7 +135,7 @@ int gpio_init(void)
   if (closesw_fd < 0)
     {
       ret = -errno;
-      gpiodbg("gpio_init: open %s failed: %d\n", CONFIG_CLOSE_SW_DEVNAME, ret);
+      gpiodbg("open %s failed: %d\n", CONFIG_CLOSE_SW_DEVNAME, ret);
       goto errout;
     }
 	
