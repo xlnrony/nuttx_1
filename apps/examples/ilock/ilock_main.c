@@ -159,7 +159,8 @@ static int32_t g_max_infra_red;
  * Public Data
  ****************************************************************************/
 
-int g_sockfd = ERROR;
+FAR struct socket g_psock;
+
 bool g_connected = false;
 
 /****************************************************************************
@@ -789,47 +790,50 @@ static int unlock_task(int argc, char *argv[])
 static int net_task(int argc, char *argv[])
 {
   int ret;
-  int flags;
-  struct timeval tv;
+//  int flags;
+//  struct timeval tv;
   struct sockaddr_in svraddr;
 
   while(true)
     {
-      g_sockfd = socket(PF_INET, SOCK_STREAM, 0);
-      if (g_sockfd < 0)
+      ret = psock_socket(PF_INET, SOCK_STREAM, 0, &g_psock);
+      if (ret < 0)
         {
           ret = -errno;
-          ilockdbg("socket failure %d\n", ret);
+          ndbg("socket failure %d\n", ret);
           goto errout;
         }
 
-      flags = fcntl(g_sockfd, F_GETFL, 0);
-      if (flags == -1)
-        {
-          ndbg("fcntl(F_GETFL) failed: %d\n", -errno);
-          goto errout_with_socket;
-        }
+      /*
+            flags = fcntl(g_sockfd, F_GETFL, 0);
+            if (flags == -1)
+              {
+                ndbg("fcntl(F_GETFL) failed: %d\n", -errno);
+                goto errout_with_socket;
+              }
 
-      ndbg("fcntl(F_GETFL) return: %d\n", flags);
+            ndbg("fcntl(F_GETFL) return: %d\n", flags);
 
-      if (fcntl(g_sockfd, F_SETFL, flags & ~O_NDELAY) < 0)
-        {
-          ndbg("fcntl(O_NDELAY) failed: %d\n", -errno);
-          goto			errout_with_socket;
-        }
+            if (fcntl(g_sockfd, F_SETFL, flags & ~O_NDELAY) < 0)
+              {
+                ndbg("fcntl(O_NDELAY) failed: %d\n", -errno);
+                goto			errout_with_socket;
+              }
+      */
 
-      tv.tv_sec  = 10;
-      tv.tv_usec = 0;
+      /*    tv.tv_sec  = 10;
+          tv.tv_usec = 0;
 
-      (void)setsockopt(g_sockfd, SOL_SOCKET, SO_RCVTIMEO, (FAR const void *)&tv,
-                       sizeof(struct timeval));
-      (void)setsockopt(g_sockfd, SOL_SOCKET, SO_SNDTIMEO, (FAR const void *)&tv,
-                       sizeof(struct timeval));
+          (void)setsockopt(g_sockfd, SOL_SOCKET, SO_RCVTIMEO, (FAR const void *)&tv,
+                           sizeof(struct timeval));
+          (void)setsockopt(g_sockfd, SOL_SOCKET, SO_SNDTIMEO, (FAR const void *)&tv,
+                           sizeof(struct timeval));
+      */
 
       svraddr.sin_family      = AF_INET;
       svraddr.sin_port        = HTONS(config->svrport);
       svraddr.sin_addr.s_addr = config->svraddr.s_addr;
-      ret = connect(g_sockfd, (struct sockaddr*)&svraddr, sizeof(struct sockaddr_in));
+      ret = psock_connect(&g_psock, (struct sockaddr*)&svraddr, sizeof(struct sockaddr_in));
       if (ret < 0)
         {
           ret = -errno;
@@ -850,7 +854,7 @@ static int net_task(int argc, char *argv[])
 
 errout_with_socket:
       g_connected = false;
-      close(g_sockfd);
+      psock_close(&g_psock);
       led2_op(INDC_TWINKLE, IND_RED, SEC2TICK(3), MSEC2TICK(200));
       sleep(10);
     }
@@ -951,22 +955,6 @@ int ilock_main(int argc, char *argv[])
   led3_op(INDC_TWINKLE, IND_BLUE, SEC2TICK(3), MSEC2TICK(200));
   buzzer_op(INDC_TWINKLE, IND_ON, SEC2TICK(3), MSEC2TICK(200));
 
-  scan_pid = task_create("iLockScan", 50, CONFIG_SCAN_TASK_STACKSIZE, scan_task, NULL);
-  if (scan_pid < 0)
-    {
-      ret = -errno;
-      ilockdbg("iLockScan task_create failed: %d\n", ret);
-      goto errout;
-    }
-
-  unlock_pid = task_create("iLockUnlock", 50, CONFIG_UNLOCK_TASK_STACKSIZE, unlock_task, NULL);
-  if (unlock_pid < 0)
-    {
-      ret = -errno;
-      ilockdbg("iLockUnlock task_create failed: %d\n", ret);
-      goto errout;
-    }
-
   net_pid = task_create("iLockNet", 50, CONFIG_NET_TASK_STACKSIZE, net_task, NULL);
   if (net_pid < 0)
     {
@@ -983,10 +971,29 @@ int ilock_main(int argc, char *argv[])
       goto errout;
     }
 
+  unlock_pid = task_create("iLockUnlock", 50, CONFIG_UNLOCK_TASK_STACKSIZE, unlock_task, NULL);
+  if (unlock_pid < 0)
+    {
+      ret = -errno;
+      ilockdbg("iLockUnlock task_create failed: %d\n", ret);
+      goto errout;
+    }
+
+  scan_pid = task_create("iLockScan", 50, CONFIG_SCAN_TASK_STACKSIZE, scan_task, NULL);
+  if (scan_pid < 0)
+    {
+      ret = -errno;
+      ilockdbg("iLockScan task_create failed: %d\n", ret);
+      goto errout;
+    }
+
+
+
   printf("Press any key to exit ......\n");
   getchar();
 
 errout:
+
   if (scan_pid > 0)
     {
       task_delete(scan_pid);
@@ -997,14 +1004,14 @@ errout:
       task_delete(unlock_pid);
     }
 
-  if (net_pid > 0)
-    {
-      task_delete(net_pid);
-    }
-
   if (log_pid > 0)
     {
       task_delete(log_pid);
+    }
+
+  if (net_pid > 0)
+    {
+      task_delete(net_pid);
     }
 
   ipconflict_deinit();

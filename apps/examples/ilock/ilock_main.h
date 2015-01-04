@@ -63,7 +63,7 @@ extern "C"
 #define EXTERN extern
 #endif
 
-EXTERN int g_sockfd;
+EXTERN FAR struct socket g_psock;
 EXTERN bool g_connected;
 
 /****************************************************************************

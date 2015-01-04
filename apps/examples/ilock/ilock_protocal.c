@@ -135,7 +135,7 @@ int protocal_send_heart_beat(void)
   p.head.category = HEART_BEAT_CATEGORY;
   p.head.serial_no = config->serial_no;
 
-  nsent = send(g_sockfd, &p, HEART_BEAT_CATEGORY_SEND_SIZE, 0);
+  nsent = psock_send(&g_psock, &p, HEART_BEAT_CATEGORY_SEND_SIZE, 0);
   if (nsent < 0)
     {
       ret = -errno;
@@ -168,7 +168,7 @@ int protocal_send_connect(void)
   p.body.connect_category.connect_knl_version = version();
   p.body.connect_category.connect_app_version = CONFIG_EXAMPLES_ILOCK_VERSION;
 
-  nsent = send(g_sockfd, &p, CONNECT_CATEGORY_SEND_SIZE, 0);
+  nsent = psock_send(&g_psock, &p, CONNECT_CATEGORY_SEND_SIZE, 0);
   if (nsent < 0)
     {
       ret = -errno;
@@ -207,7 +207,7 @@ int protocal_send_alert(uint32_t serial_no, uint8_t alert_type, uint8_t tm[6])
   p.body.alert_category.alert_type = alert_type;
   memcpy(p.body.alert_category.alert_time, tm, 6);
 
-  nsent = send(g_sockfd, &p, ALERT_CATEGORY_SEND_SIZE, 0);
+  nsent = psock_send(&g_psock, &p, ALERT_CATEGORY_SEND_SIZE, 0);
   if (nsent < 0)
     {
       ret = -errno;
@@ -253,7 +253,7 @@ int protocal_send_log(int32_t serial_no, bool *log_group, uint8_t *log_pubkey, u
   p.body.log_ex_category.flag = type;
   memcpy(p.body.log_ex_category.log_time, tm, 6);
 
-  nsent = send(g_sockfd, &p, LOG_CATEGORY_SEND_SIZE, 0);
+  nsent = psock_send(&g_psock, &p, LOG_CATEGORY_SEND_SIZE, 0);
   if (nsent < 0)
     {
       ret = -errno;
@@ -302,7 +302,7 @@ static int protocal_send_time_view(void)
   p.body.time_view_category.view_time[4] = tm->tm_min;
   p.body.time_view_category.view_time[5] = tm->tm_sec;
 
-  nsent = send(g_sockfd, &p, TIME_VIEW_CATEGORY_SEND_SIZE, 0);
+  nsent = psock_send(&g_psock, &p, TIME_VIEW_CATEGORY_SEND_SIZE, 0);
   if (nsent < 0)
     {
       ret = -errno;
@@ -344,7 +344,7 @@ static int protocal_send_sensor_view(void)
   p.body.sensor_view_category.view_battery_voltage = 0;
   p.body.sensor_view_category.view_power_voltage = 0;
 
-  nsent = send(g_sockfd, &p, SENSOR_VIEW_CATEGORY_SEND_SIZE, 0);
+  nsent = psock_send(&g_psock, &p, SENSOR_VIEW_CATEGORY_SEND_SIZE, 0);
   if (nsent < 0)
     {
       ret = -errno;
@@ -386,7 +386,7 @@ static int protocal_send_net_addr_view(void)
   p.body.view_net_addr_category.view_svraddr = config->svraddr.s_addr;
   memcpy(p.body.view_net_addr_category.view_macaddr, config->macaddr, IFHWADDRLEN);
 
-  nsent = send(g_sockfd, &p, VIEW_NET_ADDR_CATEGORY_SEND_SIZE, 0);
+  nsent = psock_send(&g_psock, &p, VIEW_NET_ADDR_CATEGORY_SEND_SIZE, 0);
   if (nsent < 0)
     {
       ret = -errno;
@@ -456,7 +456,7 @@ static int protocal_send_ok(uint8_t category)
   p.head.category = category;
   p.head.serial_no = config->serial_no;
 
-  nsent = send(g_sockfd, &p, PROTOCAL_HEAD_SIZE, 0);
+  nsent = psock_send(&g_psock, &p, PROTOCAL_HEAD_SIZE, 0);
   if (nsent < 0)
     {
       ret = -errno;
@@ -496,7 +496,7 @@ static int protocal_send_download_firmware_ok(uint32_t firmware_crc32, uint32_t 
   p.body.download_firmware_category.firmware_len = firmware_len;
   p.body.download_firmware_category.firmware_pos = firmware_pos;
 
-  nsent = send(g_sockfd, &p, DOWNLOAD_FIRMWARE_CATEGORY_SEND_SIZE, 0);
+  nsent = psock_send(&g_psock, &p, DOWNLOAD_FIRMWARE_CATEGORY_SEND_SIZE, 0);
   if (nsent < 0)
     {
       ret = -errno;
@@ -533,7 +533,7 @@ static int protocal_send_crc32_firmware(uint8_t crc32_firmware_success)
   p.head.serial_no = config->serial_no;
   p.body.crc32_firmware_category.crc32_success = crc32_firmware_success;
 
-  nsent = send(g_sockfd, &p, CRC32_FIRMWARE_CATEGORY_SEND_SIZE, 0);
+  nsent = psock_send(&g_psock, &p, CRC32_FIRMWARE_CATEGORY_SEND_SIZE, 0);
   if (nsent < 0)
     {
       ret = -errno;
@@ -572,7 +572,7 @@ static int protocal_send_version(void)
   p.body.version_view_category.view_knl_version = version();
   p.body.version_view_category.view_app_version = CONFIG_EXAMPLES_ILOCK_VERSION;
 
-  nsent = send(g_sockfd, &p, VERSION_VIEW_CATEGORY_SEND_SIZE, 0);
+  nsent = psock_send(&g_psock, &p, VERSION_VIEW_CATEGORY_SEND_SIZE, 0);
   if (nsent < 0)
     {
       ret = -errno;
@@ -902,7 +902,7 @@ int protocal_recv(void)
   recv_pos = 0;
   while (recv_pos < PROTOCAL_HEAD_SIZE)
     {
-      recv_len = recv(g_sockfd, &recv_buf[recv_pos], PROTOCAL_HEAD_SIZE - recv_pos, 0);
+      recv_len = psock_recv(&g_psock, &recv_buf[recv_pos], PROTOCAL_HEAD_SIZE - recv_pos, 0);
 
       if (recv_len < 0)
         {
@@ -924,7 +924,7 @@ int protocal_recv(void)
   recv_pos = PROTOCAL_HEAD_SIZE;
   while (recv_pos < recv_size)
     {
-      recv_len = recv(g_sockfd, &recv_buf[recv_pos], recv_size - recv_pos, 0);
+      recv_len = psock_recv(&g_psock, &recv_buf[recv_pos], recv_size - recv_pos, 0);
 
       if (recv_len < 0)
         {

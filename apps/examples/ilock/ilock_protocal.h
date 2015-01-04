@@ -55,10 +55,6 @@
 #define MAGIC_THREE					'0'
 #define MAGIC_FOUR 					'0'
 
-#define HEART_BEAT_CATEGORY 					0
-#define HEART_BEAT_CATEGORY 					0
-#define HEART_BEAT_CATEGORY 					0
-
 #define HEART_BEAT_CATEGORY 													0
 #define LOG_CATEGORY 																		1
 #define DOWNLOAD_PUBKEY_CATEGORY 										2
