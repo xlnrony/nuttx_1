@@ -790,19 +790,39 @@ static int unlock_task(int argc, char *argv[])
 static int net_task(int argc, char *argv[])
 {
   int ret;
+  int sockfd;
+  FAR struct socket *psock;
 //  int flags;
 //  struct timeval tv;
   struct sockaddr_in svraddr;
 
+
   while(true)
     {
-      ret = psock_socket(PF_INET, SOCK_STREAM, 0, &g_psock);
-      if (ret < 0)
+      sockfd = socket(PF_INET, SOCK_STREAM, 0);
+      if (sockfd < 0)
         {
           ret = -errno;
           ndbg("socket failure %d\n", ret);
           goto errout;
         }
+
+      psock = sockfd_socket(sockfd);
+      if (!psock)
+        {
+          ret = -EFAULT;
+          nlldbg("Failed to convert sockfd=%d to a socket structure\n", sockfd);
+          goto errout_with_sockfd;
+        }
+
+      ret = net_clone(psock, &g_psock);
+      if (ret < 0)
+        {
+          nlldbg("net_clone failed: %d\n", ret);
+          goto errout;
+        }
+
+      psock_close(psock);
 
       /*
             flags = fcntl(g_sockfd, F_GETFL, 0);
@@ -838,27 +858,30 @@ static int net_task(int argc, char *argv[])
         {
           ret = -errno;
           ndbg("connect failure: %d\n", ret);
-          goto errout_with_socket;
+          goto errout_with_g_psock;
         }
 
       ret = protocal_send_connect();
       if (ret < 0)
         {
           ret = -errno;
-          goto errout_with_socket;
+          goto errout_with_g_psock;
         }
 
       g_connected = true;
 
       while(protocal_recv() == OK);
 
-errout_with_socket:
+errout_with_g_psock:
       g_connected = false;
       psock_close(&g_psock);
       led2_op(INDC_TWINKLE, IND_RED, SEC2TICK(3), MSEC2TICK(200));
       sleep(10);
     }
 errout:
+  return ret;
+errout_with_sockfd:
+  close(sockfd);
   return ret;
 }
 

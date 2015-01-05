@@ -639,8 +639,8 @@ static int protocal_deal(struct protocal_s * protocal)
 //        ET0 = 1;
       switch (protocal->head.category)
         {
-          //            case HEART_BEAT_CATEGORY:
-          //                break;
+			case HEART_BEAT_CATEGORY:
+			  break;
           case ASSIGN_SHOCK_RESISTOR_THRESHOLD_CATEGORY:
             config->shock_resistor_threshold = protocal->body.assign_shock_resistor_threshold_category.assign_shock_resistor_threshold;
             ret = save_config();
@@ -907,13 +907,13 @@ int protocal_recv(void)
       if (recv_len < 0)
         {
           ret = -errno;
-          ilockdbg("protocal_recv: protocal head recv failed: %d\n", ret);
+          ilockdbg("protocal head recv failed: %d\n", ret);
           goto errout;
         }
       else if (recv_len == 0)
         {
           ret = -EHOSTDOWN;
-          ilockdbg("protocal_recv: in protocal head recv, the server closed the connection\n");
+          ilockdbg("in protocal head recv, the server closed the connection\n");
           goto errout;
         }
       recv_pos += recv_len;
@@ -929,13 +929,13 @@ int protocal_recv(void)
       if (recv_len < 0)
         {
           ret = -errno;
-          ilockdbg("protocal_recv: protocal body recv failed: %d\n", ret);
+          ilockdbg("protocal body recv failed: %d\n", ret);
           goto errout;
         }
       else if (recv_len == 0)
         {
           ret = -EHOSTDOWN;
-          ilockdbg("protocal_recv: in protocal body recv, the server closed the connection\n");
+          ilockdbg("in protocal body recv, the server closed the connection\n");
           goto errout;
         }
       recv_pos += recv_len;
@@ -944,7 +944,7 @@ int protocal_recv(void)
   ret = protocal_deal((struct protocal_s *) recv_buf);
   if (ret < 0)
     {
-      ilockdbg("protocal_recv: protocal deal failed: %d\n", ret);
+      ilockdbg("protocal deal failed: %d\n", ret);
     }
 errout:
   return ret;
